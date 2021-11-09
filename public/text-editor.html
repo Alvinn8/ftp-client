@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+    <style type="text/css">
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #container {
+            width: 100%;
+            height: calc(100% - 50px);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+    <div id="controls"></div>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.20.0/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.20.0/min/vs' } });
+
+        require(['vs/editor/editor.main'], function () {
+            window.editor = monaco.editor.create(document.getElementById('container'));
+
+            window.onresize = function () {
+                editor.layout();
+            };
+
+            // Call the function created by the main page
+            window.editorLoaded();
+        });
+    </script>
+</body>
+
+</html>

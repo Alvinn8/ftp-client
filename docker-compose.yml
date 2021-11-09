@@ -1,0 +1,14 @@
+version: '3'
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: web.Dockerfile
+    ports:
+      - "80:80"
+  server:
+    build:
+      context: ./
+      dockerfile: server.Dockerfile
+    ports:
+      - "8081:8081"

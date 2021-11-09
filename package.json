@@ -1,0 +1,37 @@
+{
+  "name": "ftp-client",
+  "version": "1.0.0",
+  "scripts": {
+    "start:server": "node build/server/server/src/index.js",
+    "dev": "node scripts/build.js dev",
+    "build:website-dev": "node scripts/build.js build-website-dev",
+    "build:server": "node scripts/build.js build-server",
+    "build:website-dist": "node scripts/build.js build-website-dist"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.14.0",
+    "@babel/plugin-proposal-class-properties": "^7.13.0",
+    "@babel/preset-react": "^7.13.13",
+    "@babel/preset-typescript": "^7.13.0",
+    "@types/node": "^16.4.12",
+    "@types/react": "^17.0.5",
+    "@types/react-dom": "^17.0.5",
+    "@types/ws": "^7.4.7",
+    "rollup": "^2.56.2",
+    "terser": "^5.7.1"
+  },
+  "babel": {
+    "presets": [
+      "@babel/preset-react",
+      "@babel/preset-typescript"
+    ],
+    "plugins": [
+      "./scripts/babel-plugin",
+      "@babel/plugin-proposal-class-properties"
+    ]
+  },
+  "dependencies": {
+    "basic-ftp": "^4.6.6",
+    "ws": "^8.0.0"
+  }
+}

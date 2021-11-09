@@ -1,0 +1,141 @@
+body, html, #root, #root > div, #grid {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    margin: 0px;
+}
+
+#grid {
+    display: grid;
+    /* Desktop */
+    grid-template-columns: auto 5fr 2fr;
+    grid-template-rows: 100px 50px 1fr;
+    grid-template-areas: ".             header         header"
+                         "file-explorer workdir        selected-info"
+                         "file-explorer folder-content selected-info";
+}
+
+@media screen and (max-width: 600px) {
+    /* Mobile */
+    #grid {
+        grid-template-columns: 1fr 50px;
+        grid-template-rows: 1fr 100px 4fr 1fr;
+        grid-template-areas: "header             header"
+                             "mobile-current-tab mobile-current-tab"
+                             "folder-content     mobile-tab-buttons"
+                             "mobile-actions     mobile-actions";
+    }
+
+    /* Center workdir in the mobile tab view. */
+    #workdir {
+        margin-top: 31px;
+    }
+}
+
+#grid > * {
+    border: 1px dotted rgba(128, 128, 128, 0.5);
+}
+
+#file-explorer {
+    grid-area: file-explorer;
+    font-size: 14px;
+    overflow-x: hidden;
+}
+
+header {
+    grid-area: header;
+}
+
+#mobile-current-tab {
+    grid-area: mobile-current-tab;
+}
+
+#mobile-tab-buttons {
+    grid-area: mobile-tab-buttons;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+#mobile-actions {
+    grid-area: mobile-actions;
+}
+
+#folder-content {
+    grid-area: folder-content;
+    overflow: scroll;
+}
+
+#folder-content > div {
+    height: 100%;
+}
+
+#workdir {
+    grid-area: workdir;
+}
+
+#selected-info {
+    grid-area: selected-info;
+}
+
+#port {
+    width: 50px;
+}
+
+.folder-entry {
+    margin: 2px;
+    line-height: 30px;
+    cursor: pointer;
+    padding: 0px 1rem;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.folder-entry span {
+    margin-left: 10px;
+}
+
+.folder-entry:hover {
+    background-color: #eee;
+}
+
+.message-container {
+    position: fixed;
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+.drop-zone {
+    position: fixed;
+    background-color: rgba(0, 140, 255, 0.4);
+    border-width: 2px;
+    border-style: dashed;
+    border-color: rgb(0, 140, 255);
+    border-radius: 5px;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.toast-square {
+    width: 20px;
+    height: 20px;
+}
+
+#editor-iframe {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+}
+
+.folder-component-arrow:hover {
+    color: var(--bs-info);
+}

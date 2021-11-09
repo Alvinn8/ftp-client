@@ -1,0 +1,101 @@
+import * as React from "react";
+import FolderContentProvider from "../folder/FolderContentProvider";
+import FolderEntry from "../folder/FolderEntry";
+import { handleOnDrop } from "../upload/upload";
+import DropZone from "./DropZone";
+import FolderEntryComponent from "./FolderEntryComponent";
+import { app } from "./index";
+
+interface FolderContentProps {
+    provider: FolderContentProvider;
+}
+
+interface FolderContentState {
+    entries: FolderEntry[];
+    dragAndDrop: boolean;
+}
+
+/**
+ * A component that renderes the files and folders in the current directory.
+ */
+export default class FolderContent extends React.Component<FolderContentProps, FolderContentState> {
+    private readonly ref: React.RefObject<HTMLDivElement> = React.createRef();
+
+    constructor(props) {
+        super(props);
+
+        app.folderContent = this;
+
+        this.state = {
+            entries: null,
+            dragAndDrop: false
+        };
+    }
+
+    async componentDidMount() {
+        await this.getEntries();
+
+        this.ref.current.ondragenter = this.onDragEnter.bind(this);
+        this.ref.current.ondragleave = this.onDragLeave.bind(this);
+        this.ref.current.ondrop = () => {};
+        // noop event listener, we just need to listen for ondrop
+        // to make the element a valid drag and drop target.
+    }
+
+    async getEntries() {
+        this.setState({
+            ...this.state,
+            entries: await this.props.provider.getFolderEntries()
+        });
+    }
+
+    onDragEnter(e: DragEvent) {
+        e.preventDefault();
+        this.setState({
+            ...this.state,
+            dragAndDrop: true
+        });
+    }
+
+    onDragLeave(e: DragEvent) {
+        const box = this.ref.current.getBoundingClientRect();
+        if (e.clientX > box.x + box.width
+            || e.clientX < box.x
+            || e.clientY > box.y + box.height
+            || e.clientY < box.y) {
+            this.setState({
+                ...this.state,
+                dragAndDrop: false
+            });
+        }
+    }
+
+    onDrop(e: DragEvent) {
+        // Read and upload
+        handleOnDrop(e);
+
+        this.setState({
+            ...this.state,
+            dragAndDrop: false
+        });
+    }
+    
+    render() {
+        let dropZone;
+        if (this.state.dragAndDrop) {
+            const box = this.ref.current.getBoundingClientRect();
+            dropZone = <DropZone x={box.x} y={box.y} width={box.width} height={box.height} onDrop={this.onDrop.bind(this)} />;
+        }
+        return (
+            <div className="py-3" ref={this.ref}>
+                {this.state.entries == null && <p>Loading files...</p> }
+                {this.state.entries != null &&
+                    this.state.entries.map((value, index) => {
+                        return <FolderEntryComponent entry={value} key={index} />;
+                    })
+                }
+                {dropZone}
+            </div>
+        );
+    }
+}
