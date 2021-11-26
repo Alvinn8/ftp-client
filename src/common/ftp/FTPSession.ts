@@ -5,6 +5,7 @@ import FolderEntry from "../folder/FolderEntry";
 import { unselectAll } from "../selection/selection";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import { addMessage } from "../ui/messages";
+import Task from "../task/Task";
 
 /**
  * An FTP session that holds some information about the current session.
@@ -72,7 +73,21 @@ export default class FTPSession {
      * Get the ftp connection with the intention of doing stuff, so the workdir
      * needs to be up to date.
      */
-    async getConnection(): Promise<FTPConnection> {
+    async getConnection(): Promise<FTPConnection>;
+
+    /**
+     * Get the ftp connection with the intention of doing stuff, so the workdir
+     * needs to be up to date.
+     * <p>
+     * The task object is passed to this method and only if the current task is
+     * that task the remote workdir will be updated, otherwise an error will be
+     * displayed as the user is likely trying to do two things at once.
+     * 
+     * @param task The task that is requesting the connection.
+     */
+    async getConnection(task: Task): Promise<FTPConnection>;
+
+    async getConnection(task?: Task): Promise<FTPConnection> {
         if (this.connection instanceof WebsocketFTPConnection) {
             const websocketFTPConnection = this.connection as WebsocketFTPConnection;
             if (websocketFTPConnection.websocket.readyState != WebSocket.OPEN) {
@@ -103,7 +118,10 @@ export default class FTPSession {
             }
         }
         if (this.workdir != this.sendWorkDir) {
-            if (!app.tasks.requestNewTask()) {
+            if (app.tasks.hasTask() && app.tasks.getTask() != task) {
+                // Show error message
+                app.tasks.requestNewTask();
+                
                 throw new Error("Unable to change the directory right now, a task is running.");
             }
             console.log("Updateing remote workdir");

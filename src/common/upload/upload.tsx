@@ -4,6 +4,7 @@
 
 import * as React from "react";
 import Dialog from "../Dialog";
+import FTPConnection from "../ftp/FTPConnection";
 import Task from "../task/Task";
 import { app } from "../ui/index";
 import Directory from "./Directory";
@@ -40,9 +41,12 @@ export async function upload(uploads: Directory) {
     const hasDirectories = Object.keys(uploads.directories).length > 0;
 
     if (!hasDirectories && uploads.files.length == 1) {
+        // Get the connection before starting the task
+        const connection = await app.state.session.getConnection();
+
         const task = new Task("Uploading " + uploads.files[0].name, "", false);
         app.tasks.setTask(task);
-        await uploadFile(uploads.files[0]);
+        await uploadFile(uploads.files[0], connection);
         task.complete();
         await app.state.session.refresh();
     } else {
@@ -76,14 +80,14 @@ export async function upload(uploads: Directory) {
  * @returns The new uploadCount, the new amount of files that have been uploaded.
  */
 async function uploadDirectory(directory: Directory, task: Task, uploadCount: number, totalCount: number): Promise<number> {
+    const connection = await app.state.session.getConnection();
     // Upload all files
     for (const file of directory.files) {
-        await uploadFile(file);
+        await uploadFile(file, connection);
         uploadCount++;
         task.progress(uploadCount, totalCount, "Uploading " + file.name);
     }
     // List the current folder so we can see if the following subdirectories exist
-    const connection = await app.state.session.getConnection();
     const list = await connection.list();
     // Loop trough all directories to upload
     for (const subdirName in directory.directories) {
@@ -113,12 +117,16 @@ async function uploadDirectory(directory: Directory, task: Task, uploadCount: nu
 
 /**
  * Upload a file to the FTP server.
+ * <p>
+ * The connection can not be fetched from the session when a task is running,
+ * without permission (providing the task), therefore the connection is injected
+ * into this method instead.
  *
  * @param file The file to upload.
+ * @param connection The connection object.
  */
-async function uploadFile(file: File) {
+async function uploadFile(file: File, connection: FTPConnection) {
     console.log("Uploading " + file.name);
-    const connection = await app.state.session.getConnection();
     await connection.upload(file, file.name);
 }
 
