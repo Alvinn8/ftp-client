@@ -84,7 +84,8 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         let dropZone;
         if (this.state.dragAndDrop) {
             const box = this.ref.current.getBoundingClientRect();
-            dropZone = <DropZone x={box.x} y={box.y} width={box.width} height={box.height} onDrop={this.onDrop.bind(this)} />;
+            const scrollTop = this.ref.current.parentElement.scrollTop;
+            dropZone = <DropZone x={box.x} y={box.y + scrollTop} width={box.width} height={box.height} onDrop={this.onDrop.bind(this)} />;
         }
         return (
             <div className="py-3" ref={this.ref}>
