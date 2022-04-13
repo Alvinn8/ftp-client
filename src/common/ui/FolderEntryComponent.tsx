@@ -122,6 +122,12 @@ export default class FolderEntryComponent extends React.Component<FolderEntryCom
         setContextMenu({
             container: element
         });
+
+        // If the element is outside of the screen, move it in to the screen
+        const box = element.firstElementChild.getBoundingClientRect();
+        if (box.bottom > document.body.clientHeight) {
+            element.style.top = document.body.clientHeight - box.height + "px";
+        }
     }
 
     async onDoubleClick(e: React.MouseEvent) {
