@@ -59,10 +59,11 @@ export default class FolderContent extends React.Component<FolderContentProps, F
 
     onDragLeave(e: DragEvent) {
         const box = this.ref.current.getBoundingClientRect();
-        if (e.clientX > box.x + box.width
+        const scrollTop = this.ref.current.parentElement.scrollTop;
+        if (e.clientX > box.right
             || e.clientX < box.x
-            || e.clientY > box.y + box.height
-            || e.clientY < box.y) {
+            || e.clientY > box.bottom + scrollTop
+            || e.clientY < box.y + scrollTop) {
             this.setState({
                 ...this.state,
                 dragAndDrop: false
