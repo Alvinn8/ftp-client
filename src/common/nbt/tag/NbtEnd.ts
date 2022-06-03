@@ -3,7 +3,7 @@ import NbtTag from "./NbtTag";
 
 class NbtEnd extends NbtTag {
     read(NbtReader: NbtReader): void {
-        throw new Error("Method not implemented.");
+        throw new Error("end tags do not have a payload");
     }
 }
 

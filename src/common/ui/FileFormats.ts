@@ -26,6 +26,7 @@ export function getIconFor(fileName: string): string {
         case ".log":
         case ".properties":
         case ".yml":
+        case ".yaml":
         case ".toml":
         case ".json":
         case ".cfg":
@@ -40,6 +41,7 @@ export function getIconFor(fileName: string): string {
         case ".MD":
         case ".css":
         case ".svg":
+        case ".xml":
             return "file-earmark-text";
 
         case ".pdf":
@@ -60,6 +62,13 @@ export function getIconFor(fileName: string): string {
         case ".patch":
         case ".diff":
             return "file-earmark-diff";
+
+        case ".dat":
+        case ".dat_old":
+        case ".dat_new":
+        case ".nbt":
+        case ".mca":
+            return "file-earmark-binary";
 
         default: return "file-earmark";
     }

@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import Dialog from "../../Dialog";
 import FolderEntry from "../../folder/FolderEntry";
+import { ensurePakoScriptIsLoaded } from "../../utils";
 import { app } from "../index";
 import { addMessage } from "../messages";
 import ImageEditor from "./ImageEditor";
@@ -179,20 +180,8 @@ function confirmOpenGzip(folderEntry: FolderEntry): Promise<boolean> {
  * @returns The ungizpped output blob.
  */
 async function ungzip(blob: Blob): Promise<Blob> {
-    let pakoScript = document.getElementById("pako-script") as HTMLScriptElement;
-    if (pakoScript == null) {
-        pakoScript = document.createElement("script");
-        pakoScript.id = "pako-script";
-        pakoScript.src = "https://cdn.jsdelivr.net/pako/1.0.3/pako.min.js";
-        const promise = new Promise(function (resolve, reject) {
-            pakoScript.addEventListener("load", resolve);
-            pakoScript.addEventListener("error", reject);
-        });
-        document.head.appendChild(pakoScript);
+    await ensurePakoScriptIsLoaded();
 
-        // Wait for the script to load
-        await promise;
-    }
     const input = await blob.arrayBuffer();
     // @ts-ignore
     const output: Uint8Array = await pako.ungzip(input);
