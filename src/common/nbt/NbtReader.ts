@@ -64,13 +64,6 @@ export default class NbtReader {
     }
 
     /**
-     * Read a eight byte unsigned number.
-     */
-    readU8(): bigint {
-        return this.data.getBigUint64(this.incIndex(8), this.littleEndian);
-    }
-
-    /**
      * Read a eight byte signed number.
      */
     read8(): bigint {

@@ -1,20 +1,7 @@
 import { ensurePakoScriptIsLoaded } from "../utils";
 import NbtReader from "./NbtReader";
 import NbtResult, { BedrockLevelDat, Compression, EditionData } from "./NbtResult";
-import NbtByte from "./tag/NbtByte";
-import NbtByteArray from "./tag/NbtByteArray";
-import NbtCompound from "./tag/NbtCompound";
-import NbtDouble from "./tag/NbtDouble";
-import NbtEnd from "./tag/NbtEnd";
-import NbtFloat from "./tag/NbtFloat";
-import NbtInt from "./tag/NbtInt";
-import NbtIntArray from "./tag/NbtIntArray";
-import NbtList from "./tag/NbtList";
-import NbtLong from "./tag/NbtLong";
-import NbtLongArray from "./tag/NbtLongArray";
-import NbtShort from "./tag/NbtShort";
-import NbtString from "./tag/NbtString";
-import NbtTag from "./tag/NbtTag";
+import { NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtEnd, NbtFloat, NbtInt, NbtIntArray, NbtList, NbtLong, NbtLongArray, NbtShort, NbtString, NbtTag } from "./nbtTags";
 
 // var blob = $0.files[0];
 // var nbt = await import("./js/common/nbt/nbt.js");

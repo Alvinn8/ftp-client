@@ -1,4 +1,5 @@
-import NbtTag from "./tag/NbtTag";
+import { NbtTag } from "./nbtTags";
+
 
 export default interface NbtResult {
     tag: NbtTag;
