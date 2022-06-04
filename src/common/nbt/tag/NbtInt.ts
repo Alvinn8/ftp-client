@@ -2,9 +2,9 @@ import NbtReader from "../NbtReader";
 import NbtTag from "./NbtTag";
 
 export default class NbtInt extends NbtTag {
-    private data: number;
+    value: number;
     
     read(reader: NbtReader): void {
-        this.data = reader.read4();
+        this.value = reader.read4();
     }
 }

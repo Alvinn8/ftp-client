@@ -6,8 +6,8 @@
 export default class NbtReader {
     private readonly data: DataView;
     private readonly bytes: Uint8Array;
-    private readonly littleEndian: boolean;
-    private index: number;
+    littleEndian: boolean;
+    index: number;
 
     constructor(data: Uint8Array, littleEndian = false) {
         this.data = new DataView(data.buffer);

@@ -4,6 +4,7 @@ import NbtTag from "./NbtTag";
 
 export default class NbtCompound extends NbtTag {
     private readonly data: {[key: string]: NbtTag} = {};
+    private readonly orderedKeys: string[] = [];
 
     read(reader: NbtReader) {
         let tagId;
@@ -12,6 +13,11 @@ export default class NbtCompound extends NbtTag {
             const name = reader.readString();
             tag.read(reader);
             this.data[name] = tag;
+            this.orderedKeys.push(name);
         }
+    }
+
+    get(name: string): NbtTag | null {
+        return this.data[name] || null;
     }
 }

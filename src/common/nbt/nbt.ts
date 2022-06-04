@@ -1,5 +1,6 @@
 import { ensurePakoScriptIsLoaded } from "../utils";
 import NbtReader from "./NbtReader";
+import NbtResult, { BedrockLevelDat, Compression, EditionData } from "./NbtResult";
 import NbtByte from "./tag/NbtByte";
 import NbtByteArray from "./tag/NbtByteArray";
 import NbtCompound from "./tag/NbtCompound";
@@ -25,25 +26,90 @@ var nbt = await import("./js/common/nbt/nbt.js");
 nbt.readJavaEditionUncompressedNbt(blob);
 */
 
-export async function readNbt(blob: Blob) {
+export async function readNbt(blob: Blob): Promise<NbtResult> {
     let data = new Uint8Array(await blob.arrayBuffer());
     let origData = data;
-    if ((data[0] == 0x1F && data[1] == 0x8B) || data[0] == 0x78) {
-        // if we detect the zlib/gzip magic number 1F 0B or 78 then inflate the
-        // data before reading
+    
+    let compression: Compression = "none";
+    let editionData: EditionData;
+    let tag: NbtTag;
+
+    if (data[0] == 0x1F && data[1] == 0x8B) {
+        // gzip magic number 1F 8B
+        compression = "gzip";
+    }
+    else if (data[0] == 0x78) {
+        // zlib magic number 0x78
+        compression = "zlib";
+    }
+
+    if (compression != "none") {
+        // pako will auto detect the algorithm
         await ensurePakoScriptIsLoaded();
         // @ts-ignore
         data = pako.inflate(origData);
     }
-    return await readNbt0(data, false); // true for little endian = bedrock (doesn't work)
+    
+    const reader = new NbtReader(data);
+
+    // Java edition?
+    editionData = {
+        edition: "java",
+        littleEndian: false
+    };
+    reader.littleEndian = false;
+    reader.index = 0;
+    tag = await attemptReadNbtTag(reader);
+
+    // Bedrock edition?
+    if (tag == null) {
+        editionData = {
+            edition: "bedrock",
+            littleEndian: true
+        };
+        reader.littleEndian = true;
+        reader.index = 0;
+        tag = await attemptReadNbtTag(reader);
+    }
+
+    // Bedrock edition level.dat?
+    if (tag == null) {
+        reader.littleEndian = true;
+        reader.index = 0;
+        const headerVersion = reader.read4();
+        const fileSize = reader.read4();
+        if (fileSize == data.byteLength - 8) {
+            editionData = {
+                edition: "bedrock",
+                littleEndian: true,
+                isLevelDat: true,
+                headerVersion
+            } as BedrockLevelDat;
+            tag = await attemptReadNbtTag(reader);
+        }
+    }
+
+    if (tag == null) {
+        throw new Error("That is not an nbt file.");
+    }
+
+    return {
+        tag,
+        compression,
+        editionData
+    };
 }
 
-export async function readNbt0(data: Uint8Array, littleEndian: boolean): Promise<NbtTag> {
-    const reader = new NbtReader(data, littleEndian);
-    const tagId = reader.readU1();
-    const tag = getTagFromId(tagId);
-    tag.read(reader);
-    return tag;
+async function attemptReadNbtTag(reader: NbtReader) {
+    try {
+        const tagId = reader.readU1();
+        const tag = getTagFromId(tagId);
+        reader.readString();
+        tag.read(reader);
+        return tag;
+    } catch {
+        return null;
+    }
 }
 
 export function getTagFromId(id: number): NbtTag {

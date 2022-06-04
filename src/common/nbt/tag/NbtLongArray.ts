@@ -2,7 +2,7 @@ import NbtReader from "../NbtReader";
 import NbtTag from "./NbtTag";
 
 export default class NbtLongArray extends NbtTag {
-    private data: BigInt64Array;
+    data: BigInt64Array;
     
     read(reader: NbtReader): void {
         const size = reader.read4();

@@ -3,7 +3,7 @@ import NbtReader from "../NbtReader";
 import NbtTag from "./NbtTag";
 
 export default class NbtList extends NbtTag {
-    private data: NbtTag[];
+    data: NbtTag[];
     
     read(reader: NbtReader): void {
         const listTypeId = reader.readU1();
