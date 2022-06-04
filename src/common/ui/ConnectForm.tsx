@@ -1,6 +1,7 @@
 import * as React from "react";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import FTPProfile from "../ftp/FTPProfile";
+import NbtTest from "./editor/nbt/NbtTest";
 import { app, State } from "./index";
 
 let url = new URL(location.href);
@@ -96,6 +97,8 @@ export default class ConnectForm extends React.Component {
                     <label htmlFor="secure" className="form-label">Secure</label>
                 </div>
                 <button onClick={this.connect.bind(this)} className="btn btn-success">Connect</button>
+                <hr />
+                <NbtTest />
             </div>
         );
     }

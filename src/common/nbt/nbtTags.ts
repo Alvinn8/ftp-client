@@ -30,6 +30,17 @@ export class NbtCompound extends NbtTag {
     get(name: string): NbtTag | null {
         return this.data[name] || null;
     }
+
+    /**
+     * Return an ordered array of keys in this compound.
+     * 
+     * The order is the order they were read in.
+     * 
+     * @returns The keys.
+     */
+    getKeys(): string[] {
+        return this.orderedKeys.slice(0);
+    }
 }
 
 export class NbtList extends NbtTag {
@@ -63,10 +74,23 @@ export const NbtEnd: NbtTag = {
     }
 };
 
+export class NbtString extends NbtTag {
+    value: string;
+    
+    read(reader: NbtReader): void {
+        this.value = reader.readString();
+    }
+}
+
 /**
  * A nbt tag with an array of a simple datatype.
  */
-export abstract class ArrayNbtTag {}
+export abstract class ArrayNbtTag {
+    /**
+     * Get the length of the array.
+     */
+    abstract length(): number;
+}
 
 export class NbtByteArray extends ArrayNbtTag {
     data: Int8Array;
@@ -77,6 +101,10 @@ export class NbtByteArray extends ArrayNbtTag {
         for (let i = 0; i < size; i++) {
             this.data[i] = reader.read1();
         }
+    }
+
+    length(): number {
+        return this.data.byteLength;
     }
 }
 
@@ -90,6 +118,10 @@ export class NbtIntArray extends ArrayNbtTag {
             this.data[i] = reader.read4();
         }
     }
+
+    length(): number {
+        return this.data.byteLength;
+    }
 }
 
 export class NbtLongArray extends ArrayNbtTag {
@@ -102,65 +134,118 @@ export class NbtLongArray extends ArrayNbtTag {
             this.data[i] = reader.read8();
         }
     }
+
+    length(): number {
+        return this.data.byteLength;
+    }
 }
 
 /**
- * A simple nbt tag. A number or string.
+ * A number nbt tag.
  */
-export abstract class SimpleNbtTag {}
+export abstract class NumberNbtTag {
+    /**
+     * Format the number as a string.
+     */
+    abstract toString(): string;
+    /**
+     * Get the character used to identify the type of tag. Null for none.
+     */
+    abstract getTypeChar(): string;
+}
 
-export class NbtByte extends SimpleNbtTag {
+export class NbtByte extends NumberNbtTag {
     value: number;
 
     read(reader: NbtReader): void {
         this.value = reader.read1();
     }
+
+    toString(): string {
+        return this.value.toString();
+    }
+
+    getTypeChar(): string {
+        return "b";
+    }
 }
 
-export class NbtShort extends SimpleNbtTag {
+export class NbtShort extends NumberNbtTag {
     value: number;
     
     read(reader: NbtReader): void {
         this.value = reader.read2();
     }
+
+    toString(): string {
+        return this.value.toString();
+    }
+
+    getTypeChar(): string {
+        return "s";
+    }
 }
 
-export class NbtInt extends SimpleNbtTag {
+export class NbtInt extends NumberNbtTag {
     value: number;
     
     read(reader: NbtReader): void {
         this.value = reader.read4();
     }
+
+    toString(): string {
+        return this.value.toString();
+    }
+
+    getTypeChar(): string {
+        return null;
+    }
 }
 
-export class NbtLong extends SimpleNbtTag {
+export class NbtLong extends NumberNbtTag {
     value: bigint;
     
     read(reader: NbtReader): void {
         this.value = reader.read8();
     }
+
+    toString(): string {
+        return this.value.toString();
+    }
+
+    getTypeChar(): string {
+        return "L";
+    }
 }
 
-export class NbtFloat extends SimpleNbtTag {
+export class NbtFloat extends NumberNbtTag {
     value: number;
     
     read(reader: NbtReader): void {
         this.value = reader.readFloat();
     }
+
+    toString(): string {
+        return this.value.toString();
+    }
+
+    getTypeChar(): string {
+        return "f";
+    }
 }
 
-export class NbtDouble extends SimpleNbtTag {
+export class NbtDouble extends NumberNbtTag {
     value: number;
     
     read(reader: NbtReader): void {
         this.value = reader.readDouble();
     }
-}
 
-export class NbtString extends SimpleNbtTag {
-    value: string;
-    
-    read(reader: NbtReader): void {
-        this.value = reader.readString();
+    toString(): string {
+        return this.value.toString();
+    }
+
+    getTypeChar(): string {
+        return "d";
     }
 }

@@ -75,6 +75,10 @@ Mobile
 - [ ] Current Open Editors window on the bottom right.
 - [x] Nicer dialogs
 - [x] Prevent saving gzipped files.
+- [ ] Nbt reading
+- [ ] Nbt editing
+- [ ] Nbt writing
+- [ ] Reading region files
 
 ## Protocol spec
 
