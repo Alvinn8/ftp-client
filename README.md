@@ -9,9 +9,10 @@ FTP Client that can be used as a WebFTP (and as an electron app).
 - Drag and drop uploading
 - Folder uploading
 - Folder downloading as zip
-- Viewing gzipped files
 - Caching for fast folder navigation
 - Calculate the size of folders
+- Viewing gzipped files
+- Viewing Minecraft NBT files
 
 # Technical information
 
@@ -75,10 +76,11 @@ Mobile
 - [ ] Current Open Editors window on the bottom right.
 - [x] Nicer dialogs
 - [x] Prevent saving gzipped files.
-- [ ] Nbt reading
-- [ ] Nbt editing
-- [ ] Nbt writing
-- [ ] Reading region files
+- [ ] Nbt reading and writing
+    - [ ] Nbt editing
+    - [ ] Nbt writing
+    - [ ] Copying nbt as snbt and binary nbt in the editor
+    - [ ] Reading region files
 
 ## Protocol spec
 

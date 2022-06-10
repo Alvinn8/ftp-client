@@ -1,7 +1,8 @@
 import { ensurePakoScriptIsLoaded } from "../utils";
 import NbtReader from "./NbtReader";
-import NbtResult, { BedrockLevelDat, Compression, EditionData } from "./NbtResult";
+import NbtResult, { BedrockEdition, BedrockLevelDat, Compression, EditionData } from "./NbtResult";
 import { NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtEnd, NbtFloat, NbtInt, NbtIntArray, NbtList, NbtLong, NbtLongArray, NbtShort, NbtString, NbtTag } from "./nbtTags";
+import NbtWriter from "./NbtWriter";
 
 // var blob = $0.files[0];
 // var nbt = await import("./js/common/nbt/nbt.js");
@@ -118,4 +119,77 @@ export function getTagFromId(id: number): NbtTag {
         default:
             throw new Error("Unknown tag type: " + id);
     }
+}
+
+export function getIdFromTag(tag: NbtTag) {
+    if (tag == NbtEnd)                  return 0;
+    if (tag instanceof NbtByte)         return 1;
+    if (tag instanceof NbtShort)        return 2;
+    if (tag instanceof NbtInt)          return 3;
+    if (tag instanceof NbtLong)         return 4;
+    if (tag instanceof NbtFloat)        return 5;
+    if (tag instanceof NbtDouble)       return 6;
+    if (tag instanceof NbtByteArray)    return 7;
+    if (tag instanceof NbtString)       return 8;
+    if (tag instanceof NbtList)         return 9;
+    if (tag instanceof NbtCompound)     return 10;
+    if (tag instanceof NbtIntArray)     return 11;
+    if (tag instanceof NbtLongArray)    return 11;
+    throw new Error("Unknown tag: " + tag);
+}
+
+export async function writeNbt(nbt: NbtResult): Promise<Blob> {
+    const writer = new NbtWriter(new Uint8Array(100), nbt.editionData.littleEndian);
+
+    // Write extra data for bedrock edition level.dat
+    let bedrockLevelData: BedrockLevelDat;
+    if (nbt.editionData.edition == "bedrock") {
+        const bedrockData = nbt.editionData as BedrockEdition;
+        if (bedrockData.isLevelDat) {
+            bedrockLevelData = bedrockData as BedrockLevelDat;
+        }
+    }
+    if (bedrockLevelData != null) {
+        // Write header
+        writer.write4(bedrockLevelData.headerVersion);
+        // Byte length is written later
+        writer.write4(0);
+    }
+
+    const tag = nbt.tag;
+    writer.writeU1(getIdFromTag(tag));
+    writer.writeString("");
+    tag.write(writer);
+
+    if (bedrockLevelData != null) {
+        // Write byte length
+        const length = writer.index;
+        writer.index = 4;
+        writer.write4(length);
+    }
+
+    let data = writer.bytes;
+
+    // Trim to size
+    const newData = new Uint8Array(writer.index);
+    for (let i = 0; i < writer.index; i++) {
+        newData[i] = data[i];
+        // this feels very inefficent, although couldn't get other set/copyWithin
+        // methods to work
+    }
+    data = newData;
+
+    if (nbt.compression != "none") {
+        // pako will auto detect the algorithm
+        await ensurePakoScriptIsLoaded();
+        if (nbt.compression == "gzip") {
+            // @ts-ignore
+            data = pako.gzip(data);
+        } else if (nbt.compression == "zlib") {
+            // @ts-ignore
+            data = pako.deflate(data);
+        }
+    }
+
+    return new Blob([data]);
 }

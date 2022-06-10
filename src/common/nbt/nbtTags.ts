@@ -1,5 +1,6 @@
 import NbtReader from "./NbtReader";
-import { getTagFromId } from "./nbt";
+import NbtWriter from "./NbtWriter";
+import { getIdFromTag, getTagFromId } from "./nbt";
 
 export abstract class NbtTag {
     /**
@@ -10,6 +11,15 @@ export abstract class NbtTag {
      * @param reader The reader to read from.
      */
     abstract read(reader: NbtReader): void;
+
+    /**
+     * Write the content of this tag.
+     * 
+     * Will only write the content and not the tag id and name.
+     * 
+     * @param writer The writer to write to.
+     */
+    abstract write(writer: NbtWriter): void;
 }
 
 export class NbtCompound extends NbtTag {
@@ -25,6 +35,17 @@ export class NbtCompound extends NbtTag {
             this.data[name] = tag;
             this.orderedKeys.push(name);
         }
+    }
+
+    write(writer: NbtWriter) {
+        for (const key of this.orderedKeys) {
+            const tag = this.get(key);
+            writer.writeU1(getIdFromTag(tag));
+            console.log(getIdFromTag(tag));
+            writer.writeString(key);
+            tag.write(writer);
+        }
+        writer.writeU1(0); // end tag
     }
 
     get(name: string): NbtTag | null {
@@ -44,15 +65,16 @@ export class NbtCompound extends NbtTag {
 }
 
 export class NbtList extends NbtTag {
+    listTypeId: number;
     data: NbtTag[];
     
     read(reader: NbtReader): void {
-        const listTypeId = reader.readU1();
+        this.listTypeId = reader.readU1();
         
         const size = reader.read4();
         this.data = new Array(size);
 
-        if (listTypeId == 0) {
+        if (this.listTypeId == 0) {
             // Null tags are only allowed as a type if the list is empty.
             if (size > 0) {
                 throw new Error("Cannot have a non-empty list of end tags.");
@@ -61,15 +83,29 @@ export class NbtList extends NbtTag {
         }
         
         for (let i = 0; i < size; i++) {
-            const tag = getTagFromId(listTypeId);;
+            const tag = getTagFromId(this.listTypeId);;
             tag.read(reader);
             this.data[i] = tag;
+        }
+    }
+
+    write(writer: NbtWriter): void {
+        writer.writeU1(this.listTypeId);
+        writer.write4(this.data.length);
+        
+        for (let i = 0; i < this.data.length; i++) {
+            const tag = this.data[i];
+            writer.writeU1(getIdFromTag(tag));
+            tag.write(writer);
         }
     }
 }
 
 export const NbtEnd: NbtTag = {
     read(reader: NbtReader): void {
+        throw new Error("end tags do not have a payload");
+    },
+    write(writer: NbtWriter) {
         throw new Error("end tags do not have a payload");
     }
 };
@@ -80,12 +116,16 @@ export class NbtString extends NbtTag {
     read(reader: NbtReader): void {
         this.value = reader.readString();
     }
+
+    write(writer: NbtWriter): void {
+        writer.writeString(this.value);
+    }
 }
 
 /**
  * A nbt tag with an array of a simple datatype.
  */
-export abstract class ArrayNbtTag {
+export abstract class ArrayNbtTag extends NbtTag {
     /**
      * Get the length of the array.
      */
@@ -100,6 +140,13 @@ export class NbtByteArray extends ArrayNbtTag {
         this.data = new Int8Array(size);
         for (let i = 0; i < size; i++) {
             this.data[i] = reader.read1();
+        }
+    }
+
+    write(writer: NbtWriter): void {
+        writer.write4(this.data.byteLength);
+        for (let i = 0; i < this.data.byteLength; i++) {
+            writer.write1(this.data[i]);
         }
     }
 
@@ -119,6 +166,13 @@ export class NbtIntArray extends ArrayNbtTag {
         }
     }
 
+    write(writer: NbtWriter): void {
+        writer.write4(this.data.byteLength);
+        for (let i = 0; i < this.data.byteLength; i++) {
+            writer.write4(this.data[i]);
+        }
+    }
+
     length(): number {
         return this.data.byteLength;
     }
@@ -135,6 +189,13 @@ export class NbtLongArray extends ArrayNbtTag {
         }
     }
 
+    write(writer: NbtWriter): void {
+        writer.write4(this.data.byteLength);
+        for (let i = 0; i < this.data.byteLength; i++) {
+            writer.write8(this.data[i]);
+        }
+    }
+
     length(): number {
         return this.data.byteLength;
     }
@@ -143,7 +204,7 @@ export class NbtLongArray extends ArrayNbtTag {
 /**
  * A number nbt tag.
  */
-export abstract class NumberNbtTag {
+export abstract class NumberNbtTag extends NbtTag {
     /**
      * Format the number as a string.
      */
@@ -159,6 +220,10 @@ export class NbtByte extends NumberNbtTag {
 
     read(reader: NbtReader): void {
         this.value = reader.read1();
+    }
+
+    write(writer: NbtWriter): void {
+        writer.write1(this.value);
     }
 
     toString(): string {
@@ -177,6 +242,10 @@ export class NbtShort extends NumberNbtTag {
         this.value = reader.read2();
     }
 
+    write(writer: NbtWriter): void {
+        writer.write2(this.value);
+    }
+
     toString(): string {
         return this.value.toString();
     }
@@ -191,6 +260,10 @@ export class NbtInt extends NumberNbtTag {
     
     read(reader: NbtReader): void {
         this.value = reader.read4();
+    }
+
+    write(writer: NbtWriter): void {
+        writer.write4(this.value);
     }
 
     toString(): string {
@@ -209,6 +282,10 @@ export class NbtLong extends NumberNbtTag {
         this.value = reader.read8();
     }
 
+    write(writer: NbtWriter): void {
+        writer.write8(this.value);
+    }
+
     toString(): string {
         return this.value.toString();
     }
@@ -225,6 +302,10 @@ export class NbtFloat extends NumberNbtTag {
         this.value = reader.readFloat();
     }
 
+    write(writer: NbtWriter): void {
+        writer.writeFloat(this.value);
+    }
+
     toString(): string {
         return this.value.toString();
     }
@@ -239,6 +320,10 @@ export class NbtDouble extends NumberNbtTag {
     
     read(reader: NbtReader): void {
         this.value = reader.readDouble();
+    }
+
+    write(writer: NbtWriter): void {
+        writer.writeDouble(this.value);
     }
 
     toString(): string {

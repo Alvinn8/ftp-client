@@ -36,7 +36,7 @@ export default class NbtTest extends React.Component<{}, State> {
             if (!(tag instanceof NbtCompound)) {
                 throw new Error("Got a non compound tag: " + tag);
             }
-            console.log(tag);
+            console.log(result);
             this.setState({
                 tag,
                 error: null
