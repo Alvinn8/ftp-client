@@ -1,17 +1,18 @@
 import * as React from "react";
 import { NbtList, NbtString, NumberNbtTag } from "../../../nbt/nbtTags";
-import { NbtIndex } from "./nbtParts";
-import NbtTagComponent from "./NbtTagComponent";
+import { UiNbtIndex } from "./nbtParts";
+import NbtTagContainer from "./NbtTagContainer";
+import UiNbtTag from "./UiNbtTag";
 
-interface NbtListComponentProps {
+interface UiNbtListProps {
     tag: NbtList;
 }
 
-interface NbtListComponentState {
+interface UiNbtListState {
     open: boolean;
 }
 
-export default class NbtListComponent extends React.Component<NbtListComponentProps, NbtListComponentState> {
+export default class UiNbtList extends React.Component<UiNbtListProps, UiNbtListState> {
     state = {
         open: false
     };
@@ -23,10 +24,14 @@ export default class NbtListComponent extends React.Component<NbtListComponentPr
         }
         return (
             <div className="text-nowrap" style={{ "margin-left": "-24px" }}>
-                <div className="d-inline-block p-1 folder-component-arrow" onClick={this.toggleOpen.bind(this)}>
+                <div className="d-inline-block p-1 arrow" onClick={this.toggleOpen.bind(this)}>
                     <i className={"bi bi-chevron-" + (this.state.open ? "down" : "right")}></i>
                 </div>
-                {this.props.children}
+                {this.props.children != null && (
+                    <NbtTagContainer label={null}>
+                        {this.props.children}
+                    </NbtTagContainer>
+                )}
                 {!this.state.open && emptyText != null && (
                     <>
                         <span>: </span>
@@ -44,7 +49,7 @@ export default class NbtListComponent extends React.Component<NbtListComponentPr
                             {this.props.tag.data.map((tag, index) => (
                                 <>
                                     {index > 0 && ", "}
-                                    <NbtTagComponent tag={tag} key={index} />
+                                    <UiNbtTag tag={tag} key={index} />
                                 </>
                             ))}
                             <span> ] </span>
@@ -54,9 +59,9 @@ export default class NbtListComponent extends React.Component<NbtListComponentPr
                     <div className="ms-4">
                         {this.props.tag.data.map((tag, index) => (
                             <div className="ms-3">
-                                <NbtTagComponent tag={tag} key={index}>
-                                    <NbtIndex index={index} />
-                                </NbtTagComponent>
+                                <UiNbtTag tag={tag} key={index}>
+                                    <UiNbtIndex index={index} />
+                                </UiNbtTag>
                             </div>
                         ))}
                         {emptyText != null && (

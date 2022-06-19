@@ -1,0 +1,50 @@
+.grid {
+    display: grid;
+    /* Desktop */
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 50px;
+    grid-template-areas: "nbt-editor"
+                         "controls";
+}
+
+.mobile-actions {
+    /* Mobile only */
+    display: none;
+}
+
+@media screen and (max-width: 600px) {
+    /* Mobile */
+
+    /* On mobile buttons are added instead of a context menu */
+    .mobile-actions {
+        display: block;
+    }
+}
+
+.nbt-editor {
+    grid-area: nbt-editor;
+    font-family: monospace;
+}
+
+.controls {
+    grid-area: controls;
+}
+
+.tag-container {
+    display: inline;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: default;
+}
+
+.tag-container:hover, .tag-container.selected {
+    background-color: #49e3e360;
+}
+
+.arrow {
+    cursor: pointer;
+}
+
+.arrow:hover {
+    color: var(--bs-info);
+}

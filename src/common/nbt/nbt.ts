@@ -1,6 +1,6 @@
 import { ensurePakoScriptIsLoaded } from "../utils";
 import NbtReader from "./NbtReader";
-import NbtResult, { BedrockEdition, BedrockLevelDat, Compression, EditionData } from "./NbtResult";
+import NbtData, { BedrockEdition, BedrockLevelDat, Compression, EditionData } from "./NbtData";
 import { NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtEnd, NbtFloat, NbtInt, NbtIntArray, NbtList, NbtLong, NbtLongArray, NbtShort, NbtString, NbtTag } from "./nbtTags";
 import NbtWriter from "./NbtWriter";
 
@@ -14,7 +14,7 @@ var nbt = await import("./js/common/nbt/nbt.js");
 nbt.readJavaEditionUncompressedNbt(blob);
 */
 
-export async function readNbt(blob: Blob): Promise<NbtResult> {
+export async function readNbt(blob: Blob): Promise<NbtData> {
     let data = new Uint8Array(await blob.arrayBuffer());
     let origData = data;
     
@@ -138,7 +138,7 @@ export function getIdFromTag(tag: NbtTag) {
     throw new Error("Unknown tag: " + tag);
 }
 
-export async function writeNbt(nbt: NbtResult): Promise<Blob> {
+export async function writeNbt(nbt: NbtData): Promise<Blob> {
     const writer = new NbtWriter(new Uint8Array(100), nbt.editionData.littleEndian);
 
     // Write extra data for bedrock edition level.dat
@@ -165,7 +165,8 @@ export async function writeNbt(nbt: NbtResult): Promise<Blob> {
         // Write byte length
         const length = writer.index;
         writer.index = 4;
-        writer.write4(length);
+        writer.write4(length - 8);
+        writer.index = length;
     }
 
     let data = writer.bytes;

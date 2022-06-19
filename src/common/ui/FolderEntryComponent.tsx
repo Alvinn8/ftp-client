@@ -3,12 +3,11 @@ import * as ReactDOM from "react-dom";
 import ContextMenuPopulator from "../contextmenu/ContextMenuPopulator";
 import FolderEntriesPopulator from "../contextmenu/FolderEntriesPopulator";
 import FolderEntryPopulator from "../contextmenu/FolderEntryPopulator";
-import Dialog from "../Dialog";
 import FolderEntry from "../folder/FolderEntry";
 import { addComponent, removeComponent, selectedFiles, selectFile, unselectAll, unselectFile } from "../selection/selection";
 import { ContextMenu, removeContextMenu, setContextMenu } from "./ContextMenu";
-import { openImageEditor, openTextEditor } from "./editor/editor";
-import { getFileType, getIconFor } from "./FileFormats";
+import { openEditor } from "./editor/editor";
+import { getIconFor } from "./FileFormats";
 import { app } from "./index";
 
 interface FolderEntryComponentProps {
@@ -135,21 +134,7 @@ export default class FolderEntryComponent extends React.Component<FolderEntryCom
         if (this.props.entry.isDirectory()) {
             app.state.session.cd(this.props.entry.name);
         } else if (this.props.entry.isFile()) {
-            let fileType = getFileType(this.props.entry.name);
-
-            if (fileType == "unknown") {
-                const option = await Dialog.choose("Open " + this.props.entry.name, "How would you like to open the file?", [
-                    { id: "text", name: "Open as text"},
-                    { id: "image", name: "Open as image"}
-                ]);
-                if (option == "text" || option == "image") fileType = option;
-            }
-
-            if (fileType == "text") {
-                openTextEditor(this.props.entry);
-            } else if (fileType == "image") {
-                openImageEditor(this.props.entry);
-            }
+            openEditor(this.props.entry);
         }
     }
 }

@@ -7,6 +7,51 @@ import * as ReactDOM from "react-dom";
  */
 namespace Dialog {
     /**
+     * Show a message dialog to the user.
+     * 
+     * @param title The title to display on the modal.
+     * @param text The text displayed to the user.
+     */
+     export function message(title: string, text: string) {
+        const modalRef: React.RefObject<HTMLDivElement> = React.createRef();
+        const modalElement =
+            <div className="modal" tabIndex={-1} ref={modalRef}>
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">{title}</h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div className="modal-body">
+                            <p>{text}</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>;
+
+        const container = document.createElement("div");
+        document.body.appendChild(container);
+
+        ReactDOM.render(modalElement, container);
+
+        // @ts-ignore
+        const modal = new bootstrap.Modal(modalRef.current, {
+            backdrop: true,
+            keyboard: true
+        });
+
+        modal.show();
+
+        modalRef.current.addEventListener("hidden.bs.modal", function () {
+            modal.dispose()
+            container.remove();
+        });
+    }
+
+    /**
      * Prompt the user for a text input.
      * 
      * @param title The title to display on the modal.

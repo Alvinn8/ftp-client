@@ -1,11 +1,11 @@
 import * as React from "react";
 import { ArrayNbtTag } from "../../../nbt/nbtTags";
 
-interface ArrayNbtTagComponentProps {
+interface UiNbtArrayProps {
     tag: ArrayNbtTag;
 }
 
-export default class ArrayNbtTagComponent extends React.Component<ArrayNbtTagComponentProps, {}> {
+export default class UiNbtArray extends React.Component<UiNbtArrayProps, {}> {
     render() {
         const length = this.props.tag.length();
         // todo: say bytes/ints/longs instead of values

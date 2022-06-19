@@ -77,7 +77,7 @@ export function getIconFor(fileName: string): string {
 /**
  * The type of a file. Used to decide how to open it.
  */
-export type FileType = "text" | "image" | "unknown";
+export type FileType = "text" | "image" | "nbt" | "unknown";
 
 /**
  * Get the {@link FileType} of the file name.
@@ -86,6 +86,16 @@ export type FileType = "text" | "image" | "unknown";
  * @returns The file type.
  */
 export function getFileType(fileName: string): FileType {
+    const index = fileName.lastIndexOf(".");
+    const extention = fileName.substring(index);
+    switch (extention) {
+        case ".dat":
+        case ".dat_old":
+        case ".dat_new":
+        case ".nbt":
+            return "nbt";
+    }
+    
     const icon = getIconFor(fileName);
     switch (icon) {
         case "file-earmark-text":

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { readNbt } from "../../../nbt/nbt";
 import { NbtCompound } from "../../../nbt/nbtTags";
-import NbtCompoundComponent from "./NbtCompoundComponent";
+import UiNbtCompound from "./UiNbtCompound";
 
 interface State {
     tag: NbtCompound;
@@ -19,7 +19,7 @@ export default class NbtTest extends React.Component<{}, State> {
             <div>
                 <input type="file" name="nbttest" id="nbttest" onChange={this.onChange.bind(this)} />
                 {this.state.tag != null && (
-                    <NbtCompoundComponent nbtCompound={this.state.tag} />
+                    <UiNbtCompound nbtCompound={this.state.tag} />
                 )}
                 {this.state.error != null && (
                     <p style={{ "color": "red" }}>{this.state.error}</p>

@@ -9,6 +9,7 @@ FTP Client that can be used as a WebFTP (and as an electron app).
 - Drag and drop uploading
 - Folder uploading
 - Folder downloading as zip
+- Mobile friendly
 - Caching for fast folder navigation
 - Calculate the size of folders
 - Viewing gzipped files

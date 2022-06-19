@@ -11,7 +11,7 @@
 
     constructor(data: Uint8Array, littleEndian = false) {
         this.data = new DataView(data.buffer);
-        this.bytes = new Uint8Array(data);
+        this.bytes = data;
         this.littleEndian = littleEndian;
         this.index = 0;
     }

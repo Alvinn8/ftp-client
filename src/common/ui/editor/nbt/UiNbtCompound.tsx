@@ -1,35 +1,40 @@
 import * as React from "react";
 import { NbtCompound } from "../../../nbt/nbtTags";
-import { NbtKey } from "./nbtParts";
-import NbtTagComponent from "./NbtTagComponent";
+import { UiNbtKey } from "./nbtParts";
+import NbtTagContainer from "./NbtTagContainer";
+import UiNbtTag from "./UiNbtTag";
 
-interface NbtCompoundComponentProps {
+interface UiNbtCompoundtProps {
     nbtCompound: NbtCompound;
 }
 
-interface NbtCompoundComponentState {
+interface UiNbtCompoundtState {
     open: boolean;
 }
 
-export default class NbtCompoundComponent extends React.Component<NbtCompoundComponentProps, NbtCompoundComponentState> {
+export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, UiNbtCompoundtState> {
     state = {
         open: false
     };
 
-    render(): React.ReactNode {
+    render() {
         return (
             <div className="text-nowrap" style={{ "margin-left": "-24px" }}>
-                <div className="d-inline-block p-1 folder-component-arrow" onClick={this.toggleOpen.bind(this)}>
+                <div className="d-inline-block p-1 arrow" onClick={this.toggleOpen.bind(this)}>
                     <i className={"bi bi-chevron-" + (this.state.open ? "down" : "right")}></i>
                 </div>
-                {this.props.children}
+                {this.props.children != null && (
+                    <NbtTagContainer label={null}>
+                        {this.props.children}
+                    </NbtTagContainer>
+                )}
                 {this.state.open && (
                     <div className="ms-4">
                         {this.props.nbtCompound.getKeys().map((key, index) => (
                             <div className="ms-3">
-                                <NbtTagComponent tag={this.props.nbtCompound.get(key)} key={index}>
-                                    <NbtKey name={key} />
-                                </NbtTagComponent>
+                                <UiNbtTag tag={this.props.nbtCompound.get(key)} key={index}>
+                                    <UiNbtKey name={key} />
+                                </UiNbtTag>
                             </div>
                         ))}
                     </div>

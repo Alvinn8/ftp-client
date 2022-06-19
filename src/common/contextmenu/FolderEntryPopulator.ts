@@ -1,5 +1,5 @@
 import FolderEntry from "../folder/FolderEntry";
-import { openImageEditor, openTextEditor } from "../ui/editor/editor";
+import { openEditor, openImageEditor } from "../ui/editor/editor";
 import { getFileType } from "../ui/FileFormats";
 import { app } from "../ui/index";
 import { deleteFolderEntries, downloadAsZip, downloadFolderEntry, rename } from "./actions";
@@ -33,11 +33,11 @@ export default class FolderEntryPopulator implements ContextMenuPopulator {
                         openImageEditor(this.entry);
                     }
                 });
-            } else if (fileType == "text") {
+            } else {
                 entries.push({
                     name: "Open",
                     handler: e => {
-                        openTextEditor(this.entry);
+                        openEditor(this.entry);
                     }
                 });
             }

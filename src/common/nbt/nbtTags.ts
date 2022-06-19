@@ -95,7 +95,6 @@ export class NbtList extends NbtTag {
         
         for (let i = 0; i < this.data.length; i++) {
             const tag = this.data[i];
-            writer.writeU1(getIdFromTag(tag));
             tag.write(writer);
         }
     }
