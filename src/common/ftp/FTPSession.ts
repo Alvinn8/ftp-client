@@ -101,6 +101,8 @@ export default class FTPSession {
                 // Reconnect the websocket
                 await websocketFTPConnection.connectToWebsocket();
                 console.log("Websocket reconnected");
+                // Ensure the remote workdir is updated
+                this.sendWorkDir = "";
                 // Check if the ftp is connected.
                 const isConnected = await websocketFTPConnection.isConnected();
                 if (!isConnected) {
