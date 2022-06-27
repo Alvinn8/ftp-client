@@ -1,7 +1,6 @@
 import * as React from "react";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import FTPProfile from "../ftp/FTPProfile";
-import NbtTest from "./editor/nbt/NbtTest";
 import { app, State } from "./index";
 
 let url = new URL(location.href);
@@ -77,15 +76,12 @@ export default class ConnectForm extends React.Component {
                 <p>Log in to the ftp server.</p>
                 <div className="input-group">
                     <span className="input-group-text">Host and Port</span>
-                    {/* <input type="text" id="host" className="form-control" defaultValue="1.vip.de.freemcserver.net" /> */}
                     <input type="text" id="host" className="form-control" />
                     <input type="number" id="port" className="form-control" defaultValue="21" />
                 </div>
-                {/* <label htmlFor="host">Host and Port</label> */}
                 <br></br>
                 <div className="mb-3">
                     <label htmlFor="username" className="form-label">Username</label>
-                    {/* <input type="text" id="username" defaultValue="Alvinn8.351526" className="form-control" /> */}
                     <input type="text" id="username" className="form-control" />
                 </div>
                 <div className="mb-3">
@@ -97,8 +93,6 @@ export default class ConnectForm extends React.Component {
                     <label htmlFor="secure" className="form-label">Secure</label>
                 </div>
                 <button onClick={this.connect.bind(this)} className="btn btn-success">Connect</button>
-                <hr />
-                <NbtTest />
             </div>
         );
     }
