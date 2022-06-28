@@ -54,7 +54,7 @@ export default class Messages extends React.Component<{}, MessagesState> {
             <div className="message-container">
                 <div className="container">
                     {this.state.messages.map((value, index) => {
-                        return <div key={index} className={ "alert alert-" + value.color }>
+                        return <div key={index} className={ "alert alert-dismissible alert-" + value.color }>
                             <span>{ value.message }</span>
                             <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>;
