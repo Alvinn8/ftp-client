@@ -32,7 +32,10 @@ export default class FolderComponent extends React.Component<FolderComponentProp
     private path = this.props.parentPath + (this.props.parentPath.endsWith("/") || this.props.parentPath == "" ? "" : "/") + this.props.folderEntry.name;
 
     componentDidMount() {
-        window["fc"] = this;
+        if (this.props.parentPath === "") {
+            // root should be open by default
+            this.toggleOpen();
+        }
     }
 
     render() {
@@ -68,7 +71,6 @@ export default class FolderComponent extends React.Component<FolderComponentProp
     async getContent() {
         if (!app.tasks.requestNewTask()) {
             this.setState({
-                ...this.state,
                 open: false
             });
             return;
@@ -76,18 +78,16 @@ export default class FolderComponent extends React.Component<FolderComponentProp
         this.fetchingContent = true;
         const content: FolderEntry[] = [];
         console.log(this.path);
-        for (const folderEntry of await FolderContentProviders.MAIN.getFolderEntriesFor(this.path)) {
+        for (const folderEntry of await FolderContentProviders.MAIN.getFolderEntries(this.path)) {
             if (folderEntry.isDirectory()) content.push(folderEntry);
         }
         this.setState({
-            ...this.state,
             content
         });
     }
 
     toggleOpen() {
         this.setState({
-            ...this.state,
             open: !this.state.open
         });
     }

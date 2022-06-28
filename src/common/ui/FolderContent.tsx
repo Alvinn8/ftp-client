@@ -11,7 +11,7 @@ interface FolderContentProps {
 }
 
 interface FolderContentState {
-    entries: FolderEntry[];
+    entries: FolderEntry[] | null;
     dragAndDrop: boolean;
 }
 
@@ -44,7 +44,6 @@ export default class FolderContent extends React.Component<FolderContentProps, F
 
     async getEntries() {
         this.setState({
-            ...this.state,
             entries: await this.props.provider.getFolderEntries()
         });
     }
@@ -52,7 +51,6 @@ export default class FolderContent extends React.Component<FolderContentProps, F
     onDragEnter(e: DragEvent) {
         e.preventDefault();
         this.setState({
-            ...this.state,
             dragAndDrop: true
         });
     }
@@ -65,7 +63,6 @@ export default class FolderContent extends React.Component<FolderContentProps, F
             || e.clientY > box.bottom + scrollTop
             || e.clientY < box.y + scrollTop) {
             this.setState({
-                ...this.state,
                 dragAndDrop: false
             });
         }
@@ -76,7 +73,6 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         handleOnDrop(e);
 
         this.setState({
-            ...this.state,
             dragAndDrop: false
         });
     }
@@ -86,14 +82,20 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         if (this.state.dragAndDrop) {
             const box = this.ref.current.getBoundingClientRect();
             const scrollTop = this.ref.current.parentElement.scrollTop;
-            dropZone = <DropZone x={box.x} y={box.y + scrollTop} width={box.width} height={box.height} onDrop={this.onDrop.bind(this)} />;
+            dropZone = <DropZone
+                x={box.x}
+                y={box.y + scrollTop}
+                width={box.width}
+                height={box.height}
+                onDrop={this.onDrop.bind(this)}
+            />;
         }
         return (
             <div className="py-3" ref={this.ref}>
                 {this.state.entries == null && <p>Loading files...</p> }
                 {this.state.entries != null &&
                     this.state.entries.map((value, index) => {
-                        return <FolderEntryComponent entry={value} key={index} />;
+                        return <FolderEntryComponent entry={value} key={value.name} />;
                     })
                 }
                 {dropZone}

@@ -12,22 +12,10 @@ import NotCachedError from "./NotCachedError";
  * rather trough the main folder content provider.
  */
 export default class CacheFolderContentProvider implements FolderContentProvider {
-    async getFolderEntries(): Promise<FolderEntry[]> {
+    async getFolderEntries(path?: string): Promise<FolderEntry[]> {
         const session = app.state.session;
         if (session != null) {
-            const cacheData = session.cache[session.workdir];
-            if (cacheData != null) {
-                console.log("We had cached data :)");
-                return cacheData;
-            }
-        }
-        throw new NotCachedError();
-    }
-
-    async getFolderEntriesFor(path: string): Promise<FolderEntry[]> {
-        const session = app.state.session;
-        if (session != null) {
-            const cacheData = session.cache[path];
+            const cacheData = session.cache[path ? path : session.workdir];
             if (cacheData != null) {
                 return cacheData;
             }

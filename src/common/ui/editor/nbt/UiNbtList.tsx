@@ -49,7 +49,7 @@ export default class UiNbtList extends React.Component<UiNbtListProps, UiNbtList
                             {this.props.tag.data.map((tag, index) => (
                                 <>
                                     {index > 0 && ", "}
-                                    <UiNbtTag tag={tag} key={index} />
+                                    <UiNbtTag tag={tag} key={index} root={false} />
                                 </>
                             ))}
                             <span> ] </span>
@@ -59,7 +59,7 @@ export default class UiNbtList extends React.Component<UiNbtListProps, UiNbtList
                     <div className="ms-4">
                         {this.props.tag.data.map((tag, index) => (
                             <div className="ms-3">
-                                <UiNbtTag tag={tag} key={index}>
+                                <UiNbtTag tag={tag} key={index} root={false}>
                                     <UiNbtIndex index={index} />
                                 </UiNbtTag>
                             </div>

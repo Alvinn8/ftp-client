@@ -1,3 +1,4 @@
+import { app } from "../ui/index";
 import FolderContentProvider from "./FolderContentProvider";
 import FolderContentProviders from "./FolderContentProviders";
 import FolderEntry from "./FolderEntry";
@@ -9,28 +10,28 @@ import NotCachedError from "./NotCachedError";
  * it fetches them from the ftp server.
  */
 export default class MainFolderContentProvider implements FolderContentProvider {
-    async getFolderEntries(): Promise<FolderEntry[]> {
+    private pendingRequests: {[key: string]: Promise<FolderEntry[]>} = {};
+    
+    async getFolderEntries(path?: string): Promise<FolderEntry[]> {
         try {
             // Try get the files from the cache.
-            return await FolderContentProviders.CACHE.getFolderEntries();
+            return await FolderContentProviders.CACHE.getFolderEntries(path);
         } catch (e) {
             if (e instanceof NotCachedError) {
                 // This folder was not cached, fetch from the ftp server.
-                return await FolderContentProviders.FTP.getFolderEntries();
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    async getFolderEntriesFor(path: string): Promise<FolderEntry[]> {
-        try {
-            // Try get the files from the cache.
-            return await FolderContentProviders.CACHE.getFolderEntriesFor(path);
-        } catch (e) {
-            if (e instanceof NotCachedError) {
-                // This folder was not cached, fetch from the ftp server.
-                return await FolderContentProviders.FTP.getFolderEntriesFor(path);
+                const pendingRequest = this.pendingRequests[path];
+                if (pendingRequest) {
+                    return await pendingRequest;
+                } else {
+                    if (!path) {
+                        path = app.state.session.workdir;
+                    }
+                    const promise = FolderContentProviders.FTP.getFolderEntries(path);
+                    this.pendingRequests[path] = promise;
+                    const result = await promise;
+                    delete this.pendingRequests[path];
+                    return result;
+                }
             } else {
                 throw e;
             }

@@ -7,22 +7,14 @@ import { app } from "../ui/index";
  * entries from the ftp server.
  */
 export default class FTPFolderContentProvider implements FolderContentProvider {
-    async getFolderEntries(): Promise<FolderEntry[]> {
-        const connection = await app.state.session.getConnection();
-        const list = await connection.list();
-        const session = app.state.session;
-        if (session != null) {
-            session.cache[session.workdir] = list;
-        }
-        return list;
-    }
-
-    async getFolderEntriesFor(path: string): Promise<FolderEntry[]> {
+    async getFolderEntries(path?: string): Promise<FolderEntry[]> {
+        console.log("path = " + path + ", workdir = " + app.state.session.workdir);
+        console.trace();
         const connection = await app.state.session.getConnection();
         const list = await connection.list(path);
         const session = app.state.session;
         if (session != null) {
-            session.cache[path] = list;
+            session.cache[path ? path : session.workdir] = list;
         }
         return list;
     }
