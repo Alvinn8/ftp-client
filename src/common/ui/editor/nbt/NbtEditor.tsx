@@ -26,7 +26,7 @@ export default class NbtEditor extends React.Component<NbtEditorControlsProps, N
                 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"></link>
                 <div className="grid">
                     <div className="ms-5 nbt-editor">
-                        <UiNbtTag tag={this.props.nbt.tag} />
+                        <UiNbtTag tag={this.props.nbt.tag} root={true} />
                     </div>
                     <div className="p-3 bottom-0 position-fixed controls">
                         <div className="mobile-actions"></div>

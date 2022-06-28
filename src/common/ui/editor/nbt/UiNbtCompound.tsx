@@ -6,6 +6,7 @@ import UiNbtTag from "./UiNbtTag";
 
 interface UiNbtCompoundtProps {
     nbtCompound: NbtCompound;
+    root: boolean;
 }
 
 interface UiNbtCompoundtState {
@@ -13,9 +14,12 @@ interface UiNbtCompoundtState {
 }
 
 export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, UiNbtCompoundtState> {
-    state = {
-        open: false
-    };
+    constructor(props) {
+        super(props);
+        this.state = {
+            open: props.root
+        };
+    }
 
     render() {
         return (
@@ -32,7 +36,7 @@ export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, 
                     <div className="ms-4">
                         {this.props.nbtCompound.getKeys().map((key, index) => (
                             <div className="ms-3">
-                                <UiNbtTag tag={this.props.nbtCompound.get(key)} key={index}>
+                                <UiNbtTag tag={this.props.nbtCompound.get(key)} key={index} root={this.props.root && key == "Data"}>
                                     <UiNbtKey name={key} />
                                 </UiNbtTag>
                             </div>

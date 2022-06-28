@@ -8,6 +8,7 @@ import NbtTagContainer from "./NbtTagContainer";
 
 interface Props {
     tag: NbtTag;
+    root: boolean;
 }
 
 export default class UiNbtTag extends React.Component<Props, {}> {
@@ -15,7 +16,7 @@ export default class UiNbtTag extends React.Component<Props, {}> {
         const tag = this.props.tag;
         if (tag instanceof NbtCompound) {
             return (
-                <UiNbtCompound nbtCompound={tag}>
+                <UiNbtCompound nbtCompound={tag} root={this.props.root}>
                     {this.props.children}
                 </UiNbtCompound>
             );

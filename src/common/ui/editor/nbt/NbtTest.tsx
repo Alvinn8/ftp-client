@@ -19,7 +19,7 @@ export default class NbtTest extends React.Component<{}, State> {
             <div>
                 <input type="file" name="nbttest" id="nbttest" onChange={this.onChange.bind(this)} />
                 {this.state.tag != null && (
-                    <UiNbtCompound nbtCompound={this.state.tag} />
+                    <UiNbtCompound nbtCompound={this.state.tag} root={true} />
                 )}
                 {this.state.error != null && (
                     <p style={{ "color": "red" }}>{this.state.error}</p>
