@@ -1,17 +1,21 @@
 import * as React from "react";
-import { selectedFiles } from "../../selection/selection";
+import FolderEntry from "../../folder/FolderEntry";
 import CompuseSize from "./ComputeSize";
+
+interface DirectoryInfoProps {
+    entry: FolderEntry;
+}
 
 /**
  * Information about a selected directory.
  */
-export default class DirectoryInfo extends React.Component {
+export default class DirectoryInfo extends React.Component<DirectoryInfoProps, {}> {
     render() {
-        const entry = selectedFiles[0];
+        const entry = this.props.entry;
         return (
             <div>
                 <p>File name: { entry.name }</p>
-                <CompuseSize />
+                <CompuseSize selection={[entry]} />
                 <p>Last modified: { entry.modifiedAt }</p>
             </div>
         );

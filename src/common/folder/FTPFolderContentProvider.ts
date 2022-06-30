@@ -8,8 +8,6 @@ import { app } from "../ui/index";
  */
 export default class FTPFolderContentProvider implements FolderContentProvider {
     async getFolderEntries(path?: string): Promise<FolderEntry[]> {
-        console.log("path = " + path + ", workdir = " + app.state.session.workdir);
-        console.trace();
         const connection = await app.state.session.getConnection();
         const list = await connection.list(path);
         const session = app.state.session;

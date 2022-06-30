@@ -10,6 +10,7 @@ import Tasks from "./task/tasks";
 import Path from "./Path";
 import Actions from "./Actions";
 import FolderExplorer from "./left/FolderExplorer";
+import FolderEntry from "../folder/FolderEntry";
 
 export let app: App;
 
@@ -18,6 +19,8 @@ export interface AppState {
     state: State;
     size: DeviceSize;
     mobileTab: MobileTab;
+    selection: FolderEntry[];
+    refreshCount: number;
 }
 
 export enum State {
@@ -56,10 +59,7 @@ class MobileTab {
 }
 
 export class App extends React.Component<{}, AppState> {
-    public folderContent: FolderContent;
-    public aside: Aside;
     public tasks: Tasks;
-    public actions: Actions;
     
     constructor(props) {
         super(props);
@@ -70,18 +70,63 @@ export class App extends React.Component<{}, AppState> {
             session: null,
             state: State.LOGIN,
             size: getDeviceSize(),
-            mobileTab: MobileTab.PATH
+            mobileTab: MobileTab.PATH,
+            selection: [],
+            refreshCount: 0
         };
 
-        window.addEventListener("resize", () => {
-            let size = getDeviceSize();
+        this.handleResize = this.handleResize.bind(this);
+        this.toggleSelected = this.toggleSelected.bind(this);
+        this.selectOnly = this.selectOnly.bind(this);
+        this.unselectAll = this.unselectAll.bind(this);
+    }
 
-            if (this.state.size != size) {
-                this.setState({
-                    ...this.state,
-                    size: size
-                });
-            }
+    componentDidMount() {
+        window.addEventListener("resize", this.handleResize);
+    }
+
+    componentWillUnmount(): void {
+        window.addEventListener("resize", this.handleResize);
+    }
+
+    handleResize() {
+        let size = getDeviceSize();
+
+        if (this.state.size != size) {
+            this.setState({
+                size: size
+            });
+        }
+    }
+
+    toggleSelected(entry: FolderEntry) {
+        const selection = this.state.selection.slice();
+        if (selection.includes(entry)) {
+            selection.splice(selection.indexOf(entry), 1);
+        } else {
+            selection.push(entry);
+        }
+        this.setState({
+            selection
+        });
+    }
+
+    selectOnly(entry: FolderEntry) {
+        this.setState({
+            selection: [entry]
+        });
+    }
+
+    unselectAll() {
+        this.setState({
+            selection: []
+        });
+    }
+    
+    refresh() {
+        this.setState({
+            selection: [],
+            refreshCount: this.state.refreshCount + 1
         });
     }
 
@@ -97,7 +142,14 @@ export class App extends React.Component<{}, AppState> {
                             <h1>ftp-client</h1>
                         </header>
                         <div id="folder-content">
-                            <FolderContent provider={FolderContentProviders.MAIN} key={this.state.session.workdir} />
+                            <FolderContent
+                                provider={FolderContentProviders.MAIN}
+                                key={this.state.session.workdir + "-" + this.state.refreshCount}
+                                selection={this.state.selection}
+                                toggleSelected={this.toggleSelected}
+                                selectOnly={this.selectOnly}
+                                unselectAll={this.unselectAll}
+                            />
                         </div>
 
                         { /* Desktop */ }
@@ -108,7 +160,7 @@ export class App extends React.Component<{}, AppState> {
                                 </div>
                                 <Path />
                                 <aside id="selected-info">
-                                    <Aside />
+                                    <Aside selection={this.state.selection} />
                                 </aside>
                             </>
                         )}
@@ -121,7 +173,7 @@ export class App extends React.Component<{}, AppState> {
                                         <Path />
                                     )}
                                     {this.state.mobileTab == MobileTab.INFO && (
-                                        <Aside />
+                                        <Aside selection={this.state.selection} />
                                     )}
                                     {this.state.mobileTab == MobileTab.FOLDERS && (
                                         <FolderExplorer />
@@ -131,18 +183,16 @@ export class App extends React.Component<{}, AppState> {
                                     {mobileTabs.map((tab, index) => {
                                         return (
                                             <button
-                                            key={index}
-                                            className={"btn btn-" + (this.state.mobileTab == tab ? "primary" : "secondary")}
-                                            onClick={() => this.setState({
-                                                ...this.state,
-                                                mobileTab: tab
-                                            })}>
+                                                key={index}
+                                                className={"btn btn-" + (this.state.mobileTab == tab ? "primary" : "secondary")}
+                                                onClick={() => this.setState({ mobileTab: tab })}
+                                            >
                                                 <i className={"bi bi-" + tab.icon}></i>
                                             </button>
                                         );
                                     })}
                                 </div>
-                                <Actions />
+                                <Actions selection={this.state.selection} />
                             </>
                         )}
                     </div>

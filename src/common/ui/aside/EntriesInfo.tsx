@@ -1,15 +1,19 @@
 import * as React from "react";
-import { selectedFiles } from "../../selection/selection";
+import FolderEntry from "../../folder/FolderEntry";
 import Size from "../Size";
 import CompuseSize from "./ComputeSize";
+
+interface EntriesInfoProps {
+    selection: FolderEntry[];
+}
 
 /**
  * Information about multiple selected folder entries.
  */
-export default class EntriesInfo extends React.Component {
+export default class EntriesInfo extends React.Component<EntriesInfoProps, {}> {
     render() {
         let size = 0;
-        for (const entry of selectedFiles) {
+        for (const entry of this.props.selection) {
             if (!entry.isFile()) {
                 size = null;
                 break;
@@ -18,12 +22,12 @@ export default class EntriesInfo extends React.Component {
         }
         return (
             <div>
-                <p>{ selectedFiles.length } selected entries.</p>
+                <p>{ this.props.selection.length } selected entries.</p>
                 { size != null && (
                     <p>Combined size: <Size size={size} /></p>
                 )}
                 {size == null && (
-                    <CompuseSize key={Math.random()} />
+                    <CompuseSize selection={this.props.selection} key={Math.random()} />
                 )}
             </div>
         );

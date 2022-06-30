@@ -1,8 +1,12 @@
 import * as React from "react";
 import { computeSize } from "../../contextmenu/actions";
-import { selectedFiles } from "../../selection/selection";
+import FolderEntry from "../../folder/FolderEntry";
 import { app } from "../index";
 import Size from "../Size";
+
+interface CompuseSizeProps {
+    selection: FolderEntry[];
+}
 
 interface CompuseSizeState {
     computing: boolean;
@@ -12,7 +16,7 @@ interface CompuseSizeState {
 /**
  * A component for the Compute Size button.
  */
-export default class CompuseSize extends React.Component<{}, CompuseSizeState> {
+export default class CompuseSize extends React.Component<CompuseSizeProps, CompuseSizeState> {
     state = {
         computing: false,
         size: null
@@ -20,26 +24,28 @@ export default class CompuseSize extends React.Component<{}, CompuseSizeState> {
 
     render() {
         if (this.state.computing) {
-            return <div>
+            return (
+                <div>
                     <p>Computing size...</p>
                     <div className="spinner-border"></div>
-                </div>;
+                </div>
+            );
         }
         if (this.state.size == null) {
-            return <button className="btn btn-primary" onClick={this.click.bind(this)}>Compute size</button>;
+            return <button className="btn btn-primary" onClick={this.handleClick.bind(this)}>Compute size</button>;
         } else {
             return <p>Size: <Size size={this.state.size} /></p>;
         }
     }
 
-    async click() {
+    async handleClick() {
         if (!app.tasks.requestNewTask()) return;
 
         this.setState({
             computing: true,
             size: null
         });
-        const size = await computeSize(selectedFiles);
+        const size = await computeSize(this.props.selection);
         this.setState({
             computing: false,
             size: size

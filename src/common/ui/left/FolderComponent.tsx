@@ -15,8 +15,13 @@ interface FolderComponentState {
      * any subfolders. Although this being false does not mean it has, it can also mean
      * that it is currently not known whether it has subfolders.
      */
-    noContent: boolean;
+    noContent: boolean; // todo this is never used?
     content: FolderEntry[];
+    fetchingContent: boolean;
+}
+
+function getPath(parentPath: string, name: string) {
+    return parentPath + (parentPath.endsWith("/") || parentPath == "" ? "" : "/") + name;
 }
 
 /**
@@ -26,10 +31,10 @@ export default class FolderComponent extends React.Component<FolderComponentProp
     state: FolderComponentState = {
         open: false,
         noContent: false,
-        content: null
+        content: null,
+        fetchingContent: false
     };
-    private fetchingContent = false;
-    private path = this.props.parentPath + (this.props.parentPath.endsWith("/") || this.props.parentPath == "" ? "" : "/") + this.props.folderEntry.name;
+    private path = getPath(this.props.parentPath, this.props.folderEntry.name);
 
     componentDidMount() {
         if (this.props.parentPath === "") {
@@ -39,7 +44,7 @@ export default class FolderComponent extends React.Component<FolderComponentProp
     }
 
     render() {
-        if (this.state.open && this.state.content == null && !this.fetchingContent) {
+        if (this.state.open && this.state.content == null && !this.state.fetchingContent) {
             this.getContent();
         }
         return (
@@ -55,7 +60,13 @@ export default class FolderComponent extends React.Component<FolderComponentProp
                     <div className="ms-3">
                         {this.state.content != null && (
                             this.state.content.map((value, index) => {
-                                return <FolderComponent folderEntry={value} parentPath={this.path} key={index} />;
+                                return (
+                                    <FolderComponent
+                                        folderEntry={value}
+                                        parentPath={this.path}
+                                        key={value.name}
+                                    />
+                                );
                             })
                         )}
                         {this.state.content == null && (
@@ -63,7 +74,6 @@ export default class FolderComponent extends React.Component<FolderComponentProp
                         )}
                     </div>
                 )}
-                {}
             </div>
         );
     }
@@ -71,18 +81,18 @@ export default class FolderComponent extends React.Component<FolderComponentProp
     async getContent() {
         if (!app.tasks.requestNewTask()) {
             this.setState({
-                open: false
+                open: false,
+                fetchingContent: true
             });
             return;
         }
-        this.fetchingContent = true;
         const content: FolderEntry[] = [];
-        console.log(this.path);
         for (const folderEntry of await FolderContentProviders.MAIN.getFolderEntries(this.path)) {
             if (folderEntry.isDirectory()) content.push(folderEntry);
         }
         this.setState({
-            content
+            content,
+            fetchingContent: false
         });
     }
 

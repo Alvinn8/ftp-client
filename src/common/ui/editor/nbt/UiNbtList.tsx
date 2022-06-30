@@ -77,7 +77,6 @@ export default class UiNbtList extends React.Component<UiNbtListProps, UiNbtList
 
     toggleOpen() {
         this.setState({
-            ...this.state,
             open: !this.state.open
         });
     }

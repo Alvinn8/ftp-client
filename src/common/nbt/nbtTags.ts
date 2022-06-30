@@ -41,7 +41,6 @@ export class NbtCompound extends NbtTag {
         for (const key of this.orderedKeys) {
             const tag = this.get(key);
             writer.writeU1(getIdFromTag(tag));
-            console.log(getIdFromTag(tag));
             writer.writeString(key);
             tag.write(writer);
         }

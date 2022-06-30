@@ -11,18 +11,15 @@ interface State {
 export default class NbtTagContainer extends React.Component<Props, State> {
     state = {
         selected: false
-    };
-
-    onClick() {
-        this.setState({
-            ...this.state,
-            selected: this.state.selected
-        });
     }
-    
+
     render() {
         return (
-            <div className={"tag-container" + (this.state.selected ? " selected" : "")} onClick={this.onClick.bind(this)}>
+            <div
+                className={"tag-container" + (this.state.selected ? " selected" : "")}
+                onClick={() => this.setState({ selected: !this.state.selected })}
+                // TODO proper selecting
+            >
                 {this.props.label != null && (
                     <span>{this.props.label}: </span>
                 )}

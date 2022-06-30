@@ -1,13 +1,22 @@
 import * as React from "react";
+import * as ReactDOM from "react-dom";
+import ContextMenuPopulator from "../contextmenu/ContextMenuPopulator";
+import FolderEntriesPopulator from "../contextmenu/FolderEntriesPopulator";
+import FolderEntryPopulator from "../contextmenu/FolderEntryPopulator";
 import FolderContentProvider from "../folder/FolderContentProvider";
 import FolderEntry from "../folder/FolderEntry";
 import { handleOnDrop } from "../upload/upload";
+import { ContextMenu, removeContextMenu, setContextMenu } from "./ContextMenu";
 import DropZone from "./DropZone";
 import FolderEntryComponent from "./FolderEntryComponent";
 import { app } from "./index";
 
 interface FolderContentProps {
     provider: FolderContentProvider;
+    selection: FolderEntry[];
+    toggleSelected: (entry: FolderEntry) => void;
+    selectOnly: (entry: FolderEntry) => void;
+    unselectAll: () => void;
 }
 
 interface FolderContentState {
@@ -23,8 +32,6 @@ export default class FolderContent extends React.Component<FolderContentProps, F
 
     constructor(props) {
         super(props);
-
-        app.folderContent = this;
 
         this.state = {
             entries: null,
@@ -76,7 +83,67 @@ export default class FolderContent extends React.Component<FolderContentProps, F
             dragAndDrop: false
         });
     }
-    
+
+    handleClick(entry: FolderEntry, e: React.MouseEvent) {
+        if (this.props.selection.length > 0 && !(e.shiftKey || e.metaKey || e.ctrlKey || e.altKey)) {
+            if (this.props.selection.includes(entry)) {
+                this.props.unselectAll();
+            } else {
+                this.props.selectOnly(entry);
+            }
+        } else {
+            this.props.toggleSelected(entry);
+        }
+    }
+
+    handleRightClick(entry: FolderEntry, e: React.MouseEvent) {
+        e.preventDefault();
+        removeContextMenu();
+
+        const element = document.createElement("div");
+        element.style.position = "fixed";
+        element.style.left = e.clientX + "px";
+        element.style.top = e.clientY + "px";
+        document.body.appendChild(element);
+
+        const selection = this.props.selection;
+        const selected = selection.includes(entry);
+
+        let populator: ContextMenuPopulator;
+
+        if (selected && selection.length == 1) {
+            // This file was selected and then right clicked.
+            populator = new FolderEntryPopulator(entry);
+        }
+        else if (!selected && selection.length == 0) {
+            // No files were selected but this one was right clicked,
+            // select it and show the context menu for this file.
+            populator = new FolderEntryPopulator(entry);
+            this.props.toggleSelected(entry);
+        }
+        else if (selected && selection.length > 1) {
+            // Selection and this entry is a part of it
+            populator = new FolderEntriesPopulator(selection);
+        }
+        else if (!selected && selection.length > 0) {
+            // There is an existing selection and this entry is not a
+            // part of it, lets unselect it and only select this entry.
+            populator = new FolderEntryPopulator(entry);
+            this.props.selectOnly(entry);
+        }
+
+        ReactDOM.render(<ContextMenu populator={ populator } />, element);
+        setContextMenu({
+            container: element
+        });
+
+        // If the element is outside of the screen, move it in to the screen
+        const box = element.firstElementChild.getBoundingClientRect();
+        if (box.bottom > document.body.clientHeight) {
+            element.style.top = document.body.clientHeight - box.height + "px";
+        }
+    }
+
     render() {
         let dropZone;
         if (this.state.dragAndDrop) {
@@ -95,7 +162,15 @@ export default class FolderContent extends React.Component<FolderContentProps, F
                 {this.state.entries == null && <p>Loading files...</p> }
                 {this.state.entries != null &&
                     this.state.entries.map((value, index) => {
-                        return <FolderEntryComponent entry={value} key={value.name} />;
+                        return (
+                            <FolderEntryComponent
+                                entry={value}
+                                selected={this.props.selection.includes(value)}
+                                onClick={(e) => this.handleClick(value, e)}
+                                onRightClick={(e) => this.handleRightClick(value, e)}
+                                key={value.name}
+                            />
+                        );
                     })
                 }
                 {dropZone}

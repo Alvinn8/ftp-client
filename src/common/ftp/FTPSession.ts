@@ -2,7 +2,6 @@ import FTPConnection from "./FTPConnection";
 import FTPProfile from "./FTPProfile";
 import { app } from "./../ui/index";
 import FolderEntry from "../folder/FolderEntry";
-import { unselectAll } from "../selection/selection";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import { addMessage } from "../ui/messages";
 import Task from "../task/Task";
@@ -31,8 +30,7 @@ export default class FTPSession {
     }
 
     workdirUpdate() {
-        unselectAll();
-        app.forceUpdate();
+        app.refresh();
     }
 
     cd(path: string) {
@@ -59,10 +57,8 @@ export default class FTPSession {
     async refresh() {
         // Delete cache
         delete this.cache[this.workdir];
-        // Refetch the entries and trigger a rerender after that (getEntries sets the state when done)
-        app.folderContent.getEntries();
         
-        unselectAll();
+        app.refresh();
     }
 
     clearCache() {

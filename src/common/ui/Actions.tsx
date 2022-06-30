@@ -2,31 +2,26 @@ import * as React from "react";
 import ContextMenuPopulator from "../contextmenu/ContextMenuPopulator";
 import FolderEntriesPopulator from "../contextmenu/FolderEntriesPopulator";
 import FolderEntryPopulator from "../contextmenu/FolderEntryPopulator";
-import { selectedFiles } from "../selection/selection";
-import { app } from "./index";
+import FolderEntry from "../folder/FolderEntry";
+
+interface ActionsProps {
+    selection: FolderEntry[];
+}
 
 /**
  * Actions displayed on mobile for the current selection. Equivalent to the context
  * menu when right clicking on a desktop.
  */
-export default class Actions extends React.Component {
-    componentDidMount() {
-        app.actions = this;
-    }
-    componentWillUnmount() {
-        if (app.actions == this) {
-            app.actions = null;
-        }
-    }
-
+export default class Actions extends React.Component<ActionsProps, {}> {
     render() {
+        const selection = this.props.selection;
         let populator: ContextMenuPopulator;
-        if (selectedFiles.length == 0) {
+        if (selection.length == 0) {
             return <></>;
-        } else if (selectedFiles.length == 1) {
-            populator = new FolderEntryPopulator(selectedFiles[0]);
+        } else if (selection.length == 1) {
+            populator = new FolderEntryPopulator(selection[0]);
         } else {
-            populator = new FolderEntriesPopulator(selectedFiles);
+            populator = new FolderEntriesPopulator(selection);
         }
 
         return (

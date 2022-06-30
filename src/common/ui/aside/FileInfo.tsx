@@ -1,13 +1,17 @@
 import * as React from "react";
-import { selectedFiles } from "../../selection/selection";
+import FolderEntry from "../../folder/FolderEntry";
 import Size from "../Size";
+
+interface FileInfoProps {
+    entry: FolderEntry;
+}
 
 /**
  * Information about a selected file.
  */
-export default class FileInfo extends React.Component {
+export default class FileInfo extends React.Component<FileInfoProps, {}> {
     render() {
-        const entry = selectedFiles[0];
+        const entry = this.props.entry;
         return (
             <div>
                 <p>File name: { entry.name }</p>
