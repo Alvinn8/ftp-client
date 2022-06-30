@@ -41,7 +41,7 @@ body {
 #file-explorer {
     grid-area: file-explorer;
     font-size: 14px;
-    overflow-x: hidden;
+    overflow-x: auto;
 }
 
 header {
