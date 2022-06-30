@@ -9,8 +9,8 @@ interface ActionsProps {
 }
 
 /**
- * Actions displayed on mobile for the current selection. Equivalent to the context
- * menu when right clicking on a desktop.
+ * Actions for the current selection. Equivalent to the context menu when right
+ * clicking on a desktop.
  */
 export default class Actions extends React.Component<ActionsProps, {}> {
     render() {

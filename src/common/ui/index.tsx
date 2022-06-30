@@ -161,6 +161,7 @@ export class App extends React.Component<{}, AppState> {
                                 <Path />
                                 <aside id="selected-info">
                                     <Aside selection={this.state.selection} />
+                                    <Actions selection={this.state.selection} />
                                 </aside>
                             </>
                         )}
