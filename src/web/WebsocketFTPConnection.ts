@@ -1,5 +1,7 @@
 import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
+import DirectoryPath from "../common/ftp/DirectoryPath";
 import FTPConnection from "../common/ftp/FTPConnection";
+import { app } from "../common/ui/index";
 import { addMessage } from "../common/ui/messages";
 import { Packet, Packets } from "../protocol/packets";
 
@@ -148,9 +150,22 @@ export default class WebsocketFTPConnection implements FTPConnection {
     }
 
     async list(path = ""): Promise<FolderEntry[]> {
+        let directoryPath = path.startsWith("/") ? path : new DirectoryPath(app.state.session.workdir).cd(path).get();
+        if (!directoryPath.endsWith("/")) {
+            directoryPath += "/";
+        }
         return (await this.send(Packets.List, { path }))
             .files
-            .map(fileInfo => new FolderEntry(fileInfo.name, fileInfo.size, fileInfo.type as number as FolderEntryType, fileInfo.rawModifiedAt));
+            .map(fileInfo => {
+                const folderEntryPath = directoryPath + fileInfo.name;
+                return new FolderEntry(
+                    folderEntryPath,
+                    fileInfo.name,
+                    fileInfo.size,
+                    fileInfo.type as number as FolderEntryType,
+                    fileInfo.rawModifiedAt
+                );
+            });
     }
 
     async pwd(): Promise<string> {
