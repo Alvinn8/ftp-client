@@ -4,13 +4,13 @@ import FTPSession from "../ftp/FTPSession";
 import ConnectForm from "./ConnectForm";
 import FolderContent from "./FolderContent";
 import Aside from "./aside/Aside";
-import FolderContentProviders from "../folder/FolderContentProviders";
 import Messages from "./messages";
 import Tasks from "./task/tasks";
 import Path from "./Path";
 import Actions from "./Actions";
 import FolderExplorer from "./left/FolderExplorer";
 import FolderEntry from "../folder/FolderEntry";
+import DirectoryPath from "../ftp/DirectoryPath";
 
 export let app: App;
 
@@ -19,6 +19,7 @@ export interface AppState {
     state: State;
     size: DeviceSize;
     mobileTab: MobileTab;
+    workdir: string;
     selection: FolderEntry[];
     refreshCount: number;
 }
@@ -71,6 +72,7 @@ export class App extends React.Component<{}, AppState> {
             state: State.LOGIN,
             size: getDeviceSize(),
             mobileTab: MobileTab.PATH,
+            workdir: "/",
             selection: [],
             refreshCount: 0
         };
@@ -79,6 +81,8 @@ export class App extends React.Component<{}, AppState> {
         this.toggleSelected = this.toggleSelected.bind(this);
         this.selectOnly = this.selectOnly.bind(this);
         this.unselectAll = this.unselectAll.bind(this);
+        this.cd = this.cd.bind(this);
+        this.cdup = this.cdup.bind(this);
     }
 
     componentDidMount() {
@@ -97,6 +101,18 @@ export class App extends React.Component<{}, AppState> {
                 size: size
             });
         }
+    }
+
+    cd(path: string) {
+        this.setState({
+            workdir:  new DirectoryPath(this.state.workdir).cd(path).get()
+        });
+    }
+
+    cdup() {
+        this.setState({
+            workdir:  new DirectoryPath(this.state.workdir).cdup().get()
+        });
     }
 
     toggleSelected(entry: FolderEntry) {
@@ -123,7 +139,12 @@ export class App extends React.Component<{}, AppState> {
         });
     }
     
-    refresh() {
+    refresh(clearCacheDeep = false) {
+        if (clearCacheDeep) {
+            this.state.session.clearCacheFor(this.state.workdir);
+        } else {
+            delete this.state.session.cache[this.state.workdir];
+        }
         this.setState({
             selection: [],
             refreshCount: this.state.refreshCount + 1
@@ -131,6 +152,11 @@ export class App extends React.Component<{}, AppState> {
     }
 
     render() {
+        const path = <Path workdir={this.state.workdir} onCdupClick={this.cdup} />;
+        const aside = <Aside workdir={this.state.workdir} selection={this.state.selection} />;
+        const folderExplorer = <FolderExplorer onChangeDirectory={this.cd} />;
+        const actions = <Actions selection={this.state.selection} onChangeDirectory={this.cd} />;
+
         return (
             <div>
                 { this.state.state == State.LOGIN && <ConnectForm />}
@@ -143,8 +169,9 @@ export class App extends React.Component<{}, AppState> {
                         </header>
                         <div id="folder-content">
                             <FolderContent
-                                provider={FolderContentProviders.MAIN}
-                                key={this.state.session.workdir + "-" + this.state.refreshCount}
+                                key={this.state.workdir + "-" + this.state.refreshCount}
+                                workdir={this.state.workdir}
+                                onChangeDirectory={this.cd}
                                 selection={this.state.selection}
                                 toggleSelected={this.toggleSelected}
                                 selectOnly={this.selectOnly}
@@ -156,12 +183,12 @@ export class App extends React.Component<{}, AppState> {
                         {this.state.size == DeviceSize.DEKSTOP && (
                             <>
                                 <div id="file-explorer" style={{ width: "20vw" }}>
-                                    <FolderExplorer />
+                                    {folderExplorer}
                                 </div>
-                                <Path />
+                                {path}
                                 <aside id="selected-info">
-                                    <Aside selection={this.state.selection} />
-                                    <Actions selection={this.state.selection} />
+                                    {aside}
+                                    {actions}
                                 </aside>
                             </>
                         )}
@@ -171,13 +198,13 @@ export class App extends React.Component<{}, AppState> {
                             <>
                                 <div id="mobile-current-tab" className="overflow-auto">
                                     {this.state.mobileTab == MobileTab.PATH && (
-                                        <Path />
+                                        {path}
                                     )}
                                     {this.state.mobileTab == MobileTab.INFO && (
-                                        <Aside selection={this.state.selection} />
+                                        {aside}
                                     )}
                                     {this.state.mobileTab == MobileTab.FOLDERS && (
-                                        <FolderExplorer />
+                                        {folderExplorer}
                                     )}
                                 </div>
                                 <div id="mobile-tab-buttons">
@@ -193,7 +220,7 @@ export class App extends React.Component<{}, AppState> {
                                         );
                                     })}
                                 </div>
-                                <Actions selection={this.state.selection} />
+                                {actions}
                             </>
                         )}
                     </div>

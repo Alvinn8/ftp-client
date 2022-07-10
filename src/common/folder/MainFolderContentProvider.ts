@@ -1,4 +1,4 @@
-import { app } from "../ui/index";
+import { ensureAbsolute } from "../utils";
 import FolderContentProvider from "./FolderContentProvider";
 import FolderContentProviders from "./FolderContentProviders";
 import FolderEntry from "./FolderEntry";
@@ -13,6 +13,7 @@ export default class MainFolderContentProvider implements FolderContentProvider 
     private pendingRequests: {[key: string]: Promise<FolderEntry[]>} = {};
     
     async getFolderEntries(path?: string): Promise<FolderEntry[]> {
+        ensureAbsolute(path);
         try {
             // Try get the files from the cache.
             return await FolderContentProviders.CACHE.getFolderEntries(path);
@@ -23,9 +24,6 @@ export default class MainFolderContentProvider implements FolderContentProvider 
                 if (pendingRequest) {
                     return await pendingRequest;
                 } else {
-                    if (!path) {
-                        path = app.state.session.workdir;
-                    }
                     const promise = FolderContentProviders.FTP.getFolderEntries(path);
                     this.pendingRequests[path] = promise;
                     const result = await promise;

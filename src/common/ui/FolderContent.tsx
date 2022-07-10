@@ -3,16 +3,16 @@ import * as ReactDOM from "react-dom";
 import ContextMenuPopulator from "../contextmenu/ContextMenuPopulator";
 import FolderEntriesPopulator from "../contextmenu/FolderEntriesPopulator";
 import FolderEntryPopulator from "../contextmenu/FolderEntryPopulator";
-import FolderContentProvider from "../folder/FolderContentProvider";
+import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry from "../folder/FolderEntry";
 import { handleOnDrop } from "../upload/upload";
 import { ContextMenu, removeContextMenu, setContextMenu } from "./ContextMenu";
 import DropZone from "./DropZone";
 import FolderEntryComponent from "./FolderEntryComponent";
-import { app } from "./index";
 
 interface FolderContentProps {
-    provider: FolderContentProvider;
+    workdir: string;
+    onChangeDirectory: (workdir: string) => void;
     selection: FolderEntry[];
     toggleSelected: (entry: FolderEntry) => void;
     selectOnly: (entry: FolderEntry) => void;
@@ -51,7 +51,7 @@ export default class FolderContent extends React.Component<FolderContentProps, F
 
     async getEntries() {
         this.setState({
-            entries: await this.props.provider.getFolderEntries()
+            entries: await FolderContentProviders.MAIN.getFolderEntries(this.props.workdir)
         });
     }
 
@@ -113,12 +113,12 @@ export default class FolderContent extends React.Component<FolderContentProps, F
 
         if (selected && selection.length == 1) {
             // This file was selected and then right clicked.
-            populator = new FolderEntryPopulator(entry);
+            populator = new FolderEntryPopulator(entry, this.props.onChangeDirectory);
         }
         else if (!selected && selection.length == 0) {
             // No files were selected but this one was right clicked,
             // select it and show the context menu for this file.
-            populator = new FolderEntryPopulator(entry);
+            populator = new FolderEntryPopulator(entry, this.props.onChangeDirectory);
             this.props.toggleSelected(entry);
         }
         else if (selected && selection.length > 1) {
@@ -128,7 +128,7 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         else if (!selected && selection.length > 0) {
             // There is an existing selection and this entry is not a
             // part of it, lets unselect it and only select this entry.
-            populator = new FolderEntryPopulator(entry);
+            populator = new FolderEntryPopulator(entry, this.props.onChangeDirectory);
             this.props.selectOnly(entry);
         }
 
@@ -168,6 +168,7 @@ export default class FolderContent extends React.Component<FolderContentProps, F
                                 selected={this.props.selection.includes(value)}
                                 onClick={(e) => this.handleClick(value, e)}
                                 onRightClick={(e) => this.handleRightClick(value, e)}
+                                onChangeDirectory={this.props.onChangeDirectory}
                                 key={value.name}
                             />
                         );

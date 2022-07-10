@@ -1,7 +1,6 @@
 import FolderEntry from "../folder/FolderEntry";
 import { openEditor, openImageEditor } from "../ui/editor/editor";
 import { getFileType } from "../ui/FileFormats";
-import { app } from "../ui/index";
 import { deleteFolderEntries, downloadAsZip, downloadFolderEntry, rename } from "./actions";
 import ContextMenuEntry from "./ContextMenuEntry";
 import ContextMenuPopulator from "./ContextMenuPopulator";
@@ -11,14 +10,17 @@ import ContextMenuPopulator from "./ContextMenuPopulator";
  */
 export default class FolderEntryPopulator implements ContextMenuPopulator {
     private readonly entry: FolderEntry;
+    private readonly onChangeDirectory: (path: string) => void;
 
     /**
      * Create a new FolderEntryPopulator from a folder entry.
      *
      * @param folderEntry The folder entry this context menu should be about.
+     * @param onChangeDirectory A function to call to change the directory.
      */
-    constructor(folderEntry: FolderEntry) {
+    constructor(folderEntry: FolderEntry, onChangeDirectory: (path: string) => void) {
         this.entry = folderEntry;
+        this.onChangeDirectory = onChangeDirectory;
     }
     
     getEntries(): ContextMenuEntry[] {
@@ -52,7 +54,7 @@ export default class FolderEntryPopulator implements ContextMenuPopulator {
             entries.push({
                 name: "Open",
                 handler: () => {
-                    app.state.session.cd(this.entry.name);
+                    this.onChangeDirectory(this.entry.path);
                 }
             });
             entries.push({

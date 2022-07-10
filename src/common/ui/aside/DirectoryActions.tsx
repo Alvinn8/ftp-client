@@ -4,11 +4,15 @@ import { directoryUpload, fileUpload, setZipUploadMode } from "../../upload/uplo
 import { joinPath } from "../../utils";
 import { app } from "../index";
 
+interface DirectoryActionsProps {
+    workdir: string;
+}
+
 /**
  * Actions for the current directory (create folder, upload). Shown on the Aside
  * when nothing is selected.
  */
-export default class DirectoryActions extends React.Component {
+export default class DirectoryActions extends React.Component<DirectoryActionsProps, {}> {
     render() {
         return (
             <div>
@@ -22,8 +26,8 @@ export default class DirectoryActions extends React.Component {
     mkdir() {
         Dialog.prompt("New Folder", "Enter the name of the new folder", "OK", "", async name => {
             const connection = await app.state.session.getConnection();
-            await connection.mkdir(joinPath(app.state.session.workdir, name));
-            await app.state.session.refresh();
+            await connection.mkdir(joinPath(this.props.workdir, name));
+            app.refresh();
         });
     }
 

@@ -1,6 +1,5 @@
 import FTPConnection from "./FTPConnection";
 import FTPProfile from "./FTPProfile";
-import { app } from "./../ui/index";
 import FolderEntry from "../folder/FolderEntry";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import { addMessage } from "../ui/messages";
@@ -21,50 +20,26 @@ import Task from "../task/Task";
 export default class FTPSession {
     public readonly profile: FTPProfile;
     private connection: FTPConnection;
-    /** @deprecated */
-    public workdir = "/";
-    /** @deprecated */
-    public sendWorkDir = "/";
     public cache: {[key: string]: FolderEntry[]} = {};
 
     constructor(profile: FTPProfile) {
         this.profile = profile;
     }
 
-    workdirUpdate() {
-        app.refresh();
-    }
-
-    cd(path: string) {
-        if (!this.workdir.endsWith("/")) this.workdir += "/";
-        if (path.startsWith("/")) {
-            this.workdir = path;
-        } else {
-            this.workdir += path;
-            console.log("Moving to " + path);
-        }
-        this.workdirUpdate();
-    }
-
-    cdup() {
-        const parts = this.workdir.split("/");
-        parts.pop();
-        this.workdir = parts.join("/");
-        if (this.workdir == "") this.workdir = "/";
-        console.log("Moving up");
-
-        this.workdirUpdate();
-    }
-
-    async refresh() {
-        // Delete cache
-        delete this.cache[this.workdir];
-        
-        app.refresh();
-    }
-
     clearCache() {
         this.cache = {};
+    }
+
+    clearCacheFor(path: string) {
+        const keysToRemove: string[] = [];
+        for (let key in this.cache) {
+            if (key.startsWith(path)) {
+                keysToRemove.push(key);
+            }
+        }
+        for (const key of keysToRemove) {
+            delete this.cache[key];
+        }
     }
 
     /**
@@ -99,8 +74,6 @@ export default class FTPSession {
                 // Reconnect the websocket
                 await websocketFTPConnection.connectToWebsocket();
                 console.log("Websocket reconnected");
-                // Ensure the remote workdir is updated
-                this.sendWorkDir = "";
                 // Check if the ftp is connected.
                 const isConnected = await websocketFTPConnection.isConnected();
                 if (!isConnected) {
@@ -116,18 +89,6 @@ export default class FTPSession {
                     });
                 }
             }
-        }
-        if (this.workdir != this.sendWorkDir) {
-            if (app.tasks.hasTask() && app.tasks.getTask() != task) {
-                // Show error message
-                app.tasks.requestNewTask();
-                
-                throw new Error("Unable to change the directory right now, a task is running.");
-            }
-            console.log("Updateing remote workdir");
-            await this.connection.cd(this.workdir);
-            this.sendWorkDir = this.workdir;
-            return this.connection;
         }
         return this.connection;
     }

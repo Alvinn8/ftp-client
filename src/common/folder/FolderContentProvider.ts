@@ -14,5 +14,5 @@ export default interface FolderContentProvider {
      *
      * @param path The path of the folder.
      */
-    getFolderEntries(path?: string): Promise<FolderEntry[]>;
+    getFolderEntries(path: string): Promise<FolderEntry[]>;
 }

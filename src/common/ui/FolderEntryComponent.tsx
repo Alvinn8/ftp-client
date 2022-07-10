@@ -2,13 +2,13 @@ import * as React from "react";
 import FolderEntry from "../folder/FolderEntry";
 import { openEditor } from "./editor/editor";
 import { getIconFor } from "./FileFormats";
-import { app } from "./index";
 
 interface FolderEntryComponentProps {
     entry: FolderEntry;
     selected: boolean;
     onClick: (e: React.MouseEvent) => void;
     onRightClick: (e: React.MouseEvent) => void;
+    onChangeDirectory: (workdir: string) => void;
 }
 
 /**
@@ -41,7 +41,7 @@ export default class FolderEntryComponent extends React.Component<FolderEntryCom
     async handleDoubleClick(e: React.MouseEvent) {
         e.preventDefault();
         if (this.props.entry.isDirectory()) {
-            app.state.session.cd(this.props.entry.name);
+            this.props.onChangeDirectory(this.props.entry.path);
         } else if (this.props.entry.isFile()) {
             openEditor(this.props.entry);
         }

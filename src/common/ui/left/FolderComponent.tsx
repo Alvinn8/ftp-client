@@ -6,6 +6,7 @@ import { app } from "../index";
 interface FolderComponentProps {
     folderEntry: FolderEntry;
     parentPath: string;
+    onChangeDirectory: (workdir: string) => void;
 }
 
 interface FolderComponentState {
@@ -64,6 +65,7 @@ export default class FolderComponent extends React.Component<FolderComponentProp
                                     <FolderComponent
                                         folderEntry={value}
                                         parentPath={this.path}
+                                        onChangeDirectory={this.props.onChangeDirectory}
                                         key={value.name}
                                     />
                                 );
@@ -103,6 +105,6 @@ export default class FolderComponent extends React.Component<FolderComponentProp
     }
 
     goto() {
-        app.state.session.cd(this.path);
+        this.props.onChangeDirectory(this.path);
     }
 }

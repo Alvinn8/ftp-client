@@ -238,7 +238,7 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
     if (isgzipped && !await confirmOpenGzip(folderEntry)) return null;
 
     const connection = await app.state.session.getConnection();
-    let blob = await connection.download(joinPath(app.state.session.workdir, folderEntry.name));
+    let blob = await connection.download(folderEntry.path);
     if (isgzipped) {
         blob = await ungzip(blob);
         return {

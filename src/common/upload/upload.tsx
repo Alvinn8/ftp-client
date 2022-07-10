@@ -50,9 +50,9 @@ export async function upload(uploads: Directory) {
         const task = new Task("Uploading " + uploads.files[0].name, "", false);
         app.tasks.setTask(task);
         const file = uploads.files[0];
-        await uploadFile(file, joinPath(app.state.session.workdir, file.name), connection);
+        await uploadFile(file, joinPath(app.state.workdir, file.name), connection);
         task.complete();
-        await app.state.session.refresh();
+        app.refresh();
     } else {
         // Count the files for the task progress
         const totalCount = countFilesRecursively(uploads);
@@ -61,13 +61,11 @@ export async function upload(uploads: Directory) {
         app.tasks.setTask(task);
 
         // Do the uploading
-        const path = new DirectoryPath(app.state.session.workdir);
+        const path = new DirectoryPath(app.state.workdir);
         await uploadDirectory(uploads, task, path, 0, totalCount);
 
-        // Remove the cache
-        app.state.session.clearCache();
-        // Refresh the current directory
-        await app.state.session.refresh();
+        // Refresh the current directory and clear cache
+        app.refresh(true);
         
         // Complete the task
         task.complete();

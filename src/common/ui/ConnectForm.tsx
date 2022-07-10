@@ -48,7 +48,6 @@ export default class ConnectForm extends React.Component {
             state: State.CONNECTING_TO_FTP
         });
         await connection.connect(host, port, username, password, secure);
-        await session.workdirUpdate();
         app.setState({
             ...app.state,
             state: State.CONNECTED

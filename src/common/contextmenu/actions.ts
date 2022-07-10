@@ -17,26 +17,52 @@ export function rename(entry: FolderEntry) {
         const connection = await app.state.session.getConnection();
         const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
         await connection.rename(entry.path, newPath);
-        await app.state.session.refresh();
+        app.refresh();
     });
+}
+
+/**
+ * Get the directory that the list of entries are in.
+ *
+ * The entries must be in the same directory.
+ * 
+ * @param entries The entries.
+ * @returns The directory path.
+ */
+function getDirectoryPath(entries: FolderEntry[]) {
+    let dir: string | null = null;
+    for (const entry of entries) {
+        const dir0 = entry.path.substring(0, entry.path.length - entry.name.length - 1);
+        if (dir == null) {
+            dir = dir0;
+        }
+        if (dir != dir0) {
+            throw new Error("Multiple entries were from different directories. dir: " + dir + ", dir0: " + dir0);
+        }
+    }
+    if (dir == null) {
+        throw new Error("No entries for getDirectory call.");
+    }
+    return new DirectoryPath(dir);
 }
 
 export async function deleteFolderEntries(entries: FolderEntry[]) {
     if (!app.tasks.requestNewTask()) return;
 
+    
     // Counting can sometimes take a bit, start a task.
     const countTask = new Task("Delete", "Counting files to delete", false);
     app.tasks.setTask(countTask);
-    const totalCount = await countFilesRecursively(entries);
+    const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries));
     countTask.complete();
-
+    
     // Delete
     const task = new Task("Deleting " + totalCount + " file" + (totalCount == 1 ? "" : "s"), "", true);
     app.tasks.setTask(task);
-    const path = new DirectoryPath(app.state.session.workdir);
+    const path = getDirectoryPath(entries);
     await deleteRecursively(entries, task, path, 0, totalCount);
     task.complete();
-    await app.state.session.refresh();
+    app.refresh(true);
 }
 
 async function deleteRecursively(entries: FolderEntry[], task: Task, path: DirectoryPath, deletedCount: number, totalCount: number): Promise<number> {
@@ -61,10 +87,7 @@ async function deleteRecursively(entries: FolderEntry[], task: Task, path: Direc
     return deletedCount;
 }
 
-async function countFilesRecursively(entries: FolderEntry[], path?: DirectoryPath): Promise<number> {
-    if (!path) {
-        path = new DirectoryPath(app.state.session.workdir);
-    }
+async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath): Promise<number> {
     let count = 0;
     for (const entry of entries) {
         // Count files and directories
@@ -86,7 +109,7 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     // Counting can sometimes take a bit, start a task.
     const countTask = new Task("Download", "Counting files to download", false);
     app.tasks.setTask(countTask);
-    const totalCount = await countFilesRecursively(entries);
+    const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries));
     countTask.complete();
 
     // Download
@@ -94,7 +117,7 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     app.tasks.setTask(task);
     // @ts-ignore
     const zip = new JSZip();
-    const path = new DirectoryPath(app.state.session.workdir);
+    const path = getDirectoryPath(entries);
     await downloadRecursively(entries, zip, task, path, 0, totalCount);
 
     // Create and download zip
@@ -130,7 +153,7 @@ export async function computeSize(entries: FolderEntry[]): Promise<number> {
 
     const task = new Task("Computing size", "", false);
     app.tasks.setTask(task);
-    const path = new DirectoryPath(app.state.session.workdir);
+    const path = getDirectoryPath(entries);
     const size = await computeSizeRecursively(entries, task, path);
     task.complete();
     return size;

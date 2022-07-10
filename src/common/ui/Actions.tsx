@@ -6,6 +6,7 @@ import FolderEntry from "../folder/FolderEntry";
 
 interface ActionsProps {
     selection: FolderEntry[];
+    onChangeDirectory: (workdir: string) => void;
 }
 
 /**
@@ -19,7 +20,7 @@ export default class Actions extends React.Component<ActionsProps, {}> {
         if (selection.length == 0) {
             return <></>;
         } else if (selection.length == 1) {
-            populator = new FolderEntryPopulator(selection[0]);
+            populator = new FolderEntryPopulator(selection[0], this.props.onChangeDirectory);
         } else {
             populator = new FolderEntriesPopulator(selection);
         }

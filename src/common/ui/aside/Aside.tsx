@@ -6,6 +6,7 @@ import EntriesInfo from "./EntriesInfo";
 import FileInfo from "./FileInfo";
 
 interface AsideProps {
+    workdir: string;
     selection: FolderEntry[];
 }
 
@@ -19,7 +20,7 @@ export default class Aside extends React.Component<AsideProps, {}> {
         return (
             <div>
                 {selection.length == 0 && (
-                    <DirectoryActions />
+                    <DirectoryActions workdir={this.props.workdir} />
                 )}
                 {selection.length == 1 && selection[0].isFile() && (
                     <FileInfo entry={selection[0]} />
