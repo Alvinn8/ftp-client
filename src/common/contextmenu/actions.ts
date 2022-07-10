@@ -15,7 +15,8 @@ export async function downloadFolderEntry(entry: FolderEntry) {
 export function rename(entry: FolderEntry) {
     Dialog.prompt("Rename "+ entry.name, "Enter the new name of the file", "Rename", entry.name, async newName => {
         const connection = await app.state.session.getConnection();
-        await connection.rename(entry.name, newName);
+        const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
+        await connection.rename(entry.path, newPath);
         await app.state.session.refresh();
     });
 }
@@ -39,7 +40,7 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
 }
 
 async function deleteRecursively(entries: FolderEntry[], task: Task, path: DirectoryPath, deletedCount: number, totalCount: number): Promise<number> {
-    const connection = await app.state.session.getConnection();
+    const connection = await app.state.session.getConnection(task);
     for (const entry of entries) {
         if (entry.isFile()) {
             // A file, delete it
@@ -105,7 +106,7 @@ export async function downloadAsZip(entries: FolderEntry[]) {
 }
 
 async function downloadRecursively(entries: FolderEntry[], zip: any, task: Task, path: DirectoryPath, downloadCount: number, totalCount: number): Promise<number> {
-    const connection = await app.state.session.getConnection();
+    const connection = await app.state.session.getConnection(task);
     for (const entry of entries) {
         if (entry.isFile()) {
             // A file, download it and place in the zip

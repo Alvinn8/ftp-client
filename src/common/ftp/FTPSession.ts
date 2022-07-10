@@ -21,7 +21,9 @@ import Task from "../task/Task";
 export default class FTPSession {
     public readonly profile: FTPProfile;
     private connection: FTPConnection;
+    /** @deprecated */
     public workdir = "/";
+    /** @deprecated */
     public sendWorkDir = "/";
     public cache: {[key: string]: FolderEntry[]} = {};
 

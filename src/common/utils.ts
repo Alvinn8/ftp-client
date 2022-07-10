@@ -14,3 +14,19 @@ export async function ensurePakoScriptIsLoaded() {
         await promise;
     }
 }
+
+export function ensureAbsolute(path: string) {
+    if (!path.startsWith("/")) {
+        throw new Error("Must be an absolute path, got: " + path);
+    }
+}
+
+export function joinPath(a: string, b: string) {
+    if (b.startsWith("/")) {
+        throw new Error("Absolute paths are not allowed in joinPath.");
+    }
+    if (!a.endsWith("/")) {
+        a += "/";
+    }
+    return a + b;
+}

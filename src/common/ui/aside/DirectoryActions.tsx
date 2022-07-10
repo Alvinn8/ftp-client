@@ -1,6 +1,7 @@
 import * as React from "react";
 import Dialog from "../../Dialog";
 import { directoryUpload, fileUpload, setZipUploadMode } from "../../upload/upload";
+import { joinPath } from "../../utils";
 import { app } from "../index";
 
 /**
@@ -21,7 +22,7 @@ export default class DirectoryActions extends React.Component {
     mkdir() {
         Dialog.prompt("New Folder", "Enter the name of the new folder", "OK", "", async name => {
             const connection = await app.state.session.getConnection();
-            await connection.mkdir(name);
+            await connection.mkdir(joinPath(app.state.session.workdir, name));
             await app.state.session.refresh();
         });
     }

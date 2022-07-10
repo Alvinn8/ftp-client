@@ -4,7 +4,7 @@ import Dialog from "../../Dialog";
 import FolderEntry from "../../folder/FolderEntry";
 import { readNbt, writeNbt } from "../../nbt/nbt";
 import NbtData, { BedrockEdition, BedrockLevelDat } from "../../nbt/NbtData";
-import { ensurePakoScriptIsLoaded } from "../../utils";
+import { ensurePakoScriptIsLoaded, joinPath } from "../../utils";
 import { FileType, getFileType } from "../FileFormats";
 import { app } from "../index";
 import { addMessage } from "../messages";
@@ -97,7 +97,7 @@ export async function openTextEditor(folderEntry: FolderEntry) {
         reader.onerror = reject;
         reader.readAsText(fileInfo.blob);
     });
-    const absolutePath = app.state.session.workdir + (app.state.session.workdir.endsWith("/") ? "" : "/") + folderEntry.name;
+    const absolutePath = folderEntry.path;
 
     wind["editorLoaded"] = async function() {
         const text = await textPromise;
@@ -186,7 +186,7 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
     wind.document.head.appendChild(style);
 
     if (allowSaving) {
-        const absolutePath = app.state.session.workdir + (app.state.session.workdir.endsWith("/") ? "" : "/") + "ftp-client_nbt_" + folderEntry.name;
+        const absolutePath = folderEntry.path + "_ftp-client_nbt";
         wind["save"] = async function() {
             // @ts-ignore
             const connection = await app.state.session.getConnection();
@@ -238,7 +238,7 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
     if (isgzipped && !await confirmOpenGzip(folderEntry)) return null;
 
     const connection = await app.state.session.getConnection();
-    let blob = await connection.download(folderEntry.name);
+    let blob = await connection.download(joinPath(app.state.session.workdir, folderEntry.name));
     if (isgzipped) {
         blob = await ungzip(blob);
         return {

@@ -1,8 +1,7 @@
 import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
-import DirectoryPath from "../common/ftp/DirectoryPath";
 import FTPConnection from "../common/ftp/FTPConnection";
-import { app } from "../common/ui/index";
 import { addMessage } from "../common/ui/messages";
+import { ensureAbsolute } from "../common/utils";
 import { Packet, Packets } from "../protocol/packets";
 
 interface PendingReply {
@@ -149,8 +148,10 @@ export default class WebsocketFTPConnection implements FTPConnection {
         return response.isFTPConnected;
     }
 
-    async list(path = ""): Promise<FolderEntry[]> {
-        let directoryPath = path.startsWith("/") ? path : new DirectoryPath(app.state.session.workdir).cd(path).get();
+    async list(path: string): Promise<FolderEntry[]> {
+        ensureAbsolute(path);
+
+        let directoryPath = path;
         if (!directoryPath.endsWith("/")) {
             directoryPath += "/";
         }
@@ -182,6 +183,8 @@ export default class WebsocketFTPConnection implements FTPConnection {
     }
 
     async download(path: string): Promise<Blob> {
+        ensureAbsolute(path);
+
         const response = await this.send(Packets.Download, { path });
         const base64 = response.data;
         const binarystring = atob(base64);
@@ -193,6 +196,8 @@ export default class WebsocketFTPConnection implements FTPConnection {
     }
 
     async upload(blob: Blob, path: string): Promise<void> {
+        ensureAbsolute(path);
+
         const base64 = await (new Promise<string>(function(resolve, reject) {
             const reader = new FileReader();
             reader.onloadend = function() {
@@ -210,14 +215,18 @@ export default class WebsocketFTPConnection implements FTPConnection {
     }
 
     async mkdir(path: string): Promise<void> {
+        ensureAbsolute(path);
         await this.send(Packets.Mkdir, { path });
     }
 
     async rename(from: string, to: string): Promise<void> {
+        ensureAbsolute(from);
+        ensureAbsolute(to);
         await this.send(Packets.Rename, { from, to });
     }
 
     async delete(path: string): Promise<void> {
+        ensureAbsolute(path);
         await this.send(Packets.Delete, { path });
     }
 }

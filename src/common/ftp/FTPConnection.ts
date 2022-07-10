@@ -14,9 +14,7 @@ import FolderEntry from "../folder/FolderEntry";
 export default interface FTPConnection {
     connect(host: string, port: number, username: string, password: string, secure: boolean): Promise<void>;
     isConnected(): Promise<boolean>;
-    
-    /** @deprecated */
-    list(): Promise<FolderEntry[]>;
+
     list(path: string): Promise<FolderEntry[]>;
     /** @deprecated */
     pwd(): Promise<string>;

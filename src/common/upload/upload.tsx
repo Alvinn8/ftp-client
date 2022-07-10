@@ -4,9 +4,12 @@
 
 import * as React from "react";
 import Dialog from "../Dialog";
+import FolderContentProviders from "../folder/FolderContentProviders";
+import DirectoryPath from "../ftp/DirectoryPath";
 import FTPConnection from "../ftp/FTPConnection";
 import Task from "../task/Task";
 import { app } from "../ui/index";
+import { joinPath } from "../utils";
 import Directory from "./Directory";
 
 export namespace UploadSupport {
@@ -46,7 +49,8 @@ export async function upload(uploads: Directory) {
 
         const task = new Task("Uploading " + uploads.files[0].name, "", false);
         app.tasks.setTask(task);
-        await uploadFile(uploads.files[0], connection);
+        const file = uploads.files[0];
+        await uploadFile(file, joinPath(app.state.session.workdir, file.name), connection);
         task.complete();
         await app.state.session.refresh();
     } else {
@@ -56,8 +60,9 @@ export async function upload(uploads: Directory) {
         const task = new Task("Uploading " + totalCount + " files", "", true);
         app.tasks.setTask(task);
 
-        // Do the uploads
-        await uploadDirectory(uploads, task, 0, totalCount);
+        // Do the uploading
+        const path = new DirectoryPath(app.state.session.workdir);
+        await uploadDirectory(uploads, task, path, 0, totalCount);
 
         // Remove the cache
         app.state.session.clearCache();
@@ -75,20 +80,21 @@ export async function upload(uploads: Directory) {
  *
  * @param directory The directory to upload.
  * @param task The task for this upload.
+ * @param path The current folder being uploaded to.
  * @param uploadCount The amount of files that have already been uploaded.
  * @param totalCount The total amount of files to upload.
  * @returns The new uploadCount, the new amount of files that have been uploaded.
  */
-async function uploadDirectory(directory: Directory, task: Task, uploadCount: number, totalCount: number): Promise<number> {
-    const connection = await app.state.session.getConnection();
+async function uploadDirectory(directory: Directory, task: Task, path: DirectoryPath, uploadCount: number, totalCount: number): Promise<number> {
+    const connection = await app.state.session.getConnection(task);
     // Upload all files
     for (const file of directory.files) {
-        await uploadFile(file, connection);
+        await uploadFile(file, joinPath(path.get(), file.name), connection);
         uploadCount++;
         task.progress(uploadCount, totalCount, "Uploading " + file.name);
     }
     // List the current folder so we can see if the following subdirectories exist
-    const list = await connection.list();
+    const list = await FolderContentProviders.MAIN.getFolderEntries(path.get());
     // Loop trough all directories to upload
     for (const subdirName in directory.directories) {
         const subdir = directory.directories[subdirName];
@@ -103,14 +109,14 @@ async function uploadDirectory(directory: Directory, task: Task, uploadCount: nu
         // If not, create the folder
         if (!folderExists) {
             task.progress(uploadCount, totalCount, "Creating " + subdirName);
-            await connection.mkdir(subdirName);
-            await connection.cd(subdirName);
+            await connection.mkdir(joinPath(path.get(), subdirName));
         }
+        path.cd(subdirName);
         // Upload the folder contents recursively
         // also reassign the uploadCount variable to the new uploadCount
-        uploadCount = await uploadDirectory(subdir, task, uploadCount, totalCount);
+        uploadCount = await uploadDirectory(subdir, task, path, uploadCount, totalCount);
         // We are now done with the sub directory, cd back up.
-        await connection.cdup();
+        path.cdup();
     }
     return uploadCount;
 }
@@ -123,11 +129,12 @@ async function uploadDirectory(directory: Directory, task: Task, uploadCount: nu
  * into this method instead.
  *
  * @param file The file to upload.
+ * @param path The path on the server to upload the file to, including the file name.
  * @param connection The connection object.
  */
-async function uploadFile(file: File, connection: FTPConnection) {
+async function uploadFile(file: File, path: string, connection: FTPConnection) {
     console.log("Uploading " + file.name);
-    await connection.upload(file, file.name);
+    await connection.upload(file, path);
 }
 
 /**
