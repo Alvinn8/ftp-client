@@ -51,8 +51,16 @@ export default class FolderContent extends React.Component<FolderContentProps, F
     }
 
     async getEntries() {
+        const entries = await FolderContentProviders.MAIN.getFolderEntries(Priority.QUICK, this.props.workdir);
+        entries.sort((a, b) => {
+            if (a.isDirectory() && b.isFile()) return -1;
+            if (b.isDirectory() && a.isFile()) return 1;
+            if (a.name < b.name) return -1;
+            if (b.name > a.name) return 1;
+            return 0;
+        });
         this.setState({
-            entries: await FolderContentProviders.MAIN.getFolderEntries(Priority.QUICK, this.props.workdir)
+            entries
         });
     }
 
