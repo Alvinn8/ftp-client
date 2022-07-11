@@ -11,11 +11,7 @@ import Task from "../task/Task";
  * The FTP connection is separated from the session so that the session can
  * reconnect using a new connection if required.
  * <p>
- * The session also holds the directory cache and keeps track of what directory
- * the user is currently in. When changing the directory using the session, the
- * directory might not change on remote ftp server until required. This is to
- * ensure that folders can be navigated using cache without requireing any ftp
- * command to be sent, allowing instant folder traversing.
+ * The session also holds the directory cache.
  */
 export default class FTPSession {
     public readonly profile: FTPProfile;
@@ -43,20 +39,17 @@ export default class FTPSession {
     }
 
     /**
-     * Get the ftp connection with the intention of doing stuff, so the workdir
-     * needs to be up to date.
+     * Get the ftp connection with the intention of doing stuff, so the FTPConnection
+     * needs to be connected.
      */
     async getConnection(): Promise<FTPConnection>;
 
     /**
-     * Get the ftp connection with the intention of doing stuff, so the workdir
-     * needs to be up to date.
-     * <p>
-     * The task object is passed to this method and only if the current task is
-     * that task the remote workdir will be updated, otherwise an error will be
-     * displayed as the user is likely trying to do two things at once.
+     * Get the ftp connection with the intention of doing stuff, so the FTPConnection
+     * needs to be connected.
      * 
      * @param task The task that is requesting the connection.
+     * @deprecated
      */
     async getConnection(task: Task): Promise<FTPConnection>;
 

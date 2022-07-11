@@ -63,7 +63,7 @@ export const packetMap = new Map<number, Packet<any, any>>();
 let idCount = 1;
 
 /**
- * A packet where {code Data} is the type the client needs to send with the packet
+ * A packet where {@code Data} is the type the client needs to send with the packet
  * and where {@code Response} is the type the server replies with.
  */
 export class Packet<Data, Response> {

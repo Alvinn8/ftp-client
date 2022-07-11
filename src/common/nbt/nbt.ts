@@ -4,16 +4,6 @@ import NbtData, { BedrockEdition, BedrockLevelDat, Compression, EditionData } fr
 import { NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtEnd, NbtFloat, NbtInt, NbtIntArray, NbtList, NbtLong, NbtLongArray, NbtShort, NbtString, NbtTag } from "./nbtTags";
 import NbtWriter from "./NbtWriter";
 
-// var blob = $0.files[0];
-// var nbt = await import("./js/common/nbt/nbt.js");
-// var NbtReader = (await import("./js/common/nbt/NbtReader.js")).default;
-
-/*
-var blob = $0.files[0];
-var nbt = await import("./js/common/nbt/nbt.js");
-nbt.readJavaEditionUncompressedNbt(blob);
-*/
-
 export async function readNbt(blob: Blob): Promise<NbtData> {
     let data = new Uint8Array(await blob.arrayBuffer());
     let origData = data;

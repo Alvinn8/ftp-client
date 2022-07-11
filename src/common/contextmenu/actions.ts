@@ -92,7 +92,7 @@ async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath
     for (const entry of entries) {
         // Count files and directories
         count++;
-        // If it's a directory, cd into it and count all files inside
+        // If it's a directory, count all files inside
         if (entry.isDirectory()) {
             path.cd(entry.name);
             const list = await FolderContentProviders.MAIN.getFolderEntries(path.get());

@@ -1,15 +1,8 @@
 import FolderEntry from "../folder/FolderEntry";
 
 /**
- * A connection to the FTP server. An FTPConnection is the main thing used for
- * communicating with the FTP server to download, upload, list files, etc.
- * <p>
- * Most of the time changing the directory should although be done via the
- * FTPSession as that will respect the cache and will be faster. But in some cases
- * like when a recursing task is being made, it might be better to change the
- * directory directly via the FTPConnection. But be very careful when doing that
- * and make sure the directory is reset back to what it was before the task started,
- * otherwise the application will desync the directory it is currently in.
+ * A connection to the FTP server. An FTPConnection is used for communicating with
+ * the FTP server to download, upload, list files, etc.
  */
 export default interface FTPConnection {
     connect(host: string, port: number, username: string, password: string, secure: boolean): Promise<void>;
