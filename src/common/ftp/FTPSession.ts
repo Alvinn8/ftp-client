@@ -4,6 +4,7 @@ import FolderEntry from "../folder/FolderEntry";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import { addMessage } from "../ui/messages";
 import Task from "../task/Task";
+import FTPRequest from "./FTPRequest";
 
 /**
  * An FTP session that holds some information about the current session.
@@ -17,6 +18,7 @@ export default class FTPSession {
     public readonly profile: FTPProfile;
     private connection: FTPConnection;
     public cache: {[key: string]: FolderEntry[]} = {};
+    private queue: FTPRequest<any>[] = [];
 
     constructor(profile: FTPProfile) {
         this.profile = profile;
@@ -42,18 +44,7 @@ export default class FTPSession {
      * Get the ftp connection with the intention of doing stuff, so the FTPConnection
      * needs to be connected.
      */
-    async getConnection(): Promise<FTPConnection>;
-
-    /**
-     * Get the ftp connection with the intention of doing stuff, so the FTPConnection
-     * needs to be connected.
-     * 
-     * @param task The task that is requesting the connection.
-     * @deprecated
-     */
-    async getConnection(task: Task): Promise<FTPConnection>;
-
-    async getConnection(task?: Task): Promise<FTPConnection> {
+    private async getConnection(): Promise<FTPConnection> {
         if (this.connection instanceof WebsocketFTPConnection) {
             const websocketFTPConnection = this.connection as WebsocketFTPConnection;
             if (websocketFTPConnection.websocket.readyState != WebSocket.OPEN) {
@@ -88,5 +79,76 @@ export default class FTPSession {
 
     setConnection(connection: FTPConnection) {
         this.connection = connection;
+    }
+
+    private addToQueue<T>(priority: number, executor: (connection: FTPConnection) => Promise<T>): Promise<T> {
+        return new Promise((resolve, reject) => {
+            const request = new FTPRequest(priority, executor, resolve, reject);
+            this.queue.push(request);
+            
+            // If this was the only request, let's execute it
+            if (this.queue.length == 1) {
+                this.executeRequest();
+            }
+        });
+    }
+
+    private async executeRequest() {
+        // sort decending, highest priority first
+        this.queue.sort((a, b) => b.priority - a.priority);
+        const request = this.queue[0];
+
+        const connection = await this.getConnection();
+
+        const promise = request.executor(connection);
+        promise.then((t) => {
+            const index = this.queue.indexOf(request);
+            this.queue.splice(index, 1);
+
+            request.resolve(t);
+
+            // This request has finished, are there more in the queue?
+            if (this.queue.length > 0) {
+                this.executeRequest();
+            }
+        });
+        promise.catch(e => request.reject(e));
+        return promise;
+    }
+
+    list(priority: number, path: string) {
+        return this.addToQueue(priority, connection => (
+            connection.list(path)
+        ));
+    }
+
+    download(priority: number, path: string) {
+        return this.addToQueue(priority, connection => (
+            connection.download(path)
+        ))
+    }
+
+    upload(priority: number, blob: Blob, path: string) {
+        return this.addToQueue(priority, connection => (
+            connection.upload(blob, path)
+        ))
+    }
+
+    mkdir(priority: number, path: string) {
+        return this.addToQueue(priority, connection => (
+            connection.mkdir(path)
+        ));
+    }
+
+    rename(priority: number, from: string, to: string) {
+        return this.addToQueue(priority, connection => (
+            connection.rename(from, to)
+        ));
+    }
+
+    delete(priority: number, path: string) {
+        return this.addToQueue(priority, connection => (
+            connection.delete(path)
+        ));
     }
 }

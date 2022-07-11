@@ -1,6 +1,7 @@
 import * as React from "react";
 import FolderContentProviders from "../../folder/FolderContentProviders";
 import FolderEntry from "../../folder/FolderEntry";
+import Priority from "../../ftp/Priority";
 import { app } from "../index";
 
 interface FolderComponentProps {
@@ -89,7 +90,7 @@ export default class FolderComponent extends React.Component<FolderComponentProp
             return;
         }
         const content: FolderEntry[] = [];
-        for (const folderEntry of await FolderContentProviders.MAIN.getFolderEntries(this.path)) {
+        for (const folderEntry of await FolderContentProviders.MAIN.getFolderEntries(Priority.QUICK, this.path)) {
             if (folderEntry.isDirectory()) content.push(folderEntry);
         }
         this.setState({

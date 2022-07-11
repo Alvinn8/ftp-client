@@ -12,11 +12,11 @@ import NotCachedError from "./NotCachedError";
 export default class MainFolderContentProvider implements FolderContentProvider {
     private pendingRequests: {[key: string]: Promise<FolderEntry[]>} = {};
     
-    async getFolderEntries(path?: string): Promise<FolderEntry[]> {
+    async getFolderEntries(priority: number, path?: string): Promise<FolderEntry[]> {
         ensureAbsolute(path);
         try {
             // Try get the files from the cache.
-            return await FolderContentProviders.CACHE.getFolderEntries(path);
+            return await FolderContentProviders.CACHE.getFolderEntries(priority, path);
         } catch (e) {
             if (e instanceof NotCachedError) {
                 // This folder was not cached, fetch from the ftp server.
@@ -24,7 +24,7 @@ export default class MainFolderContentProvider implements FolderContentProvider 
                 if (pendingRequest) {
                     return await pendingRequest;
                 } else {
-                    const promise = FolderContentProviders.FTP.getFolderEntries(path);
+                    const promise = FolderContentProviders.FTP.getFolderEntries(priority, path);
                     this.pendingRequests[path] = promise;
                     const result = await promise;
                     delete this.pendingRequests[path];

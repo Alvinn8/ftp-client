@@ -5,6 +5,7 @@ import FolderEntriesPopulator from "../contextmenu/FolderEntriesPopulator";
 import FolderEntryPopulator from "../contextmenu/FolderEntryPopulator";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry from "../folder/FolderEntry";
+import Priority from "../ftp/Priority";
 import { handleOnDrop } from "../upload/upload";
 import { ContextMenu, removeContextMenu, setContextMenu } from "./ContextMenu";
 import DropZone from "./DropZone";
@@ -51,7 +52,7 @@ export default class FolderContent extends React.Component<FolderContentProps, F
 
     async getEntries() {
         this.setState({
-            entries: await FolderContentProviders.MAIN.getFolderEntries(this.props.workdir)
+            entries: await FolderContentProviders.MAIN.getFolderEntries(Priority.QUICK, this.props.workdir)
         });
     }
 

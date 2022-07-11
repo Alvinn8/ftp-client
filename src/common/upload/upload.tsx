@@ -7,6 +7,7 @@ import Dialog from "../Dialog";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import DirectoryPath from "../ftp/DirectoryPath";
 import FTPConnection from "../ftp/FTPConnection";
+import Priority from "../ftp/Priority";
 import Task from "../task/Task";
 import { app } from "../ui/index";
 import { joinPath } from "../utils";
@@ -44,13 +45,10 @@ export async function upload(uploads: Directory) {
     const hasDirectories = Object.keys(uploads.directories).length > 0;
 
     if (!hasDirectories && uploads.files.length == 1) {
-        // Get the connection before starting the task
-        const connection = await app.state.session.getConnection();
-
         const task = new Task("Uploading " + uploads.files[0].name, "", false);
         app.tasks.setTask(task);
         const file = uploads.files[0];
-        await uploadFile(file, joinPath(app.state.workdir, file.name), connection);
+        await uploadFile(file, joinPath(app.state.workdir, file.name));
         task.complete();
         app.refresh();
     } else {
@@ -84,15 +82,14 @@ export async function upload(uploads: Directory) {
  * @returns The new uploadCount, the new amount of files that have been uploaded.
  */
 async function uploadDirectory(directory: Directory, task: Task, path: DirectoryPath, uploadCount: number, totalCount: number): Promise<number> {
-    const connection = await app.state.session.getConnection(task);
     // Upload all files
     for (const file of directory.files) {
-        await uploadFile(file, joinPath(path.get(), file.name), connection);
+        await uploadFile(file, joinPath(path.get(), file.name));
         uploadCount++;
         task.progress(uploadCount, totalCount, "Uploading " + file.name);
     }
     // List the current folder so we can see if the following subdirectories exist
-    const list = await FolderContentProviders.MAIN.getFolderEntries(path.get());
+    const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, path.get());
     // Loop trough all directories to upload
     for (const subdirName in directory.directories) {
         const subdir = directory.directories[subdirName];
@@ -107,7 +104,7 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
         // If not, create the folder
         if (!folderExists) {
             task.progress(uploadCount, totalCount, "Creating " + subdirName);
-            await connection.mkdir(joinPath(path.get(), subdirName));
+            await app.state.session.mkdir(Priority.LARGE_TASK, joinPath(path.get(), subdirName));
         }
         path.cd(subdirName);
         // Upload the folder contents recursively
@@ -128,11 +125,10 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
  *
  * @param file The file to upload.
  * @param path The path on the server to upload the file to, including the file name.
- * @param connection The connection object.
  */
-async function uploadFile(file: File, path: string, connection: FTPConnection) {
+async function uploadFile(file: File, path: string) {
     console.log("Uploading " + file.name);
-    await connection.upload(file, path);
+    await app.state.session.upload(Priority.LARGE_TASK, file, path);
 }
 
 /**
