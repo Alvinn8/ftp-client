@@ -200,7 +200,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
 
         const base64 = await (new Promise<string>(function(resolve, reject) {
             const reader = new FileReader();
-            reader.onloadend = function() {
+            reader.onload = function() {
                 const dataURL = (reader.result as string);
                 resolve(dataURL.substring(dataURL.indexOf(",") + 1));
             }
