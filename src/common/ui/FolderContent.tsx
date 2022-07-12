@@ -41,13 +41,13 @@ export default class FolderContent extends React.Component<FolderContentProps, F
     }
 
     async componentDidMount() {
-        await this.getEntries();
-
         this.ref.current.ondragenter = this.onDragEnter.bind(this);
         this.ref.current.ondragleave = this.onDragLeave.bind(this);
         this.ref.current.ondrop = () => {};
         // noop event listener, we just need to listen for ondrop
         // to make the element a valid drag and drop target.
+        
+        await this.getEntries();
     }
 
     async getEntries() {
@@ -72,6 +72,9 @@ export default class FolderContent extends React.Component<FolderContentProps, F
     }
 
     onDragLeave(e: DragEvent) {
+        if (!this.ref.current) {
+            return;
+        }
         const box = this.ref.current.getBoundingClientRect();
         const scrollTop = this.ref.current.parentElement.scrollTop;
         if (e.clientX > box.right
@@ -155,7 +158,7 @@ export default class FolderContent extends React.Component<FolderContentProps, F
 
     render() {
         let dropZone;
-        if (this.state.dragAndDrop) {
+        if (this.state.dragAndDrop && this.ref.current) {
             const box = this.ref.current.getBoundingClientRect();
             const scrollTop = this.ref.current.parentElement.scrollTop;
             dropZone = <DropZone
