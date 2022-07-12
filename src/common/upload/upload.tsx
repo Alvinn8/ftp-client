@@ -194,9 +194,11 @@ async function getDropEventFiles(event: React.DragEvent | DragEvent): Promise<Di
     // These promises can then all be awaited using Promise.all
 
     for (const item of event.dataTransfer.items) {
-        const entry = item.webkitGetAsEntry();
-        const promise = handleItem(entry, root);
-        promises.push(promise);
+        if (item.kind == "file") {
+            const entry = item.webkitGetAsEntry();
+            const promise = handleItem(entry, root);
+            promises.push(promise);
+        }
     }
     await Promise.all(promises);
     return root;
