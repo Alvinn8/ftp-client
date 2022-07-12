@@ -22,11 +22,14 @@ export function addMessage(message: Message) {
     });
     if (message.stayForMillis) {
         setTimeout(() => {
-            const messageArray = messages.state.messages;
-            messageArray.splice(messageArray.indexOf(message), 1);
-            messages.setState({
-                messages: messageArray
-            });
+            const messageArray = messages.state.messages.slice();
+            const index = messageArray.indexOf(message);
+            if (index >= 0) {
+                messageArray.splice(index, 1);
+                messages.setState({
+                    messages: messageArray
+                });
+            }
         }, message.stayForMillis);
     }
 }
@@ -49,15 +52,35 @@ export default class Messages extends React.Component<{}, MessagesState> {
         };
     }
 
+    closeMessage(e: React.MouseEvent, message: Message) {
+        e.preventDefault();
+
+        const index = this.state.messages.indexOf(message);
+        if (index >= 0) {
+            const messages = this.state.messages.slice();
+            messages.splice(index, 1);
+            this.setState({
+                messages
+            });
+        }
+    }
+
     render() {
         return (
             <div className="message-container">
                 <div className="container">
                     {this.state.messages.map((value, index) => {
-                        return <div key={index} className={ "alert alert-dismissible alert-" + value.color }>
-                            <span>{ value.message }</span>
-                            <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>;
+                        return (
+                            <div key={index} className={ "alert alert-dismissible alert-" + value.color }>
+                                <span>{ value.message }</span>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    aria-label="Close"
+                                    onClick={(e) => this.closeMessage(e, value)}
+                                ></button>
+                            </div>
+                        );
                     })}
                 </div>
             </div>
