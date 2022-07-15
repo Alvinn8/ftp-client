@@ -105,13 +105,15 @@ export class App extends React.Component<{}, AppState> {
 
     cd(path: string) {
         this.setState({
-            workdir:  new DirectoryPath(this.state.workdir).cd(path).get()
+            workdir:  new DirectoryPath(this.state.workdir).cd(path).get(),
+            selection: []
         });
     }
 
     cdup() {
         this.setState({
-            workdir:  new DirectoryPath(this.state.workdir).cdup().get()
+            workdir:  new DirectoryPath(this.state.workdir).cdup().get(),
+            selection: []
         });
     }
 
