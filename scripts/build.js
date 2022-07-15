@@ -140,11 +140,13 @@ async function buildDistWebsite() {
         }
     });
 
+    let rand = Math.floor(Math.random() * 16**7).toString(16);
+
     for (const chunk of output) {
         if (chunk.type == "chunk") {
             const result = await minify(chunk.code);
             // const result = chunk;
-            await fs.writeFile(WEBSITE_DIST_FOLDER + "/bundle.js", result.code, "utf-8");
+            await fs.writeFile(WEBSITE_DIST_FOLDER + "/bundle-"+ rand +".js", result.code, "utf-8");
         }
     }
 
@@ -161,7 +163,7 @@ async function buildDistWebsite() {
     + `<script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>` + n
     + `<script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>` + "\n" + n
     + `<!-- JavaScript -->` + n
-    + `<script src="bundle.js" defer></script>`
+    + `<script src="bundle-${rand}.js" defer></script>`
     ;
 
     indexHtml = before + middle + after;
