@@ -198,13 +198,13 @@ export class App extends React.Component<{}, AppState> {
                             <>
                                 <div id="mobile-current-tab" className="overflow-auto">
                                     {this.state.mobileTab == MobileTab.PATH && (
-                                        {path}
+                                        <>{path}</>
                                     )}
                                     {this.state.mobileTab == MobileTab.INFO && (
-                                        {aside}
+                                        <>{aside}</>
                                     )}
                                     {this.state.mobileTab == MobileTab.FOLDERS && (
-                                        {folderExplorer}
+                                        <>{folderExplorer}</>
                                     )}
                                 </div>
                                 <div id="mobile-tab-buttons">
