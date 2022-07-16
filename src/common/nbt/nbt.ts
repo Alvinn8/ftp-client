@@ -104,7 +104,7 @@ export function getTagFromId(id: number): NbtTag {
         case 9: return new NbtList();
         case 10: return new NbtCompound();
         case 11: return new NbtIntArray();
-        case 11: return new NbtLongArray();
+        case 12: return new NbtLongArray();
     
         default:
             throw new Error("Unknown tag type: " + id);
@@ -124,7 +124,7 @@ export function getIdFromTag(tag: NbtTag) {
     if (tag instanceof NbtList)         return 9;
     if (tag instanceof NbtCompound)     return 10;
     if (tag instanceof NbtIntArray)     return 11;
-    if (tag instanceof NbtLongArray)    return 11;
+    if (tag instanceof NbtLongArray)    return 12;
     throw new Error("Unknown tag: " + tag);
 }
 
