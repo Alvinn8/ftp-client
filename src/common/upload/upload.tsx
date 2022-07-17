@@ -2,6 +2,7 @@
  * File for handleing file and folder uploads in different ways.
  */
 
+import * as JSZip from "jszip";
 import * as React from "react";
 import Dialog from "../Dialog";
 import FolderContentProviders from "../folder/FolderContentProviders";
@@ -386,7 +387,6 @@ async function getUploadsFromZip(zip): Promise<Directory> {
  * @param file The zip file.
  */
 async function handleZip(file: File) {
-    // @ts-ignore
     const zip = await JSZip.loadAsync(file);
     const uploads = await getUploadsFromZip(zip);
     upload(uploads);

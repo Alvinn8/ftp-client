@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as ReactDOM from "react-dom";
+import * as ReactDOM from "react-dom/client";
 import FTPSession from "../ftp/FTPSession";
 import ConnectForm from "./ConnectForm";
 import FolderContent from "./FolderContent";
@@ -11,6 +11,9 @@ import Actions from "./Actions";
 import FolderExplorer from "./left/FolderExplorer";
 import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import "./style.css";
 
 export let app: App;
 
@@ -234,6 +237,6 @@ export class App extends React.Component<{}, AppState> {
     }
 }
 
-ReactDOM.render(<App />, document.getElementById("root"));
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 
 window["app"] = app;

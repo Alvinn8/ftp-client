@@ -2,7 +2,7 @@ import * as ftp from "basic-ftp";
 import { FTPError } from "basic-ftp";
 import { createServer } from "http";
 import * as ws from "ws";
-import { ErrorReply, ListReply, Packet, packetMap, Packets } from "../../protocol/packets";
+import { ErrorReply, ListReply, Packet, packetMap, Packets } from "../protocol/packets";
 import { WritableMemoryStream, ReadableMemoryStream } from "./memoryStreams";
 
 

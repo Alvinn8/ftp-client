@@ -1,3 +1,4 @@
+import { Modal } from "bootstrap";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
@@ -37,8 +38,7 @@ namespace Dialog {
 
         ReactDOM.render(modalElement, container);
 
-        // @ts-ignore
-        const modal = new bootstrap.Modal(modalRef.current, {
+        const modal = new Modal(modalRef.current, {
             backdrop: true,
             keyboard: true
         });
@@ -95,8 +95,7 @@ namespace Dialog {
 
         inputRef.current.value = defaultValue;
 
-        // @ts-ignore
-        const modal = new bootstrap.Modal(modalRef.current, {
+        const modal = new Modal(modalRef.current, {
             backdrop: true,
             keyboard: true
         });
@@ -176,8 +175,7 @@ namespace Dialog {
 
             ReactDOM.render(modalElement, container);
 
-            // @ts-ignore
-            const modal = new bootstrap.Modal(ref.current, {
+            const modal = new Modal(ref.current, {
                 backdrop: allowCancel ? true : "static",
                 keyboard: allowCancel
             });
@@ -227,8 +225,7 @@ namespace Dialog {
 
             ReactDOM.render(modalElement, container);
 
-            // @ts-ignore
-            const modal = new bootstrap.Modal(ref.current, {
+            const modal = new Modal(ref.current, {
                 backdrop: true,
                 keyboard: true
             });

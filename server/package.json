@@ -1,0 +1,17 @@
+{
+  "name": "ftp-client-server",
+  "version": "1.0.0",
+  "main": "bundle.js",
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "start": "node bundle.js",
+    "build+start": "npm run build && npm start"
+  },
+  "dependencies": {
+    "basic-ftp": "^4.6.6",
+    "ws": "^8.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.14.49"
+  }
+}

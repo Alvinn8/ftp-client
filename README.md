@@ -31,13 +31,13 @@ FTP Client that can be used as a WebFTP (and as an electron app).
 
 **Note:** The electron app does not exist yet.
 
-## Build folder
+## Build Tools
 
-`build/website-dev` - Folder where the website is when in development, uses ESM (`type="module"` scripts).
+The website uses [Vite](https://vitejs.dev/).
 
-`build/website-dist` - Bundled website
+The server code is also inside the `src` folder, which might be a little confusing at first. This is because the code in `src/protocol` is shared between the websocket server and the website. The `server` folder contains the npm submodule and esbuild config for building the server. A `server/bundle.js` file is created which is executed to start the server.
 
-`build/server` - NodeJS server code, run with `node build/server/server/src/index.js`
+The easiest way to start developing is to use Docker: `docker-compose up`
 
 ## Wireframes
 Desktop

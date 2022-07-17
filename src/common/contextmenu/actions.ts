@@ -1,3 +1,4 @@
+import * as JSZip from "jszip";
 import Dialog from "../Dialog";
 import download from "../download";
 import FolderContentProviders from "../folder/FolderContentProviders";
@@ -8,7 +9,7 @@ import Task from "../task/Task";
 import { app } from "../ui/index";
 
 export async function downloadFolderEntry(entry: FolderEntry) {
-    const blob = await app.state.session.download(Priority.QUICK, entry.name);
+    const blob = await app.state.session.download(Priority.QUICK, entry.path);
     download(blob, entry.name);
 }
 
@@ -118,7 +119,6 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     // Download
     const task = new Task("Downloading " + totalCount + " files", "", true);
     app.tasks.setTask(task);
-    // @ts-ignore
     const zip = new JSZip();
     const path = getDirectoryPath(entries);
     await downloadRecursively(entries, zip, task, path, 0, totalCount);

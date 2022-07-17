@@ -1,8 +1,8 @@
-import { ensurePakoScriptIsLoaded } from "../utils";
 import NbtReader from "./NbtReader";
 import NbtData, { BedrockEdition, BedrockLevelDat, Compression, EditionData } from "./NbtData";
 import { NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtEnd, NbtFloat, NbtInt, NbtIntArray, NbtList, NbtLong, NbtLongArray, NbtShort, NbtString, NbtTag } from "./nbtTags";
 import NbtWriter from "./NbtWriter";
+import { deflate, gzip, inflate } from "pako";
 
 export async function readNbt(blob: Blob): Promise<NbtData> {
     let data = new Uint8Array(await blob.arrayBuffer());
@@ -23,9 +23,7 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
 
     if (compression != "none") {
         // pako will auto detect the algorithm
-        await ensurePakoScriptIsLoaded();
-        // @ts-ignore
-        data = pako.inflate(origData);
+        data = inflate(origData);
     }
     
     const reader = new NbtReader(data);
@@ -172,13 +170,10 @@ export async function writeNbt(nbt: NbtData): Promise<Blob> {
 
     if (nbt.compression != "none") {
         // pako will auto detect the algorithm
-        await ensurePakoScriptIsLoaded();
         if (nbt.compression == "gzip") {
-            // @ts-ignore
-            data = pako.gzip(data);
+            data = gzip(data);
         } else if (nbt.compression == "zlib") {
-            // @ts-ignore
-            data = pako.deflate(data);
+            data = deflate(data);
         }
     }
 

@@ -17,8 +17,8 @@ export default class DirectoryActions extends React.Component<DirectoryActionsPr
     render() {
         return (
             <div>
-                <button className="btn btn-primary" onClick={this.mkdir}>New Folder</button>
-                <button className="btn btn-info" onClick={this.upload}>Upload</button>
+                <button className="btn btn-primary" onClick={this.mkdir.bind(this)}>New Folder</button>
+                <button className="btn btn-info" onClick={this.upload.bind(this)}>Upload</button>
                 <p>You can also upload files and folders by dragging and dropping them.</p>
             </div>
         );

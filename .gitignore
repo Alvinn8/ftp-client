@@ -1,4 +1,5 @@
 .DS_Store
 node_modules
-build
+dist
 *.code-workspace
+server/bundle.js

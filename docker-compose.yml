@@ -1,14 +1,20 @@
 version: '3'
 services:
   web:
-    build:
-      context: ./
-      dockerfile: web.Dockerfile
+    image: node:16.15-alpine3.14
+    working_dir: /app
     ports:
-      - "80:80"
+      - 3000:3000
+      - 4173:4173
+    volumes:
+      - .:/app
+    command: [ "npm", "run", "dev" ]
+    tty: true
   server:
-    build:
-      context: ./
-      dockerfile: server.Dockerfile
+    image: node:16.15-alpine3.14
+    working_dir: /app/server
     ports:
-      - "8081:8081"
+      - 8081:8081
+    volumes:
+      - .:/app
+    command: [ "npm", "run", "build+start" ]

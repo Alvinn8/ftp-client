@@ -1,16 +1,16 @@
-FROM node:12 AS build
+FROM node:16.15-alpine3.14 AS build
 
-WORKDIR /app
-COPY package*.json .
+WORKDIR /app/server
+COPY package*.json ./
 RUN npm install --only=dev
-COPY . .
-RUN npm run build:server
+COPY . /app/
+RUN npm run build
 
 FROM node:12
 WORKDIR /app
-COPY package*.json .
+COPY ./server/package*.json ./
 RUN npm install --only=prod
-COPY --from=build app/build/server .
+COPY --from=build app/server/bundle.js ./
 ENV PORT=8081
 EXPOSE 8081
-CMD [ "node", "server/src/index.js" ]
+CMD [ "node", "bundle.js" ]

@@ -1,3 +1,4 @@
+import { ungzip as pakoUngzip } from "pako";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import Dialog from "../../Dialog";
@@ -5,7 +6,6 @@ import FolderEntry from "../../folder/FolderEntry";
 import Priority from "../../ftp/Priority";
 import { readNbt, writeNbt } from "../../nbt/nbt";
 import NbtData, { BedrockEdition, BedrockLevelDat } from "../../nbt/NbtData";
-import { ensurePakoScriptIsLoaded, joinPath } from "../../utils";
 import { FileType, getFileType } from "../FileFormats";
 import { app } from "../index";
 import { addMessage } from "../messages";
@@ -270,10 +270,7 @@ function confirmOpenGzip(folderEntry: FolderEntry): Promise<boolean> {
  * @returns The ungizpped output blob.
  */
 async function ungzip(blob: Blob): Promise<Blob> {
-    await ensurePakoScriptIsLoaded();
-
     const input = await blob.arrayBuffer();
-    // @ts-ignore
-    const output: Uint8Array = await pako.ungzip(input);
+    const output: Uint8Array = pakoUngzip(input);
     return new Blob([output]);
 }
