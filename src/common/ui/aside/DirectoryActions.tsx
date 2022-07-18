@@ -3,7 +3,7 @@ import Dialog from "../../Dialog";
 import Priority from "../../ftp/Priority";
 import { directoryUpload, fileUpload, setZipUploadMode } from "../../upload/upload";
 import { joinPath } from "../../utils";
-import { app } from "../index";
+import { getApp } from "../App";
 
 interface DirectoryActionsProps {
     workdir: string;
@@ -26,8 +26,8 @@ export default class DirectoryActions extends React.Component<DirectoryActionsPr
 
     mkdir() {
         Dialog.prompt("New Folder", "Enter the name of the new folder", "OK", "", async name => {
-            await app.state.session.mkdir(Priority.QUICK, joinPath(this.props.workdir, name));
-            app.refresh();
+            await getApp().state.session.mkdir(Priority.QUICK, joinPath(this.props.workdir, name));
+            getApp().refresh();
         });
     }
 

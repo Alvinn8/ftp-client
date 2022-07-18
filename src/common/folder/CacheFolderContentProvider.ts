@@ -1,4 +1,4 @@
-import { app } from "../ui/index";
+import { getApp } from "../ui/App";
 import FolderContentProvider from "./FolderContentProvider";
 import FolderEntry from "./FolderEntry";
 import NotCachedError from "./NotCachedError";
@@ -13,7 +13,7 @@ import NotCachedError from "./NotCachedError";
  */
 export default class CacheFolderContentProvider implements FolderContentProvider {
     async getFolderEntries(_priority: number, path: string): Promise<FolderEntry[]> {
-        const session = app.state.session;
+        const session = getApp().state.session;
         if (session != null) {
             const cacheData = session.cache[path];
             if (cacheData != null) {

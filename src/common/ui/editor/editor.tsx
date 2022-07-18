@@ -7,7 +7,7 @@ import Priority from "../../ftp/Priority";
 import { readNbt, writeNbt } from "../../nbt/nbt";
 import NbtData, { BedrockEdition, BedrockLevelDat } from "../../nbt/NbtData";
 import { FileType, getFileType } from "../FileFormats";
-import { app } from "../index";
+import { getApp } from "../App";
 import { addMessage } from "../messages";
 import ImageEditor from "./ImageEditor";
 import NbtEditor from "./nbt/NbtEditor";
@@ -123,7 +123,7 @@ export async function openTextEditor(folderEntry: FolderEntry) {
         const text: string = wind.editor.getValue();
 
         const blob = new Blob([text]);
-        await app.state.session.upload(Priority.QUICK, blob, absolutePath);
+        await getApp().state.session.upload(Priority.QUICK, blob, absolutePath);
 
         // @ts-ignore
         wind.saveFinished();
@@ -188,11 +188,10 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
     if (allowSaving) {
         const absolutePath = folderEntry.path + "_ftp-client_nbt";
         wind["save"] = async function() {
-            // @ts-ignore
-            const connection = await app.state.session.getConnection();
+            const session = await getApp().state.session;
     
             const blob = await writeNbt(nbt);
-            await connection.upload(blob, absolutePath);
+            await session.upload(Priority.QUICK, blob, absolutePath);
     
             // @ts-ignore
             wind.saveFinished();
@@ -237,7 +236,7 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
     const isgzipped = folderEntry.name.endsWith(".gz");
     if (isgzipped && !await confirmOpenGzip(folderEntry)) return null;
 
-    let blob = await app.state.session.download(Priority.QUICK, folderEntry.path);
+    let blob = await getApp().state.session.download(Priority.QUICK, folderEntry.path);
     if (isgzipped) {
         blob = await ungzip(blob);
         return {

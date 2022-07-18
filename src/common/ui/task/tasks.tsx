@@ -1,6 +1,6 @@
 import * as React from "react";
 import Task from "../../task/Task";
-import { app } from "../index";
+import { getApp } from "../App";
 import { addMessage } from "../messages";
 import TaskComponent from "./TaskComponent";
 
@@ -13,16 +13,18 @@ interface TasksState {
  * <p>
  * Only one task can run at once.
  * <p>
- * Access this using {@code app.tasks}.
+ * Access this using {@code getApp().tasks}.
  */
 export default class Tasks extends React.Component<{}, TasksState> {
     state = {
         task: null
     };
 
+    private task: Task;
+
     constructor(props) {
         super(props);
-        app.tasks = this;
+        getApp().tasks = this;
     }
     
     /**
@@ -30,7 +32,7 @@ export default class Tasks extends React.Component<{}, TasksState> {
      * @returns Returns {@code true} if a task is running, otherwise {@code false}.
      */
     hasTask(): boolean {
-        return this.state.task != null;
+        return this.task != null;
     }
 
     /**
@@ -57,9 +59,13 @@ export default class Tasks extends React.Component<{}, TasksState> {
      * @throws {Error} if a task is already running.
      */
     setTask(task: Task) {
-        if (this.hasTask()) throw new Error("A different task is already running!");
+        if (this.hasTask()) {
+            console.error(this.getTask().title + " was running but tried to start "+ task.title);
+            throw new Error("A different task is already running!");
+        }
         console.log("Setting the task to " + task.title);
 
+        this.task = task;
         this.setState({
             task: task
         });
@@ -72,8 +78,9 @@ export default class Tasks extends React.Component<{}, TasksState> {
      * @throws {Error} if the specified task is not the running task.
      */
     finishTask(task: Task) {
-        if (this.state.task != task) throw new Error("Tried to finish a task that isn't the current task!");
+        if (this.task != task) throw new Error("Tried to finish a task that isn't the current task!");
         console.log("Finishing task");
+        this.task = null;
         this.setState({
             task: null
         });
@@ -85,7 +92,7 @@ export default class Tasks extends React.Component<{}, TasksState> {
      * @returns The current task or null.
      */
     getTask(): Task | null {
-        return this.state.task;
+        return this.task;
     }
 
     render() {

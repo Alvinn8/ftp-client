@@ -1,6 +1,6 @@
 import FolderContentProvider from "./FolderContentProvider";
 import FolderEntry from "./FolderEntry";
-import { app } from "../ui/index";
+import { getApp } from "../ui/App";
 
 /**
  * An implementation of {@link FolderContentProvider} that fetches the folder
@@ -8,11 +8,9 @@ import { app } from "../ui/index";
  */
 export default class FTPFolderContentProvider implements FolderContentProvider {
     async getFolderEntries(priority: number, path: string): Promise<FolderEntry[]> {
-        const list = await app.state.session.list(priority, path);
-        const session = app.state.session;
-        if (session != null) {
-            session.cache[path] = list;
-        }
+        const session = getApp().state.session;
+        const list = await session.list(priority, path);
+        session.cache[path] = list;
         return list;
     }
 }

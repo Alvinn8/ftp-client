@@ -1,4 +1,4 @@
-import { app } from "../ui/index";
+import { getApp } from "../ui/App";
 import TaskComponent from "../ui/task/TaskComponent";
 
 /**
@@ -22,7 +22,7 @@ export default class Task {
 
 
     public complete() {
-        app.tasks.finishTask(this);
+        getApp().tasks.finishTask(this);
     }
 
     public progress(value: number, max: number, body?: string) {

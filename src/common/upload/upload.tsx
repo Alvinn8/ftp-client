@@ -7,10 +7,9 @@ import * as React from "react";
 import Dialog from "../Dialog";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import DirectoryPath from "../ftp/DirectoryPath";
-import FTPConnection from "../ftp/FTPConnection";
 import Priority from "../ftp/Priority";
 import Task from "../task/Task";
-import { app } from "../ui/index";
+import { getApp } from "../ui/App";
 import { joinPath } from "../utils";
 import Directory from "./Directory";
 
@@ -29,7 +28,8 @@ export namespace UploadSupport {
      * Whether folders can be drag and drop'ed with the drop event.
      */
     export const dropFolderUpload =
-       "items" in DataTransfer.prototype
+        "DataTransfer" in window
+    && "items" in DataTransfer.prototype
     && "DataTransferItemList" in window
     && "DataTransferItem" in window
     && "webkitGetAsEntry" in DataTransferItem.prototype;
@@ -41,30 +41,30 @@ export namespace UploadSupport {
  * @param uploads The contents to upload.
  */
 export async function upload(uploads: Directory) {
-    if (!app.tasks.requestNewTask()) return;
+    if (!getApp().tasks.requestNewTask()) return;
 
     const hasDirectories = Object.keys(uploads.directories).length > 0;
 
     if (!hasDirectories && uploads.files.length == 1) {
         const task = new Task("Uploading " + uploads.files[0].name, "", false);
-        app.tasks.setTask(task);
+        getApp().tasks.setTask(task);
         const file = uploads.files[0];
-        await uploadFile(file, joinPath(app.state.workdir, file.name));
+        await uploadFile(file, joinPath(getApp().state.workdir, file.name));
         task.complete();
-        app.refresh();
+        getApp().refresh();
     } else {
         // Count the files for the task progress
         const totalCount = countFilesRecursively(uploads);
 
         const task = new Task("Uploading " + totalCount + " files", "", true);
-        app.tasks.setTask(task);
+        getApp().tasks.setTask(task);
 
         // Do the uploading
-        const path = new DirectoryPath(app.state.workdir);
+        const path = new DirectoryPath(getApp().state.workdir);
         await uploadDirectory(uploads, task, path, 0, totalCount);
 
         // Refresh the current directory and clear cache
-        app.refresh(true);
+        getApp().refresh(true);
         
         // Complete the task
         task.complete();
@@ -105,7 +105,7 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
         // If not, create the folder
         if (!folderExists) {
             task.progress(uploadCount, totalCount, "Creating " + subdirName);
-            await app.state.session.mkdir(Priority.LARGE_TASK, joinPath(path.get(), subdirName));
+            await getApp().state.session.mkdir(Priority.LARGE_TASK, joinPath(path.get(), subdirName));
         }
         path.cd(subdirName);
         // Upload the folder contents recursively
@@ -129,7 +129,7 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
  */
 async function uploadFile(file: File, path: string) {
     console.log("Uploading " + file.name);
-    await app.state.session.upload(Priority.LARGE_TASK, file, path);
+    await getApp().state.session.upload(Priority.LARGE_TASK, file, path);
 }
 
 /**

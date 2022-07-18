@@ -1,7 +1,7 @@
 import * as React from "react";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import FTPProfile from "../ftp/FTPProfile";
-import { app, State } from "./index";
+import { getApp, State } from "./App";
 
 let url = new URL(location.href);
 
@@ -37,25 +37,25 @@ export default class ConnectForm extends React.Component {
         const connection = new WebsocketFTPConnection();
         session.setConnection(connection);
 
-        app.setState({
-            ...app.state,
+        getApp().setState({
+            ...getApp().state,
             session: session,
             state: State.CONNECTING_TO_SERVER
         });
         await connection.connectToWebsocket();
-        app.setState({
-            ...app.state,
+        getApp().setState({
+            ...getApp().state,
             state: State.CONNECTING_TO_FTP
         });
         await connection.connect(host, port, username, password, secure);
-        app.setState({
-            ...app.state,
+        getApp().setState({
+            ...getApp().state,
             state: State.CONNECTED
         });
     } catch(e) {
         console.error(e);
-        app.setState({
-            ...app.state,
+        getApp().setState({
+            ...getApp().state,
             state: State.LOGIN
         });
     }

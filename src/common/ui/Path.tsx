@@ -16,7 +16,13 @@ export default class Path extends React.Component<PathProps, {}> {
                     <button onClick={this.props.onCdupClick} className="btn btn-primary">
                         <i className="bi bi-arrow-left-square"></i>
                     </button>
-                    <input type="text" readOnly value={this.props.workdir} className="form-control bg-white" />
+                    <input
+                        type="text"
+                        readOnly
+                        value={this.props.workdir}
+                        className="form-control bg-white"
+                        aria-label="Current folder path"
+                    />
                 </div>
             </div>
         );
