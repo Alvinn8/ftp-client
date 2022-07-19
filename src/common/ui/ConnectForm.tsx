@@ -1,7 +1,8 @@
 import * as React from "react";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import FTPProfile from "../ftp/FTPProfile";
-import { getApp, State } from "./App";
+import FTPSession from "../ftp/FTPSession";
+import { State } from "./App";
 
 let url = new URL(location.href);
 
@@ -19,12 +20,18 @@ function getBoolean(id): boolean {
     return (document.getElementById(id) as HTMLInputElement).checked;
 }
 
+interface ConnectFormProps {
+    onProgress: (state: State) => void;
+    onConnect: (session: FTPSession) => void;
+    onError: (e: Error) => void;
+}
+
 /**
  * A component for the form where the user enteres the FTP host and credentials.
  * <p>
  * Also handles connecting and extracting credentials from the URL.
  */
-export default class ConnectForm extends React.Component {
+export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
     async connect() {
         const host = getString("host");
         const port = parseInt(getString("port"));
@@ -37,27 +44,14 @@ export default class ConnectForm extends React.Component {
         const connection = new WebsocketFTPConnection();
         session.setConnection(connection);
 
-        getApp().setState({
-            ...getApp().state,
-            session: session,
-            state: State.CONNECTING_TO_SERVER
-        });
+        this.props.onProgress(State.CONNECTING_TO_SERVER);
         await connection.connectToWebsocket();
-        getApp().setState({
-            ...getApp().state,
-            state: State.CONNECTING_TO_FTP
-        });
+        this.props.onProgress(State.CONNECTING_TO_FTP);
         await connection.connect(host, port, username, password, secure);
-        getApp().setState({
-            ...getApp().state,
-            state: State.CONNECTED
-        });
+        this.props.onConnect(session);
     } catch(e) {
         console.error(e);
-        getApp().setState({
-            ...getApp().state,
-            state: State.LOGIN
-        });
+        this.props.onError(e);
     }
 
     componentDidMount() {

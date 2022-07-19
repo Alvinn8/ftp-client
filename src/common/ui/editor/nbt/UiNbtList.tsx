@@ -20,10 +20,10 @@ export default class UiNbtList extends React.Component<UiNbtListProps, UiNbtList
     render(): React.ReactNode {
         let emptyText;
         if (this.props.tag.data.length <= 0) {
-            emptyText = <span style={{ "font-style": "italic" }}>empty list</span>;
+            emptyText = <span style={{ fontStyle: "italic" }}>empty list</span>;
         }
         return (
-            <div className="text-nowrap" style={{ "margin-left": "-24px" }}>
+            <div className="text-nowrap" style={{ marginLeft: "-24px" }}>
                 <div className="d-inline-block p-1 arrow" onClick={this.toggleOpen.bind(this)}>
                     <i className={"bi bi-chevron-" + (this.state.open ? "down" : "right")}></i>
                 </div>
@@ -47,10 +47,10 @@ export default class UiNbtList extends React.Component<UiNbtListProps, UiNbtList
                         <>
                             <span>: [ </span>
                             {this.props.tag.data.map((tag, index) => (
-                                <>
+                                <React.Fragment key={index}>
                                     {index > 0 && ", "}
-                                    <UiNbtTag tag={tag} key={index} root={false} />
-                                </>
+                                    <UiNbtTag tag={tag} root={false} />
+                                </React.Fragment>
                             ))}
                             <span> ] </span>
                         </>
@@ -58,8 +58,8 @@ export default class UiNbtList extends React.Component<UiNbtListProps, UiNbtList
                 {this.state.open && (
                     <div className="ms-4">
                         {this.props.tag.data.map((tag, index) => (
-                            <div className="ms-3">
-                                <UiNbtTag tag={tag} key={index} root={false}>
+                            <div className="ms-3" key={index}>
+                                <UiNbtTag tag={tag} root={false}>
                                     <UiNbtIndex index={index} />
                                 </UiNbtTag>
                             </div>

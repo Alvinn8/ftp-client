@@ -4,7 +4,7 @@ import ConnectForm from "./ConnectForm";
 import FolderContent from "./FolderContent";
 import Aside from "./aside/Aside";
 import Messages from "./messages";
-import Tasks from "./task/tasks";
+import Tasks from "./task/Tasks";
 import Path from "./Path";
 import Actions from "./Actions";
 import FolderExplorer from "./left/FolderExplorer";
@@ -76,8 +76,6 @@ class MobileTab {
 }
 
 export class App extends React.Component<AppProps, AppState> {
-    public tasks: Tasks;
-    
     constructor(props) {
         super(props);
         if (app != null) {
@@ -132,14 +130,14 @@ export class App extends React.Component<AppProps, AppState> {
 
     cd(path: string) {
         this.setState({
-            workdir:  new DirectoryPath(this.state.workdir).cd(path).get(),
+            workdir: new DirectoryPath(this.state.workdir).cd(path).get(),
             selection: []
         });
     }
 
     cdup() {
         this.setState({
-            workdir:  new DirectoryPath(this.state.workdir).cdup().get(),
+            workdir: new DirectoryPath(this.state.workdir).cdup().get(),
             selection: []
         });
     }
@@ -167,7 +165,7 @@ export class App extends React.Component<AppProps, AppState> {
             selection: []
         });
     }
-    
+
     refresh(clearCacheDeep = false) {
         if (clearCacheDeep) {
             this.state.session.clearCacheFor(this.state.workdir);
@@ -188,10 +186,16 @@ export class App extends React.Component<AppProps, AppState> {
 
         return (
             <div>
-                { this.state.state == State.LOGIN && <ConnectForm />}
-                { this.state.state == State.CONNECTING_TO_SERVER && <p>Connecting to ftp-client...</p>}
-                { this.state.state == State.CONNECTING_TO_FTP && <p>Connecting...</p>}
-                { this.state.state == State.CONNECTED &&
+                {this.state.state == State.LOGIN && (
+                    <ConnectForm
+                        onProgress={stage => this.setState({ state: stage })}
+                        onConnect={session => this.setState({ session, state: State.CONNECTED })}
+                        onError={e => this.setState({ state: State.LOGIN })}
+                    />
+                )}
+                {this.state.state == State.CONNECTING_TO_SERVER && <p>Connecting to ftp-client...</p>}
+                {this.state.state == State.CONNECTING_TO_FTP && <p>Connecting...</p>}
+                {this.state.state == State.CONNECTED &&
                     <div id="grid">
                         <header>
                             <h1>ftp-client</h1>
@@ -208,7 +212,7 @@ export class App extends React.Component<AppProps, AppState> {
                             />
                         </div>
 
-                        { /* Desktop */ }
+                        { /* Desktop */}
                         {this.state.size == DeviceSize.DEKSTOP && (
                             <>
                                 <div id="file-explorer" style={{ width: "20vw" }}>
@@ -222,7 +226,7 @@ export class App extends React.Component<AppProps, AppState> {
                             </>
                         )}
 
-                        { /* Mobile */ }
+                        { /* Mobile */}
                         {this.state.size == DeviceSize.MOBILE && (
                             <>
                                 <div id="mobile-current-tab" className="overflow-auto">

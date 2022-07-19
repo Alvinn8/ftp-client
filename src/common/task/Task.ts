@@ -1,5 +1,5 @@
-import { getApp } from "../ui/App";
-import TaskComponent from "../ui/task/TaskComponent";
+import { EventEmitter } from "eventemitter3";
+import TaskManager from "./TaskManager";
 
 /**
  * A task that is currently running.
@@ -8,30 +8,23 @@ import TaskComponent from "../ui/task/TaskComponent";
  * 
  * @see Tasks
  */
-export default class Task {
+export default class Task extends EventEmitter {
     public readonly title: string;
     public readonly body: string;
     public readonly hasProgressBar: boolean;
-    public component: TaskComponent;
 
     constructor(title: string, body: string, hasProgressBar: boolean) {
+        super();
         this.title = title;
         this.body = body;
         this.hasProgressBar = hasProgressBar;
     }
 
-
     public complete() {
-        getApp().tasks.finishTask(this);
+        TaskManager.finishTask(this);
     }
 
     public progress(value: number, max: number, body?: string) {
-        if (this.component != null) {
-            this.component.setState({
-                value: value,
-                max: max,
-                bodyOverride: body
-            });
-        }
+        this.emit("progress", value, max, body);
     }
 }

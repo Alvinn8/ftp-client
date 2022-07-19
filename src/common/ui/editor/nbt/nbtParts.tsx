@@ -16,7 +16,7 @@ export function UiNbtNumberComponent(props: { value: string, type: string }) {
 }
 
 function UiNbtNumberValue(props: { value: string }) {
-    return <span style={{ "color": "#efb930", "font-weight": 600 }}>{props.value}</span>;
+    return <span style={{ "color": "#efb930", "fontWeight": 600 }}>{props.value}</span>;
 }
 
 function UiNbtNumberType(props: { type: string }) {
@@ -37,7 +37,7 @@ export function UiNbtString(props: { value: string }) {
         <span>"</span>
         <span style={{ "color": "#4bb54b" }}>{escapedString}</span>
         {suffix != null && (
-            <span style={{ "color": "#4bb54b", "font-style": "italic" }}>{suffix}</span>
+            <span style={{ "color": "#4bb54b", "fontStyle": "italic" }}>{suffix}</span>
         )}
         <span>"</span>
     </>;

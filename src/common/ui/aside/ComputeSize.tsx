@@ -1,6 +1,7 @@
 import * as React from "react";
 import { computeSize } from "../../contextmenu/actions";
 import FolderEntry from "../../folder/FolderEntry";
+import TaskManager from "../../task/TaskManager";
 import { getApp } from "../App";
 import Size from "../Size";
 
@@ -39,7 +40,7 @@ export default class CompuseSize extends React.Component<CompuseSizeProps, Compu
     }
 
     async handleClick() {
-        if (!getApp().tasks.requestNewTask()) return;
+        if (!TaskManager.requestNewTask()) return;
 
         this.setState({
             computing: true,

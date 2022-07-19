@@ -9,6 +9,7 @@ import FolderContentProviders from "../folder/FolderContentProviders";
 import DirectoryPath from "../ftp/DirectoryPath";
 import Priority from "../ftp/Priority";
 import Task from "../task/Task";
+import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
 import { joinPath } from "../utils";
 import Directory from "./Directory";
@@ -41,13 +42,13 @@ export namespace UploadSupport {
  * @param uploads The contents to upload.
  */
 export async function upload(uploads: Directory) {
-    if (!getApp().tasks.requestNewTask()) return;
+    if (!TaskManager.requestNewTask()) return;
 
     const hasDirectories = Object.keys(uploads.directories).length > 0;
 
     if (!hasDirectories && uploads.files.length == 1) {
         const task = new Task("Uploading " + uploads.files[0].name, "", false);
-        getApp().tasks.setTask(task);
+        TaskManager.setTask(task);
         const file = uploads.files[0];
         await uploadFile(file, joinPath(getApp().state.workdir, file.name));
         task.complete();
@@ -57,7 +58,7 @@ export async function upload(uploads: Directory) {
         const totalCount = countFilesRecursively(uploads);
 
         const task = new Task("Uploading " + totalCount + " files", "", true);
-        getApp().tasks.setTask(task);
+        TaskManager.setTask(task);
 
         // Do the uploading
         const path = new DirectoryPath(getApp().state.workdir);

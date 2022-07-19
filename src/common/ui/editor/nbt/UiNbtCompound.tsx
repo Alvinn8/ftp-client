@@ -23,7 +23,7 @@ export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, 
 
     render() {
         return (
-            <div className="text-nowrap" style={{ "margin-left": "-24px" }}>
+            <div className="text-nowrap" style={{ marginLeft: "-24px" }}>
                 <div className="d-inline-block p-1 arrow" onClick={this.toggleOpen.bind(this)}>
                     <i className={"bi bi-chevron-" + (this.state.open ? "down" : "right")}></i>
                 </div>
@@ -35,8 +35,8 @@ export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, 
                 {this.state.open && (
                     <div className="ms-4">
                         {this.props.nbtCompound.getKeys().map((key, index) => (
-                            <div className="ms-3">
-                                <UiNbtTag tag={this.props.nbtCompound.get(key)} key={index} root={this.props.root && key == "Data"}>
+                            <div className="ms-3" key={key}>
+                                <UiNbtTag tag={this.props.nbtCompound.get(key)} root={this.props.root && key == "Data"}>
                                     <UiNbtKey name={key} />
                                 </UiNbtTag>
                             </div>

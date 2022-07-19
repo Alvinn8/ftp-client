@@ -1,7 +1,6 @@
 import * as React from "react";
 import Task from "../../task/Task";
-import { getApp } from "../App";
-import { addMessage } from "../messages";
+import TaskManager from "../../task/TaskManager";
 import TaskComponent from "./TaskComponent";
 
 interface TasksState {
@@ -9,90 +8,30 @@ interface TasksState {
 }
 
 /**
- * Displays and handles the running task.
+ * Displays the running task.
  * <p>
  * Only one task can run at once.
- * <p>
- * Access this using {@code getApp().tasks}.
  */
 export default class Tasks extends React.Component<{}, TasksState> {
     state = {
         task: null
     };
 
-    private task: Task;
-
     constructor(props) {
         super(props);
-        getApp().tasks = this;
-    }
-    
-    /**
-     * Check if a task is currently running.
-     * @returns Returns {@code true} if a task is running, otherwise {@code false}.
-     */
-    hasTask(): boolean {
-        return this.task != null;
+        this.handleTaskChange = this.handleTaskChange.bind(this);
     }
 
-    /**
-     * Check if a new task can be started, and if not, display a message to the user.
-     * 
-     * @returns Returns {@code false} if the task can't be started.
-     */
-    requestNewTask(): boolean {
-        if (this.hasTask()) {
-            addMessage({
-                color: "warning",
-                message: "Wait for the other tasks to finish before starting a new operation.",
-                stayForMillis: 5000
-            });
-            return false;
-        }
-        return true;
+    componentDidMount() {
+        TaskManager.on("change", this.handleTaskChange);
     }
 
-    /**
-     * Set the current running task.
-     *
-     * @param task The task to set.
-     * @throws {Error} if a task is already running.
-     */
-    setTask(task: Task) {
-        if (this.hasTask()) {
-            console.error(this.getTask().title + " was running but tried to start "+ task.title);
-            throw new Error("A different task is already running!");
-        }
-        console.log("Setting the task to " + task.title);
-
-        this.task = task;
-        this.setState({
-            task: task
-        });
+    componentWillUnmount() {
+        TaskManager.off("change", this.handleTaskChange);
     }
 
-    /**
-     * Finish the current task.
-     * 
-     * @param task The task to finish.
-     * @throws {Error} if the specified task is not the running task.
-     */
-    finishTask(task: Task) {
-        if (this.task != task) throw new Error("Tried to finish a task that isn't the current task!");
-        console.log("Finishing task");
-        this.task = null;
-        this.setState({
-            task: null
-        });
-    }
-
-    /**
-     * Get the current task, or null if none is running.
-     *
-     * @returns The current task or null.
-     */
-    getTask(): Task | null {
-        return this.task;
+    handleTaskChange(task: Task) {
+        this.setState({ task });
     }
 
     render() {

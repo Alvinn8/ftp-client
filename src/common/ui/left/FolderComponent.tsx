@@ -2,6 +2,7 @@ import * as React from "react";
 import FolderContentProviders from "../../folder/FolderContentProviders";
 import FolderEntry from "../../folder/FolderEntry";
 import Priority from "../../ftp/Priority";
+import TaskManager from "../../task/TaskManager";
 import { getApp } from "../App";
 
 interface FolderComponentProps {
@@ -82,7 +83,7 @@ export default class FolderComponent extends React.Component<FolderComponentProp
     }
 
     async getContent() {
-        if (!getApp().tasks.requestNewTask()) {
+        if (!TaskManager.requestNewTask()) {
             this.setState({
                 open: false,
                 fetchingContent: true

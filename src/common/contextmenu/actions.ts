@@ -6,6 +6,7 @@ import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
 import Priority from "../ftp/Priority";
 import Task from "../task/Task";
+import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
 
 export async function downloadFolderEntry(entry: FolderEntry) {
@@ -47,12 +48,12 @@ function getDirectoryPath(entries: FolderEntry[]) {
 }
 
 export async function deleteFolderEntries(entries: FolderEntry[]) {
-    if (!getApp().tasks.requestNewTask()) return;
+    if (!TaskManager.requestNewTask()) return;
 
     
     // Counting can sometimes take a bit, start a task.
     const countTask = new Task("Delete", "Counting files to delete", false);
-    getApp().tasks.setTask(countTask);
+    TaskManager.setTask(countTask);
     const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries));
     countTask.complete();
 
@@ -63,7 +64,7 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
     
     // Delete
     const task = new Task("Deleting " + totalCount + " file" + (totalCount == 1 ? "" : "s"), "", true);
-    getApp().tasks.setTask(task);
+    TaskManager.setTask(task);
     const path = getDirectoryPath(entries);
     await deleteRecursively(entries, task, path, 0, totalCount);
     task.complete();
@@ -108,17 +109,17 @@ async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath
 }
 
 export async function downloadAsZip(entries: FolderEntry[]) {
-    if (!getApp().tasks.requestNewTask()) return;
+    if (!TaskManager.requestNewTask()) return;
 
     // Counting can sometimes take a bit, start a task.
     const countTask = new Task("Download", "Counting files to download", false);
-    getApp().tasks.setTask(countTask);
+    TaskManager.setTask(countTask);
     const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries));
     countTask.complete();
 
     // Download
     const task = new Task("Downloading " + totalCount + " files", "", true);
-    getApp().tasks.setTask(task);
+    TaskManager.setTask(task);
     const zip = new JSZip();
     const path = getDirectoryPath(entries);
     await downloadRecursively(entries, zip, task, path, 0, totalCount);
@@ -151,10 +152,10 @@ async function downloadRecursively(entries: FolderEntry[], zip: any, task: Task,
 }
 
 export async function computeSize(entries: FolderEntry[]): Promise<number> {
-    if (!getApp().tasks.requestNewTask()) return;
+    if (!TaskManager.requestNewTask()) return;
 
     const task = new Task("Computing size", "", false);
-    getApp().tasks.setTask(task);
+    TaskManager.setTask(task);
     const path = getDirectoryPath(entries);
     const size = await computeSizeRecursively(entries, task, path);
     task.complete();

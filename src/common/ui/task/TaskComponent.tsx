@@ -20,7 +20,23 @@ export default class TaskComponent extends React.Component<TaskProps, TaskState>
 
     constructor(props) {
         super(props);
-        this.props.task.component = this;
+        this.handleProgress = this.handleProgress.bind(this);
+    }
+
+    componentDidMount() {
+        this.props.task.on("progress", this.handleProgress);
+    }
+
+    componentWillUnmount() {
+        this.props.task.off("progress", this.handleProgress);
+    }
+
+    handleProgress(value: number, max: number, body?: string) {
+        this.setState({
+            value,
+            max,
+            bodyOverride: body
+        });
     }
 
     render() {
@@ -35,7 +51,7 @@ export default class TaskComponent extends React.Component<TaskProps, TaskState>
                     <div className="progress">
                         <div className="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
                             aria-valuenow={this.state.value} aria-valuemin={0} aria-valuemax={this.state.max}
-                            style={{width: (this.state.value / this.state.max) * 100 + "%"}}></div>
+                            style={{ width: (this.state.value / this.state.max) * 100 + "%" }}></div>
                     </div>
                 )}
             </div>
