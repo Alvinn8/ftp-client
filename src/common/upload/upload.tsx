@@ -197,8 +197,10 @@ async function getDropEventFiles(event: React.DragEvent | DragEvent): Promise<Di
     for (const item of event.dataTransfer.items) {
         if (item.kind == "file") {
             const entry = item.webkitGetAsEntry();
-            const promise = handleItem(entry, root);
-            promises.push(promise);
+            if (entry) {
+                const promise = handleItem(entry, root);
+                promises.push(promise);
+            }
         }
     }
     await Promise.all(promises);

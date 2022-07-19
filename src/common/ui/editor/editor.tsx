@@ -95,7 +95,9 @@ export async function openTextEditor(folderEntry: FolderEntry) {
         reader.onload = function () {
             resolve(reader.result as string);
         };
-        reader.onerror = reject;
+        reader.onerror = function () {
+            reject("Failed to read file.");
+        };
         reader.readAsText(fileInfo.blob);
     });
     const absolutePath = folderEntry.path;

@@ -124,7 +124,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                             message: data.message,
                             stayForMillis: 10000
                         });
-                        reject(data);
+                        reject(new Error("Error from server: " + data.message));
                     }
                     else resolve(data);
                 }
@@ -204,7 +204,9 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 const dataURL = (reader.result as string);
                 resolve(dataURL.substring(dataURL.indexOf(",") + 1));
             }
-            reader.onerror = reject;
+            reader.onerror = function () {
+                reject("Failed to read file to upload.");
+            };
             reader.readAsDataURL(blob);
         }));
 
