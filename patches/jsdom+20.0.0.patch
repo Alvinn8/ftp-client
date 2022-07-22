@@ -1,0 +1,13 @@
+diff --git a/node_modules/jsdom/lib/jsdom/living/file-api/FileReader-impl.js b/node_modules/jsdom/lib/jsdom/living/file-api/FileReader-impl.js
+index 9ade893..539b469 100644
+--- a/node_modules/jsdom/lib/jsdom/living/file-api/FileReader-impl.js
++++ b/node_modules/jsdom/lib/jsdom/living/file-api/FileReader-impl.js
+@@ -114,7 +114,7 @@ class FileReaderImpl extends EventTargetImpl {
+           }
+           case "buffer":
+           default: {
+-            this.result = copyToArrayBufferInNewRealm(data, this._globalObject);
++            this.result = new Uint8Array(data).buffer;
+             break;
+           }
+         }
