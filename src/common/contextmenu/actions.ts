@@ -1,4 +1,4 @@
-import * as JSZip from "jszip";
+import JSZip from "jszip";
 import Dialog from "../Dialog";
 import download from "../download";
 import FolderContentProviders from "../folder/FolderContentProviders";
@@ -132,7 +132,7 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     task.complete();
 }
 
-async function downloadRecursively(entries: FolderEntry[], zip: any, task: Task, path: DirectoryPath, downloadCount: number, totalCount: number): Promise<number> {
+async function downloadRecursively(entries: FolderEntry[], zip: JSZip, task: Task, path: DirectoryPath, downloadCount: number, totalCount: number): Promise<number> {
     for (const entry of entries) {
         if (entry.isFile()) {
             // A file, download it and place in the zip

@@ -2,7 +2,7 @@
  * File for handleing file and folder uploads in different ways.
  */
 
-import * as JSZip from "jszip";
+import JSZip from "jszip";
 import * as React from "react";
 import Dialog from "../Dialog";
 import FolderContentProviders from "../folder/FolderContentProviders";
