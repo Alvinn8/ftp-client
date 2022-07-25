@@ -124,7 +124,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                             message: data.message,
                             stayForMillis: 10000
                         });
-                        reject(new Error("Error from server: " + data.message));
+                        reject(new Error(data.message));
                     }
                     else resolve(data);
                 }

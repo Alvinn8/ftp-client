@@ -89,7 +89,7 @@ server.on("connection", function(ws) {
                             promise.catch((err) => {
                                 const response: ErrorReply = {
                                     action: "error",
-                                    message: err instanceof FTPError ? err.toString() : ""
+                                    message: err instanceof FTPError ? err.toString() : "Internal server error"
                                 };
                                 response["requestId"] = requestId;
                                 connection.sendJson(response);
