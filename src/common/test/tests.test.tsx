@@ -1,6 +1,6 @@
 import * as React from "react";
 import { afterEach, beforeEach, vi, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { getApp, App, DeviceSize } from "../ui/App";
 import FTPSession from "../ftp/FTPSession";
@@ -194,9 +194,11 @@ describe("ftp-client tests", () => {
 
     it("navigate to subfolder via folder explorer", async () => {
         await naviateToSubfolderTest(async () => {
-            const folderEntry = (await screen.findAllByText("test_folder")).find(e => !e.parentElement.classList.contains("folder-entry"));
-            expect(folderEntry).toBeInTheDocument();
-            await userEvent.click(folderEntry);
+            await waitForElementToBeRemoved(screen.getByText("Loading..."));
+            const folders = Array.from(document.getElementById("file-explorer").querySelectorAll("span"));
+            const folder = folders.find(el => el.textContent.includes("test_folder"));
+            expect(folder).toBeInTheDocument();
+            await userEvent.click(folder);
         });
     });
 
