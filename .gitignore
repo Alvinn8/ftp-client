@@ -3,3 +3,4 @@ node_modules
 dist
 *.code-workspace
 server/bundle.js
+.idea/
