@@ -1,3 +1,19 @@
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: var(--bs-dark);
+        color: var(--bs-light);
+    }
+
+    .folder-entry:hover {
+        background-color: gray !important;
+    }
+
+    .modal-content {
+        background-color: var(--bs-dark);
+        color: var(--bs-light);
+    }
+}
+
 body, html, #root, #root > div, #grid {
     height: 100%;
     width: 100%;
