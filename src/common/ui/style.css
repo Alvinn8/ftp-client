@@ -7,6 +7,23 @@ body {
     margin: 0px;
 }
 
+/* Enable darkmode in a Bootstrap Page */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: var(--bs-dark);
+        color: var(--bs-light);
+    }
+
+    .folder-entry:hover {
+        background-color: gray !important;
+    }
+
+    .modal-content {
+        background-color: var(--bs-dark);
+        color: var(--bs-light);
+    }
+}
+
 #grid {
     display: grid;
     /* Desktop */
