@@ -4,9 +4,9 @@ services:
     image: node:16.15-alpine3.14
     working_dir: /app
     ports:
-      - "3000:3000"   # dev
-      - "4173:4173"   # preview
-      - "51204:51204" # vitest ui
+      - 3000:3000   # dev
+      - 4173:4173   # preview
+      - 51204:51204 # vitest ui
     volumes:
       - .:/app
     command: [ "npm", "run", "dev" ]
@@ -15,7 +15,7 @@ services:
     image: node:16.15-alpine3.14
     working_dir: /app/server
     ports:
-      - "8081:8081"
+      - 8081:8081
     volumes:
       - .:/app
     command: [ "npm", "run", "build+start" ]
