@@ -12,6 +12,12 @@
             padding: 0;
             overflow: hidden;
         }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: var(--bs-dark);
+                color: var(--bs-light);
+            }
+        }
         #container {
             width: 100%;
             height: calc(100% - 50px);
@@ -27,7 +33,19 @@
         require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.20.0/min/vs' } });
 
         require(['vs/editor/editor.main'], function () {
-            window.editor = monaco.editor.create(document.getElementById('container'));
+            // Check if we are using dark mode
+            const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (isDarkMode) {
+                window.editor = monaco.editor.create(document.getElementById('container'), {
+                    theme: 'vs-dark'
+                });
+            } else {
+                window.editor = monaco.editor.create(
+                    document.getElementById('container')
+                );
+            }
+
 
             window.onresize = function () {
                 editor.layout();
