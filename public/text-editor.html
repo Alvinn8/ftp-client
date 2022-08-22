@@ -36,15 +36,9 @@
             // Check if we are using dark mode
             const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-            if (isDarkMode) {
-                window.editor = monaco.editor.create(document.getElementById('container'), {
-                    theme: 'vs-dark'
-                });
-            } else {
-                window.editor = monaco.editor.create(
-                    document.getElementById('container')
-                );
-            }
+            window.editor = monaco.editor.create(document.getElementById('container'), {
+                theme: isDarkMode ? 'vs-dark' : 'vs'
+            });
 
 
             window.onresize = function () {
