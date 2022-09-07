@@ -10,6 +10,7 @@ import Actions from "./Actions";
 import FolderExplorer from "./left/FolderExplorer";
 import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./style.css";
 

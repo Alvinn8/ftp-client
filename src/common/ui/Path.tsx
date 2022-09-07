@@ -20,7 +20,7 @@ export default class Path extends React.Component<PathProps, {}> {
                         type="text"
                         readOnly
                         value={this.props.workdir}
-                        className="form-control"
+                        className="form-control bg-white"
                         aria-label="Current folder path"
                     />
                 </div>
