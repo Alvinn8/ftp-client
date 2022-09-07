@@ -4,10 +4,6 @@
         color: var(--bs-light);
     }
 
-    .folder-entry:hover {
-        background-color: gray !important;
-    }
-
     .modal-content {
         background-color: var(--bs-dark);
         color: var(--bs-light);
@@ -115,6 +111,12 @@ header {
 
 .folder-entry:hover {
     background-color: #eee;
+}
+
+@media (prefers-color-scheme: dark) {
+    .folder-entry:hover {
+        background-color: #333;
+    }
 }
 
 .message-container {
