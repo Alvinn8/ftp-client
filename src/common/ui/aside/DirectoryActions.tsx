@@ -13,25 +13,15 @@ interface DirectoryActionsProps {
  * Actions for the current directory (create folder, upload). Shown on the Aside
  * when nothing is selected.
  */
-export default class DirectoryActions extends React.Component<DirectoryActionsProps, {}> {
-    render() {
-        return (
-            <div>
-                <button className="btn btn-primary" onClick={this.mkdir.bind(this)}>New Folder</button>
-                <button className="btn btn-info" onClick={this.upload.bind(this)}>Upload</button>
-                <p>You can also upload files and folders by dragging and dropping them.</p>
-            </div>
-        );
-    }
-
-    mkdir() {
+const DirectoryActions: React.FC<DirectoryActionsProps> = (props) => {
+    function mkdir() {
         Dialog.prompt("New Folder", "Enter the name of the new folder", "OK", "", async name => {
-            await getApp().state.session.mkdir(Priority.QUICK, joinPath(this.props.workdir, name));
+            await getApp().state.session.mkdir(Priority.QUICK, joinPath(props.workdir, name));
             getApp().refresh();
         });
     }
 
-    async upload() {
+    async function upload() {
         const choice = await Dialog.choose("Upload", "Do you want to upload files or folders?", [
             { id: "file", name: "Upload Files" },
             { id: "folder", name: "Upload Folders" },
@@ -48,4 +38,22 @@ export default class DirectoryActions extends React.Component<DirectoryActionsPr
             fileUpload.click();
         }
     }
-}
+
+    async function refresh() {
+        getApp().state.session.clearCache();
+        getApp().refresh();
+    }
+
+    return (
+        <div>
+            <button className="btn btn-primary m-2" onClick={mkdir}>New Folder</button>
+            <button className="btn btn-info m-2" onClick={upload}>Upload</button>
+            <p>You can also upload files and folders by dragging and dropping them.</p>
+            <button className="btn btn-secondary m-2" onClick={refresh}>
+                <i className="bi bi-arrow-clockwise"></i>
+                <span>&nbsp;Refresh</span>
+            </button>
+        </div>
+    );
+};
+export default DirectoryActions;
