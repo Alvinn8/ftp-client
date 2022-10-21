@@ -25,7 +25,8 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 main: resolve(__dirname, "index.html"),
-                monacoTextEditor: resolve(__dirname, "editor", "text", "monaco.html")
+                monacoTextEditor: resolve(__dirname, "editor", "text", "monaco.html"),
+                codemirrorTextEditor: resolve(__dirname, "editor", "text", "codemirror.html"),
             }
         }
     }

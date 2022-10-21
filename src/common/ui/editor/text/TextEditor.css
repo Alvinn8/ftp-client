@@ -5,13 +5,15 @@ html, body {
     padding: 0;
     overflow: hidden;
 }
+.text-editor-container {
+    width: 100%;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 1fr auto;
+}
 @media (prefers-color-scheme: dark) {
     body {
         background-color: var(--bs-dark);
         color: var(--bs-light);
     }
-}
-#editor {
-    width: 100%;
-    height: calc(100% - 50px);
 }

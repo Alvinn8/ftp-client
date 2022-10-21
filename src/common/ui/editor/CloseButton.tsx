@@ -6,6 +6,7 @@ interface CloseButtonProps {
 
 /**
  * The close button on editors.
+ * @deprecated
  */
 export default class CloseButton extends React.Component<CloseButtonProps, {}> {
     render() {

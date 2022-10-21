@@ -1,8 +1,9 @@
 import { editor as monacoEditor, Uri } from "monaco-editor";
-import React, { useEffect, useRef } from "react"
-import { TextEditorData } from "./TextEditor2";
+import React, { useEffect, useRef } from "react";
+import { isDarkTheme } from "../../theme";
+import { TextEditorData } from "./TextEditor";
 
-const MonacoEditor2: React.FC<TextEditorData> = ({ text, absolutePath, allowSaving }) => {
+const MonacoEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvider }) => {
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -16,8 +17,10 @@ const MonacoEditor2: React.FC<TextEditorData> = ({ text, absolutePath, allowSavi
 
             const editor = monacoEditor.create(ref.current, {
                 model: model,
-                theme: "vs" // TODO
+                theme: isDarkTheme() ? "vs-dark" : "vs"
             });
+
+            valueProvider.getValue = () => editor.getValue();
 
             const onResize = () => editor.layout();
             window.addEventListener("resize", onResize);
@@ -29,6 +32,6 @@ const MonacoEditor2: React.FC<TextEditorData> = ({ text, absolutePath, allowSavi
         }
     }, []);
 
-    return <div ref={ref}></div>;
+    return <div ref={ref} style={{ overflow: "hidden" }} />;
 };
-export default MonacoEditor2;
+export default MonacoEditor;
