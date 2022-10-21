@@ -82,7 +82,9 @@ server.on("connection", function(ws) {
                                 // ... then send the response back to the client with the
                                 // same request id so the client can handle the response.
                                 response["requestId"] = requestId;
-                                connection.sendJson(response);
+                                if (connection) {
+                                    connection.sendJson(response);
+                                }
                             });
 
                             // Handle errors
@@ -92,7 +94,9 @@ server.on("connection", function(ws) {
                                     message: err instanceof FTPError ? err.toString() : "Internal server error"
                                 };
                                 response["requestId"] = requestId;
-                                connection.sendJson(response);
+                                if (connection) {
+                                    connection.sendJson(response);
+                                }
                             });
                         }
 
