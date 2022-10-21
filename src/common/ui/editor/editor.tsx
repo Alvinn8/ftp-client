@@ -12,6 +12,8 @@ import { addMessage } from "../messages";
 import ImageEditor from "./ImageEditor";
 import NbtEditor from "./nbt/NbtEditor";
 import TextEditorControls from "./TextEditorControls";
+import MonacoEditor from "./text/MonacoEditor";
+import TextEditor from "./text/TextEditor";
 
 // @ts-ignore
 window.editorWindows = [];
@@ -80,12 +82,84 @@ export async function openEditor(folderEntry: FolderEntry) {
     }
 }
 
+export async function openTextEditor(folderEntry: FolderEntry) {
+    const fileInfo = await getFile(folderEntry);
+    if (fileInfo == null) return;
+    const wind = openWindow(folderEntry.name, "editor/text/monaco.html");
+
+    const textPromise = new Promise<string>(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () {
+            resolve(reader.result as string);
+        };
+        reader.onerror = function () {
+            reject("Failed to read file.");
+        };
+        reader.readAsText(fileInfo.blob);
+    });
+    const absolutePath = folderEntry.path;
+
+    wind.addEventListener("load", async () => {
+        wind.postMessage({
+            text: await textPromise,
+            absolutePath,
+            allowSaving: fileInfo.allowSaving
+        });
+    });
+}
+
+/** @deprecated */
+export async function openTextEditor_also_old(folderEntry: FolderEntry) {
+    const fileInfo = await getFile(folderEntry);
+    if (fileInfo == null) return;
+    const wind = openWindow(folderEntry.name);
+
+    const textPromise = new Promise<string>(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () {
+            resolve(reader.result as string);
+        };
+        reader.onerror = function () {
+            reject("Failed to read file.");
+        };
+        reader.readAsText(fileInfo.blob);
+    });
+    const text = await textPromise;
+    const absolutePath = folderEntry.path;
+
+    const bootstrap = wind.document.createElement("link");
+    bootstrap.href = "https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css";
+    bootstrap.rel = "stylesheet";
+    bootstrap.integrity = "sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0";
+    bootstrap.crossOrigin = "anonymous";
+    wind.document.head.appendChild(bootstrap);
+
+    const style = wind.document.createElement("link");
+    style.href = "text-editor.css";
+    style.rel = "stylesheet";
+    wind.document.head.appendChild(style);
+
+    const controls = wind.document.createElement("div");
+    wind.document.body.appendChild(controls);
+    ReactDOM.render(<TextEditorControls window={wind} allowSaving={fileInfo.allowSaving} />, controls);
+
+    setEditor(wind, MonacoEditor, text, absolutePath);
+}
+
+/** @deprecated */
+export async function setEditor(wind: Window, editor: TextEditor, text: string, absolutePath: string) {
+    if (!editor.isLoaded(wind)) {
+        await editor.load(wind);
+    }
+    editor.open(wind, text, absolutePath);
+}
+
 /**
  * Open a text editor to view and edit a text file.
  *
  * @param folderEntry The folder entry to edit as text.
  */
-export async function openTextEditor(folderEntry: FolderEntry) {
+export async function openTextEditor_old(folderEntry: FolderEntry) {
     const fileInfo = await getFile(folderEntry);
     if (fileInfo == null) return;
     const wind = openWindow(folderEntry.name, "text-editor.html");
@@ -112,7 +186,7 @@ export async function openTextEditor(folderEntry: FolderEntry) {
             null, // auto detect language from uri (file extention)
             uri
         );
-        // @ts-ignore
+        // @ts-ignore0: src="https://cdn.jsdelivr.net/npm/monaco-editor@0.20.0/min/vs/loader.js"
         wind.editor.setModel(model);
 
         wind.document.title = "Editing " + folderEntry.name + (fileInfo.isGZipped ? " (gzipped)" : "");

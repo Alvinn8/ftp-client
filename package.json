@@ -16,6 +16,7 @@
     "bootstrap-icons": "^1.9.1",
     "eventemitter3": "^4.0.7",
     "jszip": "^3.10.0",
+    "monaco-editor": "0.34.1",
     "pako": "^1.0.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
