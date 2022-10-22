@@ -1,5 +1,6 @@
 import * as React from "react";
 import Task from "../../task/Task";
+import { isDarkTheme } from "../theme";
 
 export interface TaskProps {
     task: Task;
@@ -40,9 +41,17 @@ export default class TaskComponent extends React.Component<TaskProps, TaskState>
     }
 
     render() {
-        return <div className="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-            <div className="toast-header">
-                <div className="bg-primary rounded me-2 toast-square"></div>
+        const classes = ["toast", "show"];
+        const headerClasses = ["toast-header"];
+        let squareColor = "bg-primary";
+        if (isDarkTheme()) {
+            classes.push("bg-secondary", "text-white");
+            headerClasses.push("bg-secondary", "text-white");
+            squareColor = "bg-dark";
+        }
+        return <div className={classes.join(" ")} role="alert" aria-live="assertive" aria-atomic="true">
+            <div className={headerClasses.join(" ")}>
+                <div className={squareColor + " rounded me-2 toast-square"}></div>
                 <strong className="me-auto">{this.props.task.title}</strong>
             </div>
             <div className="toast-body">
