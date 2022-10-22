@@ -55,3 +55,9 @@
 .arrow:hover {
     color: var(--bs-info);
 }
+
+.editor-controls {
+    position: fixed;
+    bottom: 0px;
+    width: 100%;
+}

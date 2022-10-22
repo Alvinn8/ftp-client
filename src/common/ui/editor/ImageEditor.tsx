@@ -6,7 +6,7 @@ const ImageEditor: React.FC = () => {
     const ref = useRef<HTMLImageElement>(null);
     const [dimensions, setDimensions] = useState("");
     
-    const url = window["imageEditorUrl"];
+    const url = window["imageEditorData"].url;
 
     useEffect(() => {
         if (!ref.current) return;
@@ -15,6 +15,10 @@ const ImageEditor: React.FC = () => {
             setDimensions(ref.current.naturalWidth + "x" + ref.current.naturalHeight);
         });
     }, [ref.current]);
+
+    useEffect(() => {
+        document.title = window["imageEditorData"].title;
+    }, []);
 
     return (
         <div className="image-editor-container">

@@ -1,16 +1,12 @@
 import { ungzip as pakoUngzip } from "pako";
-import * as React from "react";
-import * as ReactDOM from "react-dom";
 import Dialog from "../../Dialog";
 import FolderEntry from "../../folder/FolderEntry";
 import Priority from "../../ftp/Priority";
-import { readNbt, writeNbt } from "../../nbt/nbt";
+import { readNbt } from "../../nbt/nbt";
 import NbtData, { BedrockEdition, BedrockLevelDat } from "../../nbt/NbtData";
 import { FileType, getFileType } from "../FileFormats";
 import { getApp } from "../App";
 import { addMessage } from "../messages";
-import ImageEditor from "./ImageEditor";
-import NbtEditor from "./nbt/NbtEditor";
 
 // @ts-ignore
 window.editorWindows = [];
@@ -23,7 +19,7 @@ window.editorWindows = [];
  * @param url The url to open.
  * @returns The window object of the created window.
  */
-function openWindow(name: string, url = "about:blank"): Window {
+function openWindow(name: string, url: string): Window {
     let wind = window.open(url, name, "width=600,height=600");
     if (wind == null) {
         const existingFrame = document.getElementById("editor-iframe");
@@ -131,8 +127,10 @@ export async function openImageEditor(folderEntry: FolderEntry) {
     if (blob == null) return;
     const wind = openWindow(folderEntry.name, "editor/image.html");
     const url = URL.createObjectURL(blob.blob);
-    wind.document.title = "Viewing " + folderEntry.name;
-    wind["imageEditorUrl"] = url;
+    wind["imageEditorData"] = {
+        url,
+        title: "Viewing " + folderEntry.name
+    };
 }
 
 /**
@@ -167,28 +165,28 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
             allowSaving = false;
     }
 
-    const wind = openWindow(folderEntry.name);
-    const css = await (await fetch("nbt-editor.css")).text();
-    await waitForPageLoad(wind);
-    const style = wind.document.createElement("style");
-    style.innerHTML = css;
-    wind.document.head.appendChild(style);
+    const wind = openWindow(folderEntry.name, "editor/nbt.html");
 
     if (allowSaving) {
         const absolutePath = folderEntry.path + "_ftp-client_nbt";
-        wind["save"] = async function() {
-            const session = await getApp().state.session;
-    
-            const blob = await writeNbt(nbt);
+        wind["save"] = async function(blob: Blob) {
+            const session = getApp().state.session;
             await session.upload(Priority.QUICK, blob, absolutePath);
-    
-            // @ts-ignore
-            wind.saveFinished();
+            wind.postMessage({
+                action: "save-callback"
+            });
         };
     }
 
-    wind.document.title = "Editing " + folderEntry.name;
-    ReactDOM.render(<NbtEditor window={wind} nbt={nbt} allowSaving={false} />, wind.document.body);
+    // We send the blob and let the editor parse the file again.
+    // The editor and the main page are in different windows
+    // so we can't transfer things between them, they have different
+    // nbt classes.
+    wind["nbtEditorData"] = {
+        blob: fileInfo.blob,
+        allowSaving: allowSaving,
+        title: "Editing " + folderEntry.name
+    };
 }
 
 /**
