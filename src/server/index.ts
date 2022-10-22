@@ -101,7 +101,7 @@ server.on("connection", function(ws) {
                         }
 
                         promise.catch((err) => {
-                            if (!(err instanceof FTPError)) {
+                            if (!(err instanceof FTPError) && "Error: Client is closed" != (err + "")) {
                                 console.error("Non ftp error in packet handler");
                                 console.error(err);
                             }
