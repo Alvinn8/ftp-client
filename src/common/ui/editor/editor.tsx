@@ -105,21 +105,19 @@ export async function openTextEditor(folderEntry: FolderEntry) {
     const absolutePath = folderEntry.path;
     const title = "Editing " + folderEntry.name + (fileInfo.isGZipped ? " (gzipped)" : "");
 
-    wind.addEventListener("load", async () => {
-        wind.postMessage({
-            text: await textPromise,
-            absolutePath,
-            title,
-            allowSaving: fileInfo.allowSaving
-        });
-    });
-
     wind["save"] = async (text: string) => {
         const blob = new Blob([text]);
         await getApp().state.session.upload(Priority.QUICK, blob, absolutePath);
         wind.postMessage({
             action: "save-callback"
         });
+    };
+
+    wind["textEditorData"] = {
+        text: await textPromise,
+        absolutePath,
+        title,
+        allowSaving: fileInfo.allowSaving
     };
 }
 
@@ -131,12 +129,10 @@ export async function openTextEditor(folderEntry: FolderEntry) {
 export async function openImageEditor(folderEntry: FolderEntry) {
     const blob = await getFile(folderEntry);
     if (blob == null) return;
-    const wind = openWindow(folderEntry.name);
-    await waitForPageLoad(wind);
+    const wind = openWindow(folderEntry.name, "editor/image.html");
     const url = URL.createObjectURL(blob.blob);
-
     wind.document.title = "Viewing " + folderEntry.name;
-    ReactDOM.render(<ImageEditor url={url} window={wind} />, wind.document.body);
+    wind["imageEditorUrl"] = url;
 }
 
 /**

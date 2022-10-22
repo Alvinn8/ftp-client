@@ -3,7 +3,7 @@ import ReactCodeMirror from "@uiw/react-codemirror";
 import { TextEditorData } from "./TextEditor";
 import { isDarkTheme } from "../../theme";
 
-const CodeMirrorEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvider }) => {
+const CodeMirrorEditor: React.FC<TextEditorData> = ({ text, valueProvider }) => {
     const valueRef = useRef<string>(text);
 
     const onChange = useCallback((value) => {
@@ -16,6 +16,7 @@ const CodeMirrorEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueP
         <ReactCodeMirror
             value={text}
             theme={isDarkTheme() ? "dark" : "light"}
+            onChange={onChange}
         />
     );
 };

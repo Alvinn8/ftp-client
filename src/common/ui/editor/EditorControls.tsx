@@ -2,12 +2,10 @@ import React, {useEffect, useState} from "react";
 
 interface TextEditorControlsProps {
     allowSaving: boolean;
-    valueProvider: {
-        getValue(): string;
-    }
+    onSave?: () => void;
 }
 
-const TextEditorControls: React.FC<TextEditorControlsProps> = ({ allowSaving, valueProvider }) => {
+const EditorControls: React.FC<TextEditorControlsProps> = ({ allowSaving, onSave }) => {
     const close = () => {
         if (window.opener) {
             // When the editor is created using a window, it can simply be closed using
@@ -24,19 +22,18 @@ const TextEditorControls: React.FC<TextEditorControlsProps> = ({ allowSaving, va
 
     const save = () => {
         setSaving(true);
-        const text = valueProvider.getValue();
-        window["save"](text);
+        if (onSave) onSave();
     };
 
-    const onMessage = (e: MessageEvent) => {
+    const handleMessage = (e: MessageEvent) => {
         if (e.data.action == "save-callback") {
             setSaving(false);
         }
     };
 
     useEffect(() => {
-        window.addEventListener("message", onMessage);
-        return () => window.removeEventListener("message", onMessage);
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
     }, []);
 
     return (
@@ -54,4 +51,4 @@ const TextEditorControls: React.FC<TextEditorControlsProps> = ({ allowSaving, va
     );
 };
 
-export default TextEditorControls;
+export default EditorControls;

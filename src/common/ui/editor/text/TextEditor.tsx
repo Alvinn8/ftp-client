@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import TextEditorControls from "./TextEditorControls";
+import EditorControls from "../EditorControls";
 import "./TextEditor.css";
 
 interface TextEditorProps {
@@ -18,26 +18,25 @@ const TextEditor: React.FC<TextEditorProps> = ({ EditorComponent }) => {
     const [data, setData] = useState<TextEditorData>(null);
     const [allowSaving, setAllowSaving] = useState(false);
 
-    const onMessage = (e: MessageEvent) => {
-        if ("text" in e.data && "absolutePath" in e.data && "allowSaving" in e.data) {
-            setData({
-                text: e.data.text,
-                absolutePath: e.data.absolutePath,
-                valueProvider: {
-                    getValue() {
-                        throw new Error("No valueProvider registered")
-                    }
-                }
-            });
-            setAllowSaving(e.data.allowSaving);
-            document.title = e.data.title;
-        }
-    };
-
     useEffect(() => {
-        window.addEventListener("message", onMessage);
-        return () => window.removeEventListener("message", onMessage);
+        const data = window["textEditorData"];
+        setData({
+            text: data.text,
+            absolutePath: data.absolutePath,
+            valueProvider: {
+                getValue() {
+                    throw new Error("No valueProvider registered")
+                }
+            }
+        });
+        setAllowSaving(data.allowSaving);
+        document.title = data.title;
     }, []);
+
+    const handleSave = () => {
+        const text = data.valueProvider.getValue();
+        window["save"](text);
+    };
 
     if (!data) return <p>Loading...</p>;
 
@@ -45,9 +44,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ EditorComponent }) => {
         <div className="text-editor-container">
             <>
                 <EditorComponent {...data} />
-                <TextEditorControls
+                <EditorControls
                     allowSaving={allowSaving}
-                    valueProvider={data.valueProvider}
+                    onSave={handleSave}
                 />
             </>
         </div>
