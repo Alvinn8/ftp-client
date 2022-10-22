@@ -27,6 +27,8 @@ export default defineConfig({
                 main: resolve(__dirname, "index.html"),
                 monacoTextEditor: resolve(__dirname, "editor", "text", "monaco.html"),
                 codemirrorTextEditor: resolve(__dirname, "editor", "text", "codemirror.html"),
+                imageEditor: resolve(__dirname, "editor", "image.html"),
+                nbtEditor: resolve(__dirname, "editor", "nbt.html"),
             }
         }
     }
