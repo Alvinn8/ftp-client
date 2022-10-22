@@ -115,7 +115,11 @@ server.on("connection", function(ws) {
     ws.on("close", function() {
         if (connection != null && connection.ftp != null && !connection.ftp.closed) {
             connection.log("Left, disconnecting ftp");
-            connection.ftp.close();
+            try {
+                connection.ftp.close();
+            } catch (e) {
+                connection.log("Disconected during a task: " + e.message);
+            }
         }
         connection = null;
     });
