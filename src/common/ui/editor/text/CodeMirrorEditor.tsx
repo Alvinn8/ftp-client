@@ -17,6 +17,9 @@ const CodeMirrorEditor: React.FC<TextEditorData> = ({ text, valueProvider }) => 
             value={text}
             theme={isDarkTheme() ? "dark" : "light"}
             onChange={onChange}
+            style={{ overflow: "hidden" }}
+            width="100%"
+            height="100%"
         />
     );
 };
