@@ -43,6 +43,10 @@ const TextEditor: React.FC<TextEditorProps> = ({ EditorComponent }) => {
     return (
         <div className="text-editor-container">
             <>
+                <EditorControls
+                    allowSaving={allowSaving}
+                    onSave={handleSave}
+                />
                 <EditorComponent {...data} />
                 <EditorControls
                     allowSaving={allowSaving}
