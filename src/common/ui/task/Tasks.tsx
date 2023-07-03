@@ -36,7 +36,7 @@ export default class Tasks extends React.Component<{}, TasksState> {
 
     render() {
         return (
-            <div className="toast-container position-absolute bottom-0 end-0 p-3">
+            <div>
                 {this.state.task != null && (
                     <TaskComponent task={this.state.task} />
                 )}

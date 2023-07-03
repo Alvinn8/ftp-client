@@ -74,7 +74,7 @@ Mobile
 - [x] Reconnecting
 - [x] Folder deleting
 - [x] Viewing gzipped files
-- [ ] Current Open Editors window on the bottom right.
+- [x] Current Open Editors window on the bottom right.
 - [x] Nicer dialogs
 - [x] Prevent saving gzipped files.
 - [ ] Nbt reading and writing

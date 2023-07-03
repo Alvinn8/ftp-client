@@ -7,9 +7,28 @@ import NbtData, { BedrockEdition, BedrockLevelDat } from "../../nbt/NbtData";
 import { FileType, getFileType } from "../FileFormats";
 import { getApp } from "../App";
 import { addMessage } from "../messages";
+import { EventEmitter } from "eventemitter3";
 
-// @ts-ignore
-window.editorWindows = [];
+class EditorWindowsStore extends EventEmitter {
+    editorWindows: Window[] = [];
+
+    setEditorWindows(editorWindows: Window[]) {
+        this.editorWindows = editorWindows;
+        this.emit("change", this.editorWindows);
+    }
+}
+export const editorWindowsStore = new EditorWindowsStore();
+
+window.addEventListener("beforeunload", (event) => {
+    if (editorWindowsStore.editorWindows.filter(wind => !wind.closed).length > 0) {
+        event.preventDefault();
+        return (event.returnValue = "");
+    }
+});
+
+window.addEventListener("unload", () => {
+    editorWindowsStore.editorWindows.forEach(wind => wind.close());
+});
 
 /**
  * Create a window where an editor can be contained.
@@ -41,10 +60,13 @@ function openWindow(name: string, url: string): Window {
         wind = iframe.contentWindow;
         wind["doClose"] = function() {
             iframe.remove();
+            editorWindowsStore.setEditorWindows(editorWindowsStore.editorWindows.filter(w => wind !== w));
         };
     }
-    // @ts-ignore
-    window.editorWindows.push(wind);
+    editorWindowsStore.setEditorWindows([...editorWindowsStore.editorWindows, wind]);
+    wind.addEventListener("beforeunload", () => {
+        editorWindowsStore.setEditorWindows(editorWindowsStore.editorWindows.filter(w => wind !== w));
+    });
     return wind;
 }
 
