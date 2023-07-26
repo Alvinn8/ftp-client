@@ -45,7 +45,8 @@ export interface PathData {
 }
 
 export interface DownloadReply {
-    data: string;
+    data?: string;
+    downloadId?: string;
 }
 
 export interface UploadData {
@@ -56,6 +57,10 @@ export interface UploadData {
 export interface RenameData {
     from: string;
     to: string;
+}
+
+export interface LargeUploadResponse {
+    uploadId: string;
 }
 
 export const packetMap = new Map<number, Packet<any, any>>();
@@ -87,4 +92,5 @@ export namespace Packets {
     export const Mkdir = new Packet<PathData, void>();
     export const Rename = new Packet<RenameData, void>();
     export const Delete = new Packet<PathData, void>();
+    export const LargeUpload = new Packet<PathData, LargeUploadResponse>();
 }

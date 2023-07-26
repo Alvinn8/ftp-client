@@ -65,7 +65,7 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
     
     render() {
         return (
-            <div className="container">
+            <div className="container" style={{ maxWidth: "800px" }}>
                 <p>Log in to the ftp server.</p>
                 <div className="input-group">
                     <span className="input-group-text">Host and Port</span>

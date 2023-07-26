@@ -3,6 +3,7 @@ import FTPConnection from "../common/ftp/FTPConnection";
 import { addMessage } from "../common/ui/messages";
 import { ensureAbsolute } from "../common/utils";
 import { Packet, Packets } from "../protocol/packets";
+import {LargeFileOperationInterface, largeFileOperationStore} from "../common/ui/LargeFileOperation";
 
 interface PendingReply {
     requestId: string;
@@ -11,6 +12,8 @@ interface PendingReply {
 
 export const PROTOCOL_TYPE = "json";
 export const PROTOCOL_VERSION  = 1;
+
+const LARGE_FILE_THRESHOLD = 1E6; // 1 MB
 
 /**
  * The URL to the websocket to connect to.
@@ -186,34 +189,115 @@ export default class WebsocketFTPConnection implements FTPConnection {
         ensureAbsolute(path);
 
         const response = await this.send(Packets.Download, { path });
-        const base64 = response.data;
-        const binarystring = atob(base64);
-        const arraybuffer = new Uint8Array(binarystring.length);
-        for (let i = 0; i < binarystring.length; i++) {
-            arraybuffer[i] = binarystring.charCodeAt(i);
+        if (response.downloadId) {
+            const url = WEBSOCKET_URL.replace(/^ws/, "http") + "/download/" + response.downloadId;
+            return await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.responseType = "blob";
+                xhr.addEventListener("progress", event => {
+                    const op: LargeFileOperationInterface = {
+                        type: "download",
+                        fileName: path.substring(path.lastIndexOf('/') + 1),
+                        hasProgress: false,
+                        loaded: 0,
+                        total: 0
+                    };
+                    if (event.lengthComputable) {
+                        const percent = event.loaded / event.total;
+                        console.log((percent * 100).toFixed(2) + "%")
+                        op.hasProgress = true;
+                        op.loaded = event.loaded;
+                        op.total = event.total;
+                    }
+                    largeFileOperationStore.setValue(op);
+                });
+                xhr.addEventListener("readystatechange", event => {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        resolve(xhr.response as Blob);
+                        largeFileOperationStore.setValue(null);
+                    }
+                });
+                xhr.addEventListener("error", event => {
+                    largeFileOperationStore.setValue(null);
+                    reject(event);
+                })
+                xhr.open("GET", url);
+                xhr.send();
+            });
+        } else if (response.data) {
+            const base64 = response.data;
+            const binarystring = atob(base64);
+            const arraybuffer = new Uint8Array(binarystring.length);
+            for (let i = 0; i < binarystring.length; i++) {
+                arraybuffer[i] = binarystring.charCodeAt(i);
+            }
+            return new Blob([arraybuffer], { type: "application/octet-stream" });
+        } else {
+            throw new Error("Failed to download (no proper response)");
         }
-        return new Blob([arraybuffer], { type: "application/octet-stream" });
     }
 
     async upload(blob: Blob, path: string): Promise<void> {
         ensureAbsolute(path);
 
-        const base64 = await (new Promise<string>(function(resolve, reject) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                const dataURL = (reader.result as string);
-                resolve(dataURL.substring(dataURL.indexOf(",") + 1));
-            }
-            reader.onerror = function () {
-                reject("Failed to read file to upload.");
-            };
-            reader.readAsDataURL(blob);
-        }));
+        if (blob.size > LARGE_FILE_THRESHOLD) {
+            const { uploadId } = await this.send(Packets.LargeUpload, {
+                path
+            });
+            const url = WEBSOCKET_URL.replace(/^ws/, "http") + "/upload/" + uploadId;
+            await new Promise<void>((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.addEventListener("progress", event => {
+                    console.log("progress!")
+                    if (event.lengthComputable) {
+                        console.log((event.loaded / event.total).toFixed(2) + "%");
+                    }
+                });
+                xhr.addEventListener("readystatechange", event => {
+                    if (xhr.readyState === XMLHttpRequest.DONE) {
+                        resolve();
+                    }
+                });
+                xhr.addEventListener("error", reject);
+                xhr.open("POST", url);
+                xhr.upload.addEventListener("progress", event => {
+                    const op: LargeFileOperationInterface = {
+                        type: "upload",
+                        fileName: path.substring(path.lastIndexOf('/') + 1),
+                        hasProgress: false,
+                        loaded: 0,
+                        total: 0
+                    };
+                    if (event.lengthComputable) {
+                        const percent = event.loaded / event.total;
+                        console.log((percent * 100).toFixed(2) + "%")
+                        op.hasProgress = true;
+                        op.loaded = event.loaded;
+                        op.total = event.total;
+                    }
+                    largeFileOperationStore.setValue(op);
+                })
+                xhr.send(blob);
+                window.xhr = xhr;
+            });
+        } else {
+            const base64 = await (new Promise<string>(function(resolve, reject) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const dataURL = (reader.result as string);
+                    resolve(dataURL.substring(dataURL.indexOf(",") + 1));
+                }
+                reader.onerror = function () {
+                    reject("Failed to read file to upload.");
+                };
+                reader.readAsDataURL(blob);
+            }));
 
-        await this.send(Packets.Upload, {
-            path: path,
-            data: base64
-        });
+            await this.send(Packets.Upload, {
+                path: path,
+                data: base64
+            });
+        }
     }
 
     async mkdir(path: string): Promise<void> {

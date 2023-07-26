@@ -11,6 +11,23 @@ const PROTOCOL_VERSION = 1;
 
 type ProtocolType = "json";
 
+const LARGE_FILE_THRESHOLD = 1E6; // 1 MB
+
+interface LargeDownload {
+    id: string;
+    path: string;
+    connection: Connection;
+}
+
+interface LargeUpload {
+    id: string;
+    path: string;
+    connection: Connection;
+}
+
+const largeDownloads: LargeDownload[] = [];
+const largeUploads: LargeUpload[] = [];
+
 const httpServer = createServer(function (req, res) {
     const headers = {
         "Access-Control-Allow-Origin": "*",
@@ -18,9 +35,49 @@ const httpServer = createServer(function (req, res) {
     };
 
     if (req.method == "GET") {
+        if (req.url && req.url.startsWith("/download/")) {
+            const downloadId = req.url.substring("/download/".length);
+            const largeDownload = largeDownloads.find(o => o.id === downloadId);
+            if (largeDownload) {
+                largeDownloads.splice(largeDownloads.indexOf(largeDownload), 1);
+                (async () => {
+                    const size = await largeDownload.connection.ftp.size(largeDownload.path);
+                    const downloadHeaders = {
+                        ...headers,
+                        "Content-Length": size
+                    };
+                    res.writeHead(200, downloadHeaders);
+                    await largeDownload.connection.ftp.downloadTo(res, largeDownload.path);
+                    res.end();
+                })();
+                return;
+            }
+            res.writeHead(404, headers);
+            res.write("404 download id not found");
+            res.end();
+            return;
+        }
         res.writeHead(200, headers);
         res.write("pong");
         res.end();
+    } else if (req.method === "POST") {
+        if (req.url && req.url.startsWith("/upload/")) {
+            const uploadId = req.url.substring("/upload/".length);
+            const largeUpload = largeUploads.find(o => o.id === uploadId);
+            if (largeUpload) {
+                largeUploads.splice(largeUploads.indexOf(largeUpload), 1);
+                (async () => {
+                    await largeUpload.connection.ftp.uploadFrom(req, largeUpload.path);
+                    res.writeHead(201, headers);
+                    res.end();
+                })();
+                return;
+            }
+        }
+        res.writeHead(404, headers);
+        res.write("404 upload id not found");
+        res.end();
+        return;
     } else if (req.method == "OPTIONS") {
         res.writeHead(204, headers);
         res.end();
@@ -54,8 +111,8 @@ server.on("connection", function(ws) {
                 connection = new Connection(ws, "json");
                 connection.log("New successfull handshake.");
             } else {
-                connection.ws.send("Error, incompatible protocol type or version. Expected \"" + "handshake json " + PROTOCOL_VERSION + "\", got \"" + message + "\"");
-                connection.ws.close();
+                ws.send("Error, incompatible protocol type or version. Expected \"" + "handshake json " + PROTOCOL_VERSION + "\", got \"" + message + "\"");
+                ws.close();
             }
         } else {
             if (connection.protocolType == "json") {
@@ -205,12 +262,25 @@ handler(Packets.CDUP, async (packet, data, connection) => {
 });
 
 handler(Packets.Download, async (packet, data, connection) => {
-    const stream = new WritableMemoryStream();
-    await connection.ftp.downloadTo(stream, data.path);
-    // By this point the stream has finished as we awaited the download method.
-    return {
-        data: stream.getBuffer().toString("base64")
-    };
+    const size = await connection.ftp.size(data.path);
+    if (size > LARGE_FILE_THRESHOLD) {
+        const downloadId = Math.random().toString().substring(2);
+        largeDownloads.push({
+            id: downloadId,
+            path: data.path,
+            connection
+        });
+        return {
+            downloadId
+        };
+    } else {
+        const stream = new WritableMemoryStream();
+        await connection.ftp.downloadTo(stream, data.path);
+        // By this point the stream has finished as we awaited the download method.
+        return {
+            data: stream.getBuffer().toString("base64")
+        };
+    }
 });
 
 handler(Packets.Upload, async (packet, data, connection) => {
@@ -218,6 +288,18 @@ handler(Packets.Upload, async (packet, data, connection) => {
     const stream = new ReadableMemoryStream(buffer);
 
     await connection.ftp.uploadFrom(stream, data.path);
+});
+
+handler(Packets.LargeUpload, async (packet, data, connection) => {
+    const uploadId = Math.random().toString().substring(2);
+
+    largeUploads.push({
+        id: uploadId,
+        path: data.path,
+        connection
+    });
+
+    return { uploadId };
 });
 
 handler(Packets.Mkdir, async (packet, data, connection) => {

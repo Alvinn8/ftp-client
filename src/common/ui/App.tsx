@@ -14,6 +14,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./style.css";
 import OpenEditors from "./editor/OpenEditors";
+import LargeFileOperation from "./LargeFileOperation";
 
 let app: App;
 
@@ -262,6 +263,7 @@ export class App extends React.Component<AppProps, AppState> {
                 }
                 <Messages />
                 <div className="position-absolute bottom-0 end-0 p-3 d-flex flex-column" style={{ gap: "8px" }}>
+                    <LargeFileOperation />
                     <Tasks />
                     <OpenEditors />
                 </div>
