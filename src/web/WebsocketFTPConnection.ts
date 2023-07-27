@@ -13,7 +13,7 @@ interface PendingReply {
 export const PROTOCOL_TYPE = "json";
 export const PROTOCOL_VERSION  = 1;
 
-const LARGE_FILE_THRESHOLD = 1E6; // 1 MB
+const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
 
 /**
  * The URL to the websocket to connect to.
@@ -56,6 +56,24 @@ connectionPromise.catch(function(e) {
     });
 });
 window["connectionPromise"] = connectionPromise;
+
+function progressTracker(type: "download" | "upload", path: string) {
+    return (event: ProgressEvent) => {
+        const op: LargeFileOperationInterface = {
+            type,
+            fileName: path.substring(path.lastIndexOf('/') + 1),
+            hasProgress: false,
+            loaded: 0,
+            total: 0
+        };
+        if (event.lengthComputable) {
+            op.hasProgress = true;
+            op.loaded = event.loaded;
+            op.total = event.total;
+        }
+        largeFileOperationStore.setValue(op);
+    };
+}
 
 /**
  * An implementation of {@link FTPConnection} that connects to a websocket server
@@ -194,23 +212,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
             return await new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.responseType = "blob";
-                xhr.addEventListener("progress", event => {
-                    const op: LargeFileOperationInterface = {
-                        type: "download",
-                        fileName: path.substring(path.lastIndexOf('/') + 1),
-                        hasProgress: false,
-                        loaded: 0,
-                        total: 0
-                    };
-                    if (event.lengthComputable) {
-                        const percent = event.loaded / event.total;
-                        console.log((percent * 100).toFixed(2) + "%")
-                        op.hasProgress = true;
-                        op.loaded = event.loaded;
-                        op.total = event.total;
-                    }
-                    largeFileOperationStore.setValue(op);
-                });
+                xhr.addEventListener("progress", progressTracker("download", path));
                 xhr.addEventListener("readystatechange", event => {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
                         resolve(xhr.response as Blob);
@@ -247,38 +249,21 @@ export default class WebsocketFTPConnection implements FTPConnection {
             const url = WEBSOCKET_URL.replace(/^ws/, "http") + "/upload/" + uploadId;
             await new Promise<void>((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
-                xhr.addEventListener("progress", event => {
-                    console.log("progress!")
-                    if (event.lengthComputable) {
-                        console.log((event.loaded / event.total).toFixed(2) + "%");
-                    }
-                });
                 xhr.addEventListener("readystatechange", event => {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
                         resolve();
+                        largeFileOperationStore.setValue(null);
                     }
                 });
-                xhr.addEventListener("error", reject);
+                xhr.addEventListener("error", (event) => {
+                    largeFileOperationStore.setValue(null);
+                    reject(event);
+                });
                 xhr.open("POST", url);
-                xhr.upload.addEventListener("progress", event => {
-                    const op: LargeFileOperationInterface = {
-                        type: "upload",
-                        fileName: path.substring(path.lastIndexOf('/') + 1),
-                        hasProgress: false,
-                        loaded: 0,
-                        total: 0
-                    };
-                    if (event.lengthComputable) {
-                        const percent = event.loaded / event.total;
-                        console.log((percent * 100).toFixed(2) + "%")
-                        op.hasProgress = true;
-                        op.loaded = event.loaded;
-                        op.total = event.total;
-                    }
-                    largeFileOperationStore.setValue(op);
-                })
+                if (xhr.upload) {
+                    xhr.upload.addEventListener("progress", progressTracker("upload", path));
+                }
                 xhr.send(blob);
-                window.xhr = xhr;
             });
         } else {
             const base64 = await (new Promise<string>(function(resolve, reject) {

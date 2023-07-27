@@ -11,7 +11,7 @@ const PROTOCOL_VERSION = 1;
 
 type ProtocolType = "json";
 
-const LARGE_FILE_THRESHOLD = 1E6; // 1 MB
+const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
 
 interface LargeDownload {
     id: string;
@@ -31,7 +31,7 @@ const largeUploads: LargeUpload[] = [];
 const httpServer = createServer(function (req, res) {
     const headers = {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET"
+        "Access-Control-Allow-Methods": "GET,POST"
     };
 
     if (req.method == "GET") {
