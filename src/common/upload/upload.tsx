@@ -150,6 +150,10 @@ function countFilesRecursively(directory: Directory): number {
 
 // Drag and drop
 
+function isZipFile(fileName: string) {
+    return fileName.endsWith(".zip") || fileName.endsWith(".mcworld") || fileName.endsWith(".mcpack");
+}
+
 /**
  * Handle a drop event where the user potentially dropped files to upload and
  * upload them. Will also prompt the user to extract a zip file if they drop
@@ -164,7 +168,7 @@ export async function handleOnDrop(event: React.DragEvent<HTMLDivElement> | Drag
     const uploads = await getDropEventFiles(event);
 
     // Check if the user uploaded a zip file
-    if (Object.keys(uploads.directories).length == 0 && uploads.files.length == 1 && uploads.files[0].name.endsWith(".zip")) {
+    if (Object.keys(uploads.directories).length == 0 && uploads.files.length == 1 && isZipFile(uploads.files[0].name)) {
         // The user has uploaded a zip file
         const file = uploads.files[0];
         const extractAndUpload = await Dialog.confirm("Extract and upload?", "Do you want to extract the contents of " + file.name + " and upload the contents, or do you want to upload the zip file?", "Upload zip file", "Extract and upload contents");
