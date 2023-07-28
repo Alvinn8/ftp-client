@@ -17,6 +17,7 @@ import OpenEditors from "./editor/OpenEditors";
 import LargeFileOperation from "./LargeFileOperation";
 import ConnectingScreen from "./ConnectingScreen";
 import ErrorScreen from "./ErrorScreen";
+import VERSION from "../version";
 
 let app: App;
 
@@ -233,6 +234,7 @@ export class App extends React.Component<AppProps, AppState> {
                                 <aside id="selected-info">
                                     {aside}
                                     {actions}
+                                    <small id="version" className="text-secondary">Version: { VERSION }</small>
                                 </aside>
                             </>
                         )}

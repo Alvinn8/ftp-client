@@ -90,6 +90,15 @@ header {
 
 #selected-info {
     grid-area: selected-info;
+    display: flex;
+    flex-direction: column;
+}
+
+#version {
+    margin: 3px;
+    margin-top: auto;
+    text-align: right;
+    opacity: 0.5;
 }
 
 #port {
