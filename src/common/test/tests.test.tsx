@@ -74,27 +74,27 @@ describe("ftp-client tests", () => {
     });
 
     it("download file via button", async () => {
-        connection.list.mockResolvedValueOnce([
-            new FolderEntry("/test.txt", "test.txt", 1, FolderEntryType.File, "")
-        ]);
+        const folderEntry = new FolderEntry("/test.txt", "test.txt", 1, FolderEntryType.File, "");
+        connection.list.mockResolvedValueOnce([folderEntry]);
         render(<App session={session} />);
 
         await userEvent.click(await screen.findByText("test.txt"));
         await userEvent.click(await screen.findByRole("button", { name: "Download" }));
 
-        expect(connection.download).toHaveBeenCalledWith("/test.txt");
+        expect(connection.download).toHaveBeenCalledWith(folderEntry);
     });
 
     it("download file via context menu", async () => {
+        const folderEntry = new FolderEntry("/test.txt", "test.txt", 1, FolderEntryType.File, "");
         connection.list.mockResolvedValueOnce([
-            new FolderEntry("/test.txt", "test.txt", 1, FolderEntryType.File, "")
+            folderEntry
         ]);
         render(<App session={session} />);
 
         fireEvent.contextMenu(await screen.findByText("test.txt"));
         await userEvent.click(await findContextMenuEntry("Download"));
 
-        expect(connection.download).toHaveBeenCalledWith("/test.txt");
+        expect(connection.download).toHaveBeenCalledWith(folderEntry);
     });
 
     it("delete file via button", async () => {

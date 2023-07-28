@@ -44,6 +44,11 @@ export interface PathData {
     path: string;
 }
 
+export interface DownloadData {
+    path: string;
+    largeDownload: boolean;
+}
+
 export interface DownloadReply {
     data?: string;
     downloadId?: string;
@@ -87,7 +92,7 @@ export namespace Packets {
     export const PWD = new Packet<{}, PWDReply>();
     export const CD = new Packet<CdData, void>();
     export const CDUP = new Packet<{}, void>();
-    export const Download = new Packet<PathData, DownloadReply>();
+    export const Download = new Packet<DownloadData, DownloadReply>();
     export const Upload = new Packet<UploadData, void>();
     export const Mkdir = new Packet<PathData, void>();
     export const Rename = new Packet<RenameData, void>();

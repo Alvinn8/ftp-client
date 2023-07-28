@@ -262,8 +262,7 @@ handler(Packets.CDUP, async (packet, data, connection) => {
 });
 
 handler(Packets.Download, async (packet, data, connection) => {
-    const size = await connection.ftp.size(data.path);
-    if (size > LARGE_FILE_THRESHOLD) {
+    if (data.largeDownload) {
         const downloadId = Math.random().toString().substring(2);
         largeDownloads.push({
             id: downloadId,

@@ -10,7 +10,7 @@ import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
 
 export async function downloadFolderEntry(entry: FolderEntry) {
-    const blob = await getApp().state.session.download(Priority.QUICK, entry.path);
+    const blob = await getApp().state.session.download(Priority.QUICK, entry);
     download(blob, entry.name);
 }
 
@@ -52,9 +52,9 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
 
     
     // Counting can sometimes take a bit, start a task.
-    const countTask = new Task("Delete", "Counting files to delete", false);
+    const countTask = new CountTask("Delete", "Counting files to delete", false);
     TaskManager.setTask(countTask);
-    const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries));
+    const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
     countTask.complete();
 
     if (totalCount > 1 && !await Dialog.confirm("Delete " + totalCount + " files", "You are about to delete "
@@ -151,7 +151,7 @@ async function downloadRecursively(entries: FolderEntry[], zip: JSZip, task: Tas
         if (entry.isFile()) {
             // A file, download it and place in the zip
             task.progress(downloadCount, totalCount, "Downloading " + entry.name);
-            const blob = await getApp().state.session.download(Priority.LARGE_TASK, entry.path);
+            const blob = await getApp().state.session.download(Priority.LARGE_TASK, entry);
             zip.file(entry.name, blob);
         } else if (entry.isDirectory()) {
             path.cd(entry.name);

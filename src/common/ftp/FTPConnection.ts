@@ -15,7 +15,7 @@ export default interface FTPConnection {
     cd(path: string): Promise<void>;
     /** @deprecated */
     cdup(): Promise<void>;
-    download(path: string): Promise<Blob>;
+    download(folderEntry: FolderEntry): Promise<Blob>;
     upload(blob: Blob, path: string): Promise<void>;
     mkdir(path: string): Promise<void>;
     rename(from: string, to: string): Promise<void>;

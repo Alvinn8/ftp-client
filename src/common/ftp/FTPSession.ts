@@ -122,9 +122,9 @@ export default class FTPSession {
         ));
     }
 
-    download(priority: number, path: string) {
+    download(priority: number, folderEntry: FolderEntry) {
         return this.addToQueue(priority, connection => (
-            connection.download(path)
+            connection.download(folderEntry)
         ))
     }
 

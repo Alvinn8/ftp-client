@@ -203,16 +203,19 @@ export default class WebsocketFTPConnection implements FTPConnection {
         await this.send(Packets.CDUP, {});
     }
 
-    async download(path: string): Promise<Blob> {
-        ensureAbsolute(path);
+    async download(folderEntry: FolderEntry): Promise<Blob> {
+        ensureAbsolute(folderEntry.path);
 
-        const response = await this.send(Packets.Download, { path });
+        const response = await this.send(Packets.Download, {
+            path: folderEntry.path,
+            largeDownload: folderEntry.size > LARGE_FILE_THRESHOLD
+        });
         if (response.downloadId) {
             const url = WEBSOCKET_URL.replace(/^ws/, "http") + "/download/" + response.downloadId;
             return await new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.responseType = "blob";
-                xhr.addEventListener("progress", progressTracker("download", path));
+                xhr.addEventListener("progress", progressTracker("download", folderEntry.path));
                 xhr.addEventListener("readystatechange", event => {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
                         resolve(xhr.response as Blob);
