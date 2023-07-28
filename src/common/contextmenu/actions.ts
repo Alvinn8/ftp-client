@@ -92,16 +92,30 @@ async function deleteRecursively(entries: FolderEntry[], task: Task, path: Direc
     return deletedCount;
 }
 
-async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath): Promise<number> {
+class CountTask extends Task {
+    private count = 0;
+
+    public setCount(count: number) {
+        this.count = count;
+        this.progress(this.count, 0, this.body + ": " + this.count);
+    }
+
+    public increment() {
+        this.setCount(this.count + 1);
+    }
+}
+
+async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath, countTask: CountTask): Promise<number> {
     let count = 0;
     for (const entry of entries) {
         // Count files and directories
         count++;
+        countTask.increment();
         // If it's a directory, count all files inside
         if (entry.isDirectory()) {
             path.cd(entry.name);
             const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, path.get());
-            count += await countFilesRecursively(list, path);
+            count += await countFilesRecursively(list, path, countTask);
             path.cdup();
         }
     }
@@ -112,9 +126,9 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     if (!TaskManager.requestNewTask()) return;
 
     // Counting can sometimes take a bit, start a task.
-    const countTask = new Task("Download", "Counting files to download", false);
+    const countTask = new CountTask("Download", "Counting files to download", false);
     TaskManager.setTask(countTask);
-    const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries));
+    const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
     countTask.complete();
 
     // Download
