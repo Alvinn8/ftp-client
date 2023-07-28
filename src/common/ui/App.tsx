@@ -15,6 +15,8 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import "./style.css";
 import OpenEditors from "./editor/OpenEditors";
 import LargeFileOperation from "./LargeFileOperation";
+import ConnectingScreen from "./ConnectingScreen";
+import ErrorScreen from "./ErrorScreen";
 
 let app: App;
 
@@ -38,12 +40,15 @@ export interface AppState {
     workdir: string;
     selection: FolderEntry[];
     refreshCount: number;
+    connectionError: string | null;
 }
 
 export enum State {
     LOGIN,
     CONNECTING_TO_SERVER,
+    FAILED_TO_CONNECT_TO_SERVER,
     CONNECTING_TO_FTP,
+    FAILED_TO_CONNECT_TO_FTP,
     CONNECTED
 }
 
@@ -92,7 +97,8 @@ export class App extends React.Component<AppProps, AppState> {
             mobileTab: MobileTab.PATH,
             workdir: "/",
             selection: [],
-            refreshCount: 0
+            refreshCount: 0,
+            connectionError: null
         };
 
         if (this.props.session) {
@@ -192,11 +198,14 @@ export class App extends React.Component<AppProps, AppState> {
                     <ConnectForm
                         onProgress={stage => this.setState({ state: stage })}
                         onConnect={session => this.setState({ session, state: State.CONNECTED })}
+                        onConnectError={msg => this.setState({ connectionError: msg })}
                         onError={e => this.setState({ state: State.LOGIN })}
                     />
                 )}
-                {this.state.state == State.CONNECTING_TO_SERVER && <p>Connecting to ftp-client...</p>}
-                {this.state.state == State.CONNECTING_TO_FTP && <p>Connecting...</p>}
+                {this.state.state == State.CONNECTING_TO_SERVER && <ConnectingScreen title="Connecting to ftp-client" body="Connecting to ftp-client..." />}
+                {this.state.state == State.FAILED_TO_CONNECT_TO_SERVER && <ErrorScreen title="Failed to connect to ftp-client" body="Please try again." />}
+                {this.state.state == State.CONNECTING_TO_FTP && <ConnectingScreen title="Connecting" body="Connecting to your files..." />}
+                {this.state.state == State.FAILED_TO_CONNECT_TO_FTP && <ErrorScreen title="Failed to connect" body={this.state.connectionError} />}
                 {this.state.state == State.CONNECTED &&
                     <div id="grid">
                         <header>

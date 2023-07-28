@@ -47,6 +47,7 @@ export const connectionPromise = new Promise<void>(async function(resolve, rejec
             await sleep(5000);
         }
     }
+    reject();
 });
 connectionPromise.catch(function(e) {
     addMessage({
@@ -54,6 +55,7 @@ connectionPromise.catch(function(e) {
         message: "Failed to connect to the server.",
         stayForMillis: 30000
     });
+    throw e;
 });
 window["connectionPromise"] = connectionPromise;
 

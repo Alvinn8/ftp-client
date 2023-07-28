@@ -23,6 +23,7 @@ function getBoolean(id): boolean {
 interface ConnectFormProps {
     onProgress: (state: State) => void;
     onConnect: (session: FTPSession) => void;
+    onConnectError: (msg: string) => void;
     onError: (e: Error) => void;
 }
 
@@ -45,9 +46,20 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
         session.setConnection(connection);
 
         this.props.onProgress(State.CONNECTING_TO_SERVER);
-        await connection.connectToWebsocket();
+        const success = await connection.connectToWebsocket().then(() => true).catch((err) => {
+            this.props.onProgress(State.FAILED_TO_CONNECT_TO_SERVER);
+            return false;
+        });
+        if (!success) return;
+
         this.props.onProgress(State.CONNECTING_TO_FTP);
-        await connection.connect(host, port, username, password, secure);
+        const success2 = await connection.connect(host, port, username, password, secure).then(() => true).catch(err => {
+            this.props.onProgress(State.FAILED_TO_CONNECT_TO_FTP);
+            this.props.onConnectError(err.message);
+            return false;
+        });
+        if (!success2) return;
+
         this.props.onConnect(session);
     } catch(e) {
         console.error(e);

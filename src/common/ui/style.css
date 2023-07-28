@@ -157,3 +157,22 @@ header {
 .folder-component-arrow:hover {
     color: var(--bs-info);
 }
+
+.screen-container {
+    width: 80vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.screen {
+    max-width: 600px;
+    text-align: center;
+    margin: auto;
+    padding: 80px 20px;
+}
+
+.screen-icon {
+    font-size: 4rem;
+}
