@@ -1,2 +1,2 @@
-const VERSION = "July 28";
+const VERSION = "July 29";
 export default VERSION;
