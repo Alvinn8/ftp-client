@@ -12,6 +12,6 @@
     "ws": "^8.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.14.49"
+    "esbuild": "^0.18.17"
   }
 }
