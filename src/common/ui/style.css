@@ -77,7 +77,7 @@ header {
 
 #folder-content {
     grid-area: folder-content;
-    overflow: scroll;
+    overflow: auto;
 }
 
 #folder-content > div {
