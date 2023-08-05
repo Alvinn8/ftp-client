@@ -122,8 +122,10 @@ export default class WebsocketFTPConnection implements FTPConnection {
             });
             this.websocket.addEventListener("close", e => {
                 let message = "Connection closed";
-                if (e.code == 1006) message = "Connection closed abnormally";
-                else if (e.code != 1000) message = "Connection closed: " + e.code + " " + e.reason;
+                // While 1006 is an abnormal close, it happens very frequently and doesn't
+                // matter since it will reconnect. There is no need to worry the user that
+                // something abnormal happened, since it is, in fact, very normal.
+                if (e.code != 1000 && e.code != 1006) message = "Connection closed: " + e.code + " " + e.reason;
                 addMessage({
                     color: "danger",
                     message: message,
