@@ -1,0 +1,27 @@
+body {
+    background-color: #212529;
+    color: white;
+}
+.logs {
+    font-family: monospace;
+    white-space: pre;
+    font-size: 14px;
+    padding-bottom: 70px;
+}
+.line {
+    display: block;
+}
+.line-error {
+    color: #ff3838;
+    background-color: #4c0000;
+}
+.line-warning {
+    color: #dcdc82;
+    background-color: #3d3d00;
+}
+.controls {
+    position: fixed;
+    bottom: 0px;
+    background-color: #212529;
+    padding: 0px 10px;
+}

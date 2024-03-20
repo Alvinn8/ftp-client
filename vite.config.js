@@ -29,6 +29,7 @@ export default defineConfig({
                 codemirrorTextEditor: resolve(__dirname, "editor", "text", "codemirror.html"),
                 imageEditor: resolve(__dirname, "editor", "image.html"),
                 nbtEditor: resolve(__dirname, "editor", "nbt.html"),
+                logEditor: resolve(__dirname, "editor", "log.html"),
             }
         }
     }

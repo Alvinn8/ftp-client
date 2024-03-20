@@ -83,7 +83,8 @@ export async function openEditor(folderEntry: FolderEntry) {
         const option = await Dialog.choose("Open " + folderEntry.name, "How would you like to open the file?", [
             { id: "text", name: "Open as text" },
             { id: "image", name: "Open as image" },
-            { id: "nbt", name: "Open as Minecraft NBT" }
+            { id: "nbt", name: "Open as Minecraft NBT" },
+            { id: "log", name: "Open as log file" },
         ]);
         fileType = option as FileType;
     }
@@ -94,6 +95,8 @@ export async function openEditor(folderEntry: FolderEntry) {
         openImageEditor(folderEntry);
     } else if (fileType == "nbt") {
         openNbtEditor(folderEntry);
+    } else if (fileType == "log") {
+        openLogEditor(folderEntry);
     }
 }
 
@@ -208,6 +211,34 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
         blob: fileInfo.blob,
         allowSaving: allowSaving,
         title: "Editing " + folderEntry.name
+    };
+}
+
+/**
+ * Open the log editor for viewing logs.
+ *
+ * @param folderEntry The folder entry to open.
+ */
+export async function openLogEditor(folderEntry: FolderEntry) {
+    const fileInfo = await getFile(folderEntry);
+    if (fileInfo == null) return;
+    const wind = openWindow(folderEntry.name, "editor/log.html");
+    
+    const textPromise = new Promise<string>(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () {
+            resolve(reader.result as string);
+        };
+        reader.onerror = function () {
+            reject("Failed to read file.");
+        };
+        reader.readAsText(fileInfo.blob);
+    });
+    const title = "Viewing " + folderEntry.name + (fileInfo.isGZipped ? " (gzipped)" : "");
+
+    wind["logEditorData"] = {
+        text: await textPromise,
+        title,
     };
 }
 

@@ -79,7 +79,7 @@ export function getIconFor(fileName: string): string {
 /**
  * The type of a file. Used to decide how to open it.
  */
-export type FileType = "text" | "image" | "nbt" | "unknown";
+export type FileType = "text" | "image" | "nbt" | "log" | "unknown";
 
 /**
  * Get the {@link FileType} of the file name.
@@ -88,6 +88,9 @@ export type FileType = "text" | "image" | "nbt" | "unknown";
  * @returns The file type.
  */
 export function getFileType(fileName: string): FileType {
+    if (fileName.endsWith(".gz")) {
+        fileName = fileName.substring(0, fileName.length - 3);
+    }
     const index = fileName.lastIndexOf(".");
     const extention = fileName.substring(index);
     switch (extention) {
@@ -96,6 +99,8 @@ export function getFileType(fileName: string): FileType {
         case ".dat_new":
         case ".nbt":
             return "nbt";
+        case ".log":
+            return "log";
     }
     
     const icon = getIconFor(fileName);
