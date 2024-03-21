@@ -1,5 +1,5 @@
 import FolderEntry from "../folder/FolderEntry";
-import { openEditor, openImageEditor } from "../ui/editor/editor";
+import { openChosenEditor, openEditor, openImageEditor } from "../ui/editor/editor";
 import { getFileType } from "../ui/FileFormats";
 import { deleteFolderEntries, downloadAsZip, downloadFolderEntry, rename } from "./actions";
 import ContextMenuEntry from "./ContextMenuEntry";
@@ -40,6 +40,12 @@ export default class FolderEntryPopulator implements ContextMenuPopulator {
                     name: "Open",
                     handler: e => {
                         openEditor(this.entry);
+                    }
+                });
+                entries.push({
+                    name: "Open as",
+                    handler: e => {
+                        openChosenEditor(this.entry);
                     }
                 });
             }

@@ -5,8 +5,10 @@ body {
 .logs {
     font-family: monospace;
     white-space: pre;
-    font-size: 14px;
+    font-size: 13px;
+    padding: 10px 15px;
     padding-bottom: 70px;
+    width: max-content;
 }
 .line {
     display: block;
@@ -15,9 +17,25 @@ body {
     color: #ff3838;
     background-color: #4c0000;
 }
+.line-error-stacktrace {
+    color: #ffadad;
+    background-color: #2a0000;
+}
 .line-warning {
     color: #dcdc82;
     background-color: #3d3d00;
+}
+.line-format-bold {
+    font-weight: bold;
+}
+.line-format-italic {
+    font-style: italic;
+}
+.line-format-underline {
+    text-decoration: underline;
+}
+.line-format-striketrough {
+    text-decoration: line-through;
 }
 .controls {
     position: fixed;

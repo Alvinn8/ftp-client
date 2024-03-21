@@ -70,23 +70,33 @@ function openWindow(name: string, url: string): Window {
     return wind;
 }
 
+async function chooseEditor(folderEntry: FolderEntry): Promise<FileType | null> {
+    const option = await Dialog.choose("Open " + folderEntry.name, "How would you like to open the file?", [
+        { id: "text", name: "Open as text" },
+        { id: "image", name: "Open as image" },
+        { id: "nbt", name: "Open as Minecraft NBT" },
+        { id: "log", name: "Open as log file" },
+    ]);
+    return option as FileType;
+}
+
 /**
  * Open the entry with the right editor. If none is detected, ask the user how to
  * open the file.
+ * <p>
+ * If the {@code fileType} is not specified, a file type will be auto detected, and
+ * if no file type could be detected the user will be prompted.
  * 
  * @param folderEntry The folder entry to open.
+ * @param fileType The file type that determins which editor to open.
  */
-export async function openEditor(folderEntry: FolderEntry) {
-    let fileType = getFileType(folderEntry.name);
-
-    if (fileType == "unknown") {
-        const option = await Dialog.choose("Open " + folderEntry.name, "How would you like to open the file?", [
-            { id: "text", name: "Open as text" },
-            { id: "image", name: "Open as image" },
-            { id: "nbt", name: "Open as Minecraft NBT" },
-            { id: "log", name: "Open as log file" },
-        ]);
-        fileType = option as FileType;
+export async function openEditor(folderEntry: FolderEntry, fileType?: FileType) {
+    if (!fileType) {
+        fileType = getFileType(folderEntry.name);
+    
+        if (fileType == "unknown") {
+            fileType = await chooseEditor(folderEntry);
+        }
     }
 
     if (fileType == "text") {
@@ -98,6 +108,11 @@ export async function openEditor(folderEntry: FolderEntry) {
     } else if (fileType == "log") {
         openLogEditor(folderEntry);
     }
+}
+
+export async function openChosenEditor(folderEntry: FolderEntry) {
+    const fileType = await chooseEditor(folderEntry);
+    await openEditor(folderEntry, fileType);
 }
 
 export async function openTextEditor(folderEntry: FolderEntry) {
