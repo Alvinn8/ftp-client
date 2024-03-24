@@ -7,6 +7,9 @@ const LogEditor: React.FC = () => {
 
     useEffect(() => {
         const data = window["logEditorData"];
+        if (!data) {
+            window.close();
+        }
         document.title = data.title;
         setLines(parseLogs(data.text));
     }, []);
@@ -29,8 +32,8 @@ const LogEditor: React.FC = () => {
     return (
         <div>
             <div className="logs">
-                { lines.map(line => {
-                    return <span className={className(line)}>{ line.text }</span>
+                { lines.map((line, index) => {
+                    return <span className={className(line)} key={index}>{ line.text }</span>
                 }) }
             </div>
             { controls }
@@ -44,11 +47,6 @@ interface Line {
     text: JSX.Element;
     level?: LogLevel;
 }
-
-const SECTION_COLOR = "§";
-const UNKNOWN_COLOR = "?";
-const ANSI_START_CHAR = "";
-const ANSI_COLOR_REGEX = /\[(?<a>\d+);(?<b>\d+)m\[/;
 
 function parseLogs(text: string): Line[] {
     const forge = isForge(text);
@@ -86,6 +84,9 @@ function className(line: Line): string {
     return className;
 }
 
+const SECTION_COLOR = "§";
+const UNKNOWN_COLOR = "?";
+
 const COLOR_CODES = {
     '0': '#000000',
     '1': '#0000aa',
@@ -112,64 +113,167 @@ const FORMATTING_CODES = {
 };
 const RESET_CODE = 'r';
 
+const ANSI_START_CHAR = "\u001b";
+const ANSI_COLOR_REGEX = /\u001b\[[0-9;]+m\[/;
+const ANSI_COLORS = {
+    '30': '#000000',
+    '31': '#ff5555',
+    '32': '#55ff55',
+    '33': '#ffff55',
+    '34': '#5555ff',
+    '35': '#ff55ff',
+    '36': '#55ffff',
+    '37': '#ffffff',
+    '39': 'unset', // default color
+};
+const ANSI_FORMATTING = {
+    '1': 'bold',
+    '3': 'italic',
+    '4': 'underline',
+    '9': 'striketrough',
+};
+const ANSI_REMOVE_FORMATTING = {
+    '22': 'bold',
+    '23': 'italic',
+    '24': 'underline',
+    '29': 'striketrough',
+};
+const ANSI_RESET = 0;
+
 function formatLine(text: string, isForge: boolean): JSX.Element {
     if (!text.includes(SECTION_COLOR) && !ANSI_COLOR_REGEX.exec(text) && (!isForge || !text.includes(UNKNOWN_COLOR))) {
         return <>{ text }</>;
     }
-    // Perform color codes.
-    const parts = [];
+    // This line contains color codes or ANSI codes, parse color.
+    
+    // Create reader for line
+    const reader = makeReader(text);
+    
+    // Current color and formatting.
     let color = null;
-    let formatting = [];
-    let save = 0;
-    let cursor = 0;
-    let key = 0;
+    const formatting = new Set();
+    
+    // Line parts
+    const parts = [];
     function savePart(skip: number) {
-        const partText = text.substring(save, cursor);
-        cursor += skip - 1;
-        const style = {
-            color
-        };
-        const className = formatting.map(f => 'line-format-' + f).join(' ');
+        const partText = reader.save(skip);
+
+        const className = [...formatting.values()].map(f => 'line-format-' + f).join(' ');
         parts.push(
             <span
                 className={className}
-                style={style}
-                key={key++}
+                style={{ color }}
+                key={parts.length}
             >{partText}</span>
         );
-        save = cursor + 1;
     }
-    while (cursor < text.length) {
-        const sub1 = text.substring(cursor, cursor + 1);
-        if (sub1 == SECTION_COLOR || (isForge && sub1 == UNKNOWN_COLOR)) {
-            const colorChar = text.charAt(cursor + 1);
+
+    // Read line.
+    while (reader.canRead()) {
+        const char = reader.read();
+
+        // Minecraft formatting/color codes
+        if (char == SECTION_COLOR || (isForge && char == UNKNOWN_COLOR)) {
+            const colorChar = reader.read();
             const newColor = COLOR_CODES[colorChar];
             const newFormatting = FORMATTING_CODES[colorChar];
             if (newColor) {
                 savePart(2);
                 color = newColor;
-                formatting = [];
+                formatting.clear();
             } else if (newFormatting) {
                 savePart(2);
-                formatting.push(newFormatting);
+                formatting.add(newFormatting);
             } else if (colorChar === RESET_CODE) {
                 savePart(2);
                 color = null;
-                formatting = [];
+                formatting.clear();
+            } else {
+                // This was apparantly not a color or formatting code,
+                // undo the read.
+                reader.back();
             }
-        }/* else if (sub1 == ANSI_START_CHAR) {
-            const sub2 = text.substring(cursor, 7);
-            const ansi = ANSI_COLOR_REGEX.exec(sub2);
-            if (ansi) {
-                color = 'lime';
-                savePart(ansi[0].length);
+        }
+        
+        // ANSI Control Codes
+        else if (char == ANSI_START_CHAR && reader.peek() == '[') {
+            let start = reader.cursor() - 1;
+            reader.skip();
+            const codes = [];
+            while (reader.canRead() && reader.peek() !== 'm') {
+                codes.push(reader.readInt());
+                if (reader.peek() === ';') {
+                    reader.skip();
+                }
             }
-        }*/
-        cursor++;
+            reader.skip(); // skip 'm'
+            let len = reader.cursor() - start;
+            savePart(len);
+            for (const code of codes) {
+                const newColor = ANSI_COLORS[code];
+                const newFormatting = ANSI_FORMATTING[code];
+                const removeFormatting = ANSI_REMOVE_FORMATTING[code];
+                if (newColor) {
+                    color = newColor;
+                    formatting.clear();
+                } else if (newFormatting) {
+                    formatting.add(newFormatting);
+                } else if (removeFormatting) {
+                    formatting.delete(removeFormatting);
+                } else if (code == ANSI_RESET) {
+                    color = null;
+                    formatting.clear();
+                } else {
+                    // Skip unknown codes.
+                    console.log(code);
+                }
+            }
+        }
     }
-    // Save last part
+    
+    // Save last part and return the parts
     savePart(0);
     return <>{ parts }</>;
+}
+
+interface Reader {
+    read(): string;
+    peek(): string;
+    skip(): void;
+    back(): void;
+    canRead(): boolean;
+    save(skip: number): string;
+    cursor(): number;
+    readInt(): number;
+}
+
+function makeReader(text: string): Reader {
+    let cursor = 0;
+    let save = 0;
+    return {
+        read() { return text.charAt(cursor++); },
+        peek() { return text.charAt(cursor) },
+        canRead() { return cursor < text.length; },
+        cursor() { return cursor; },
+        skip() { cursor++; },
+        back() { cursor--; },
+        save(skip: number) {
+            let str = text.substring(save, cursor - skip);
+            save = cursor;
+            return str;
+        },
+        readInt: function() {
+            let str = "";
+            while (this.canRead() && isDigit(this.peek())) {
+                str += this.read();
+            }
+            return parseInt(str);
+        },
+    };
+}
+
+function isDigit(char: string): boolean {
+    return char >= '0' && char <= '9';
 }
 
 export default LogEditor;

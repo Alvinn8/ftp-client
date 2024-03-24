@@ -1,11 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap');
+
 body {
     background-color: #212529;
     color: white;
 }
 .logs {
-    font-family: monospace;
+    font-family: "Noto Sans Mono", monospace;
     white-space: pre;
-    font-size: 13px;
+    font-size: 12px;
     padding: 10px 15px;
     padding-bottom: 70px;
     width: max-content;
