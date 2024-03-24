@@ -30,6 +30,14 @@ window.addEventListener("unload", () => {
     editorWindowsStore.editorWindows.forEach(wind => wind.close());
 });
 
+window.addEventListener("focus", () => {
+    const current = editorWindowsStore.editorWindows;
+    const openWindows = current.filter(wind => !wind.closed);
+    if (openWindows.length !== current.length) {
+        editorWindowsStore.setEditorWindows(openWindows);
+    }
+});
+
 /**
  * Create a window where an editor can be contained.
  *
