@@ -11,6 +11,9 @@ const NbtEditor = () => {
 
     useEffect(() => {
         const data = window["nbtEditorData"];
+        if (!data) {
+            window.close();
+        }
         const read = async () => {
             setNbt(await readNbt(data.blob));
             setAllowSaving(data.allowSaving);

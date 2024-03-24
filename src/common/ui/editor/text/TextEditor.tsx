@@ -20,6 +20,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ EditorComponent }) => {
 
     useEffect(() => {
         const data = window["textEditorData"];
+        if (!data) {
+            window.close();
+        }
         setData({
             text: data.text,
             absolutePath: data.absolutePath,
