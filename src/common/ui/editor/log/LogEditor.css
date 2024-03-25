@@ -10,7 +10,8 @@ body {
     font-size: 12px;
     padding: 10px 15px;
     padding-bottom: 70px;
-    width: max-content;
+    padding-right: 0px;
+    width: 100%;
 }
 .line {
     display: block;
