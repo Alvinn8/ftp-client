@@ -10,8 +10,12 @@ import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
 
 export async function downloadFolderEntry(entry: FolderEntry) {
-    const blob = await getApp().state.session.download(Priority.QUICK, entry);
-    download(blob, entry.name);
+    try {
+        const blob = await getApp().state.session.download(Priority.QUICK, entry);
+        download(blob, entry.name);
+    } catch(e) {
+        Dialog.message("Failed to download", String(e));
+    }
 }
 
 export function rename(entry: FolderEntry) {

@@ -233,7 +233,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 xhr.open("GET", url);
                 xhr.send();
             });
-        } else if (response.data) {
+        } else if (response.data || response.data === '') {
             const base64 = response.data;
             const binarystring = atob(base64);
             const arraybuffer = new Uint8Array(binarystring.length);

@@ -195,7 +195,7 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
     } catch(e) {
         Dialog.message(
             "Error reading NBT",
-            "There was an error reading the NBT file. Are you sure it is an NBT file? " + e
+            "There was an error reading the NBT file. " + String(e)
         );
         return;
     }
@@ -299,7 +299,13 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
     const isgzipped = folderEntry.name.endsWith(".gz");
     if (isgzipped && !await confirmOpenGzip(folderEntry)) return null;
 
-    let blob = await getApp().state.session.download(Priority.QUICK, folderEntry);
+    let blob;
+    try {
+        blob = await getApp().state.session.download(Priority.QUICK, folderEntry)
+    } catch(e) {
+        Dialog.message("Failed to open file", String(e));
+        return null;
+    }
     if (isgzipped) {
         blob = await ungzip(blob);
         return {
