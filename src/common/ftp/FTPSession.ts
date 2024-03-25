@@ -93,6 +93,16 @@ export default class FTPSession {
         });
     }
 
+    private removeFromQueue<T>(request: FTPRequest<T>) {
+        const index = this.queue.indexOf(request);
+        this.queue.splice(index, 1);
+
+        // This request has finished, are there more in the queue?
+        if (this.queue.length > 0) {
+            this.executeRequest();
+        }
+    }
+
     private async executeRequest() {
         // sort decending, highest priority first
         this.queue.sort((a, b) => b.priority - a.priority);
@@ -102,17 +112,13 @@ export default class FTPSession {
 
         const promise = request.executor(connection);
         promise.then((t) => {
-            const index = this.queue.indexOf(request);
-            this.queue.splice(index, 1);
-
             request.resolve(t);
-
-            // This request has finished, are there more in the queue?
-            if (this.queue.length > 0) {
-                this.executeRequest();
-            }
+            this.removeFromQueue(request);
         });
-        promise.catch(e => request.reject(e));
+        promise.catch(e => {
+            request.reject(e);
+            this.removeFromQueue(request);
+        });
         return promise;
     }
 
