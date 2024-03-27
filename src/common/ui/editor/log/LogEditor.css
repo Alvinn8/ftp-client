@@ -11,7 +11,7 @@ body {
     padding: 10px 15px;
     padding-bottom: 70px;
     padding-right: 0px;
-    width: 100%;
+    width: max(max-content, 100%);
 }
 .line {
     display: block;

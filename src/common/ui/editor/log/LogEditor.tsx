@@ -49,14 +49,12 @@ interface Line {
 }
 
 function parseLogs(text: string): Line[] {
-    const forge = isForge(text);
-
     const result = [];
     const lines = text.split("\n");
     for (let i = 0; i < lines.length; i++) {
         const current = lines[i];
         const line: Line = {
-            text: formatLine(current, forge),
+            text: formatLine(current),
         };
         const currentLower = current.toLowerCase();
         if (/at ([a-zA-Z0-9\.<>_\-$/]+)\(.+\)/.exec(currentLower)) {
@@ -70,10 +68,6 @@ function parseLogs(text: string): Line[] {
         result.push(line);
     }
     return result;
-}
-
-function isForge(text: string): boolean {
-    return text.includes("Forge") || text.includes("forge");
 }
 
 function className(line: Line): string {
@@ -114,7 +108,7 @@ const FORMATTING_CODES = {
 const RESET_CODE = 'r';
 
 const ANSI_START_CHAR = "\u001b";
-const ANSI_COLOR_REGEX = /\u001b\[[0-9;]+m\[/;
+const ANSI_COLOR_REGEX = /\u001b\[[0-9;]*m/;
 const ANSI_COLORS = {
     '30': '#000000',
     '31': '#ff5555',
@@ -140,8 +134,8 @@ const ANSI_REMOVE_FORMATTING = {
 };
 const ANSI_RESET = 0;
 
-function formatLine(text: string, isForge: boolean): JSX.Element {
-    if (!text.includes(SECTION_COLOR) && !ANSI_COLOR_REGEX.exec(text) && (!isForge || !text.includes(UNKNOWN_COLOR))) {
+function formatLine(text: string): JSX.Element {
+    if (!text.includes(SECTION_COLOR) && !ANSI_COLOR_REGEX.exec(text) && !text.includes(UNKNOWN_COLOR)) {
         return <>{ text }</>;
     }
     // This line contains color codes or ANSI codes, parse color.
@@ -173,7 +167,7 @@ function formatLine(text: string, isForge: boolean): JSX.Element {
         const char = reader.read();
 
         // Minecraft formatting/color codes
-        if (char == SECTION_COLOR || (isForge && char == UNKNOWN_COLOR)) {
+        if (char == SECTION_COLOR || char == UNKNOWN_COLOR) {
             const colorChar = reader.read();
             const newColor = COLOR_CODES[colorChar];
             const newFormatting = FORMATTING_CODES[colorChar];
