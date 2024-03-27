@@ -91,6 +91,11 @@ export function getFileType(fileName: string): FileType {
     if (fileName.endsWith(".gz")) {
         fileName = fileName.substring(0, fileName.length - 3);
     }
+
+    if (fileName.startsWith("crash-") && fileName.endsWith(".txt")) {
+        return "log";
+    }
+
     const index = fileName.lastIndexOf(".");
     const extention = fileName.substring(index);
     switch (extention) {
