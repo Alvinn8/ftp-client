@@ -47,7 +47,16 @@ window.addEventListener("focus", () => {
  * @returns The window object of the created window.
  */
 function openWindow(name: string, url: string): Window {
-    let wind = window.open(url, name, "width=600,height=600");
+    let wind: Window = null;
+    if (window.innerWidth > 600) {
+        // Try open popup window on desktop
+        wind = window.open(url, name, "width=600,height=600");
+        if (wind) {
+            // Add to list of open popup windows
+            editorWindowsStore.setEditorWindows([...editorWindowsStore.editorWindows, wind]);
+        }
+    }
+    // If the popup failed to open, open an iframe instead.
     if (wind == null) {
         const existingFrame = document.getElementById("editor-iframe");
         if (existingFrame != null) {
@@ -71,8 +80,7 @@ function openWindow(name: string, url: string): Window {
             editorWindowsStore.setEditorWindows(editorWindowsStore.editorWindows.filter(w => wind !== w));
         };
     }
-    editorWindowsStore.setEditorWindows([...editorWindowsStore.editorWindows, wind]);
-    wind.addEventListener("beforeunload", () => {
+    wind.addEventListener("unload", () => {
         editorWindowsStore.setEditorWindows(editorWindowsStore.editorWindows.filter(w => wind !== w));
     });
     return wind;
