@@ -16,6 +16,14 @@ class EditorWindowsStore extends EventEmitter {
         this.editorWindows = editorWindows;
         this.emit("change", this.editorWindows);
     }
+
+    removeUnloaded() {
+        const current = this.editorWindows;
+        const openWindows = current.filter(wind => !wind.closed);
+        if (openWindows.length !== current.length) {
+            this.setEditorWindows(openWindows);
+        }
+    }
 }
 export const editorWindowsStore = new EditorWindowsStore();
 
@@ -31,11 +39,7 @@ window.addEventListener("unload", () => {
 });
 
 window.addEventListener("focus", () => {
-    const current = editorWindowsStore.editorWindows;
-    const openWindows = current.filter(wind => !wind.closed);
-    if (openWindows.length !== current.length) {
-        editorWindowsStore.setEditorWindows(openWindows);
-    }
+    editorWindowsStore.removeUnloaded();
 });
 
 /**
@@ -77,11 +81,13 @@ function openWindow(name: string, url: string): Window {
         wind = iframe.contentWindow;
         wind["doClose"] = function() {
             iframe.remove();
-            editorWindowsStore.setEditorWindows(editorWindowsStore.editorWindows.filter(w => wind !== w));
+            editorWindowsStore.removeUnloaded();
         };
     }
     wind.addEventListener("unload", () => {
-        editorWindowsStore.setEditorWindows(editorWindowsStore.editorWindows.filter(w => wind !== w));
+        setTimeout(() => {
+            editorWindowsStore.removeUnloaded();
+        }, 100);
     });
     return wind;
 }
