@@ -8,7 +8,7 @@
     "build+start": "npm run build && npm start"
   },
   "dependencies": {
-    "basic-ftp": "^4.6.6",
+    "basic-ftp": "^5.0.5",
     "ws": "^8.0.0"
   },
   "devDependencies": {
