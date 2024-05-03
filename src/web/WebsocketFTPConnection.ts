@@ -207,6 +207,31 @@ export default class WebsocketFTPConnection implements FTPConnection {
         await this.send(Packets.CDUP, {});
     }
 
+    private async keepAlive(xhr: XMLHttpRequest) {
+        // It is very important that the connection to the FTP server isn't closed
+        // while we are uploading or downloading large files. Since the websocket
+        // connection isn't used for this process, we need to ensure the connection
+        // isn't closed, because closing the connection causes the FTP connection
+        // to close.
+        // We therefore send ping messages during the upload or download.
+        const intervalId = setInterval(() => {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                console.log("Stopped pinging.");
+                clearInterval(intervalId);
+                return;
+            }
+            // Send a ping request
+            console.log("Pinging");
+            this.isConnected().then(val => {
+                if (!val) {
+                    console.warn("FTP not connected while still uploading.");
+                }
+            }).catch(e => {
+                console.error("Failed to ping", e);
+            });
+        }, 5000);
+    }
+
     async download(folderEntry: FolderEntry): Promise<Blob> {
         ensureAbsolute(folderEntry.path);
 
@@ -232,6 +257,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 })
                 xhr.open("GET", url);
                 xhr.send();
+                this.keepAlive(xhr);
             });
         } else if (response.data || response.data === '') {
             const base64 = response.data;
@@ -287,6 +313,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                     xhr.upload.addEventListener("progress", progressTracker("upload", path));
                 }
                 xhr.send(blob);
+                this.keepAlive(xhr);
             });
         } else {
             const base64 = await (new Promise<string>(function(resolve, reject) {
