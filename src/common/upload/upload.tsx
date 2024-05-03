@@ -50,9 +50,23 @@ export async function upload(uploads: Directory) {
         const task = new Task("Uploading " + uploads.files[0].name, "", false);
         TaskManager.setTask(task);
         const file = uploads.files[0];
-        await uploadFile(file, joinPath(getApp().state.workdir, file.name));
+        const dir = getApp().state.workdir;
+        try {
+            await uploadFile(file, joinPath(dir, file.name));
+        } catch (e) {
+            task.complete();
+            getApp().refresh();
+            Dialog.message("Failed to upload", String(e) || "Unknown error");
+            return;
+        }
         task.complete();
         getApp().refresh();
+
+        // Check if the file now exists in the directory.
+        const content = await getApp().state.session.list(Priority.QUICK, dir);
+        if (!content.some(entry => entry.name === file.name)) {
+            Dialog.message("Failed to upload", "The file was not uploaded for an unknown reason.");
+        }
     } else {
         // Count the files for the task progress
         const totalCount = countFilesRecursively(uploads);

@@ -258,14 +258,30 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 const xhr = new XMLHttpRequest();
                 xhr.addEventListener("readystatechange", event => {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
-                        resolve();
                         largeFileOperationStore.setValue(null);
+                        if (xhr.status !== 200) {
+                            reject(xhr.statusText);
+                        } else {
+                            try {
+                                const text = xhr.responseText;
+                                console.log(`Upload response text: "${text}"`);
+                                const json = JSON.parse(text);
+                                if (json.action === "error") {
+                                    reject(json.message);
+                                } else {
+                                    resolve();
+                                }
+                            } catch (e) {
+                                reject(e);
+                            }
+                        }
                     }
                 });
                 xhr.addEventListener("error", (event) => {
                     largeFileOperationStore.setValue(null);
                     reject(event);
                 });
+                xhr.responseType = "text";
                 xhr.open("POST", url);
                 if (xhr.upload) {
                     xhr.upload.addEventListener("progress", progressTracker("upload", path));

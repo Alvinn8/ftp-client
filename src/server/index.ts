@@ -28,6 +28,26 @@ interface LargeUpload {
 const largeDownloads: LargeDownload[] = [];
 const largeUploads: LargeUpload[] = [];
 
+function showErrorToUser(error: any): string | null {
+    if (error instanceof FTPError) {
+        return error.toString();
+    }
+    if (!error) {
+        return null;
+    }
+    if (error.code === "ECONNREFUSED") {
+        return "Connection refused: " + error.toString();
+    }
+    if (error.code === "ECONNRESET") {
+        return "Connection reset: " + error.toString();
+    }
+    const str = error.toString();
+    if (str === "Error: Timeout (data socket)" || str === "Error: Timeout (control socket)") {
+        return str;
+    }
+    return null;
+}
+
 const httpServer = createServer(function (req, res) {
     const headers = {
         "Access-Control-Allow-Origin": "*",
@@ -49,7 +69,9 @@ const httpServer = createServer(function (req, res) {
                     res.writeHead(200, downloadHeaders);
                     await largeDownload.connection.ftp.downloadTo(res, largeDownload.path);
                     res.end();
-                })();
+                })().catch(err => {
+                    largeDownload.connection.log("Download error " + err);
+                });
                 return;
             }
             res.writeHead(404, headers);
@@ -68,9 +90,19 @@ const httpServer = createServer(function (req, res) {
                 largeUploads.splice(largeUploads.indexOf(largeUpload), 1);
                 (async () => {
                     await largeUpload.connection.ftp.uploadFrom(req, largeUpload.path);
-                    res.writeHead(201, headers);
+                    res.writeHead(200, headers);
+                    res.write(JSON.stringify({}));
                     res.end();
-                })();
+                })().catch(err => {
+                    if (!res.headersSent) {
+                        res.writeHead(200, headers);
+                        res.write(JSON.stringify({
+                            action: "error",
+                            message: showErrorToUser(err) || "Internal server error"
+                        } as ErrorReply));
+                        res.end();
+                    }
+                });
                 return;
             }
         }
@@ -121,8 +153,26 @@ server.on("connection", function(ws) {
                     const packetId: number = json.packetId;
                     connection.log("Got packet id: " + packetId);
 
-                    // Get the packet and it's handler
+                    // Get the packet
                     const packet = packetMap.get(packetId);
+                    if (packet != null && packet !== Packets.Ping && packet !== Packets.Connect) {
+                        // Ensure the ftp client is connected before attempting to interact.
+                        if (connection.ftp == null || connection.ftp.closed) {
+                            const requestId = json["requestId"];
+                            if (requestId != null) {
+                                const response: ErrorReply = {
+                                    action: "error",
+                                    message: "Not connected",
+                                };
+                                response["requestId"] = requestId;
+                                if (connection) {
+                                    connection.sendJson(response);
+                                }
+                            }
+                            return;
+                        }
+                    }
+                    // Get the packet handler
                     const handler = packetHandlers.get(packet);
                     // If they exist...
                     if (packet != null && handler != null) {
@@ -142,13 +192,11 @@ server.on("connection", function(ws) {
                                 if (connection) {
                                     connection.sendJson(response);
                                 }
-                            });
-
-                            // Handle errors
-                            promise.catch((err) => {
+                            }, (err) => {
+                                // Handle errors
                                 const response: ErrorReply = {
                                     action: "error",
-                                    message: err instanceof FTPError ? err.toString() : "Internal server error"
+                                    message: showErrorToUser(err) || "Internal server error"
                                 };
                                 response["requestId"] = requestId;
                                 if (connection) {
@@ -158,10 +206,21 @@ server.on("connection", function(ws) {
                         }
 
                         promise.catch((err) => {
-                            if (!(err instanceof FTPError) && "Error: Client is closed" != (err + "")) {
-                                console.error("Non ftp error in packet handler");
-                                console.error(err);
+                            if (showErrorToUser(err)) {
+                                // This error has already been displayed to the user.
+                                return;
                             }
+                            const strErr = String(err);
+                            switch (strErr) {
+                                case "Error: Client is closed":
+                                case "Error: User closed client during task":
+                                case "Error: Client is closed because User closed client": {
+                                    // Ignore when the user closes the tab during a task.
+                                    return;
+                                }
+                            }
+                            console.error(`[${connection.id}] Non ftp error in packet handler`);
+                            console.error(err);
                         });
                     }
                 }
