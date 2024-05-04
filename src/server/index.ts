@@ -219,7 +219,7 @@ server.on("connection", function(ws) {
                                     return;
                                 }
                             }
-                            console.error(`[${connection.id}] Non ftp error in packet handler`);
+                            console.error(`[${connection ? connection.id : '?'}] Non ftp error in packet handler`);
                             console.error(err);
                         });
                     }
