@@ -1,9 +1,10 @@
 import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
 import FTPConnection from "../common/ftp/FTPConnection";
 import { addMessage } from "../common/ui/messages";
-import { ensureAbsolute } from "../common/utils";
+import { blobToBase64, dirname, ensureAbsolute, filename } from "../common/utils";
 import { Packet, Packets } from "../protocol/packets";
 import {LargeFileOperationInterface, largeFileOperationStore} from "../common/ui/LargeFileOperation";
+import Dialog from "../common/Dialog";
 
 interface PendingReply {
     requestId: string;
@@ -14,6 +15,7 @@ export const PROTOCOL_TYPE = "json";
 export const PROTOCOL_VERSION  = 1;
 
 const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
+const CHUNK_SIZE = 2 * 1024 * 1024; // 5 MB
 
 /**
  * The URL to the websocket to connect to.
@@ -213,6 +215,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
         // connection isn't used for this process, we need to ensure the connection
         // isn't closed, because closing the connection causes the FTP connection
         // to close.
+        // TODO update comment
         // We therefore send ping messages during the upload or download.
         const intervalId = setInterval(() => {
             if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -276,57 +279,56 @@ export default class WebsocketFTPConnection implements FTPConnection {
         ensureAbsolute(path);
 
         if (blob.size > LARGE_FILE_THRESHOLD) {
-            const { uploadId } = await this.send(Packets.LargeUpload, {
-                path
+            const { uploadId } = await this.send(Packets.ChunkedUploadStart, {
+                path,
+                size: blob.size
             });
-            const url = WEBSOCKET_URL.replace(/^ws/, "http") + "/upload/" + uploadId;
-            await new Promise<void>((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.addEventListener("readystatechange", event => {
-                    if (xhr.readyState === XMLHttpRequest.DONE) {
-                        largeFileOperationStore.setValue(null);
-                        if (xhr.status !== 200) {
-                            reject(xhr.statusText);
-                        } else {
-                            try {
-                                const text = xhr.responseText;
-                                console.log(`Upload response text: "${text}"`);
-                                const json = JSON.parse(text);
-                                if (json.action === "error") {
-                                    reject(json.message);
-                                } else {
-                                    resolve();
-                                }
-                            } catch (e) {
-                                reject(e);
-                            }
-                        }
-                    }
+            const chunkCount = Math.ceil(blob.size / CHUNK_SIZE);
+            
+            let lastStatus = "";
+            for (let i = 0; i < chunkCount; i++) {
+                const start = i * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, blob.size);
+                const chunk = blob.slice(start, end);
+                const base64 = await blobToBase64(chunk);
+
+                console.log(`Uploading chunk ${i}/${chunkCount - 1}, bytes ${start} to ${end}.`);
+                const { status } = await this.send(Packets.ChunkedUpload, {
+                    uploadId,
+                    data: base64,
+                    start,
+                    end
                 });
-                xhr.addEventListener("error", (event) => {
-                    largeFileOperationStore.setValue(null);
-                    reject(event);
-                });
-                xhr.responseType = "text";
-                xhr.open("POST", url);
-                if (xhr.upload) {
-                    xhr.upload.addEventListener("progress", progressTracker("upload", path));
+                lastStatus = status;
+                if (status !== "success" && status !== "end") {
+                    // TODO maybe error here straight away?
+                    // currently we just let the file size check verify stuff.
+                    break;
                 }
-                xhr.send(blob);
-                this.keepAlive(xhr);
+                // TODO report progress
+            }
+
+            // Verify file size
+            const listResult = await this.send(Packets.List, {
+                path: dirname(path)
             });
+            const fileName = filename(path);
+            const fileInfo = listResult.files.find(f => f.name === fileName);
+            if (!fileInfo || fileInfo.size !== blob.size) {
+                await (new Promise<void>(resolve => {
+                    Dialog.message(
+                        "Partial upload failed",
+                        `The file at ${path} failed to upload properly and might have corrupted due to
+                        only part of the file being uploaded correctly. Only ${Math.round(fileInfo.size / 1E6)} MB out of
+                        ${Math.round(blob.size / 1E6)} were actually uploaded. Please delete ${path} and try to
+                        upload it again. Last chunk status: ${lastStatus}`,
+                        () => resolve()
+                    );
+                }));
+                throw new Error("Chunked upload failed."); // TODO retry for grouped uploads and such
+            }
         } else {
-            const base64 = await (new Promise<string>(function(resolve, reject) {
-                const reader = new FileReader();
-                reader.onload = function() {
-                    const dataURL = (reader.result as string);
-                    resolve(dataURL.substring(dataURL.indexOf(",") + 1));
-                }
-                reader.onerror = function () {
-                    reject("Failed to read file to upload.");
-                };
-                reader.readAsDataURL(blob);
-            }));
+            const base64 = await blobToBase64(blob);
 
             await this.send(Packets.Upload, {
                 path: path,

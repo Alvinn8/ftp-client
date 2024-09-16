@@ -13,7 +13,7 @@ namespace Dialog {
      * @param title The title to display on the modal.
      * @param text The text displayed to the user.
      */
-     export function message(title: string, text: string) {
+     export function message(title: string, text: string, onClose?: () => void) {
         const modalRef: React.RefObject<HTMLDivElement> = React.createRef();
         const modalElement =
             <div className="modal" tabIndex={-1} ref={modalRef}>
@@ -48,6 +48,15 @@ namespace Dialog {
         modalRef.current.addEventListener("hidden.bs.modal", function () {
             modal.dispose()
             container.remove();
+        });
+
+        modalRef.current.addEventListener("hide.bs.modal", function () {
+            // Wait a bit so the onClick for the submit button runs if applicable
+            setTimeout(() => {
+                if (typeof onClose == "function") {
+                    onClose();
+                }
+            }, 1);
         });
     }
 

@@ -68,6 +68,38 @@ export interface LargeUploadResponse {
     uploadId: string;
 }
 
+export interface ChunkedUploadStartData {
+    path: string;
+    /** The total size in bytes of the file to upload. */
+    size: number;
+}
+
+export interface ChunkedUploadStartResponse {
+    uploadId: string;
+}
+
+export interface ChunkedUploadData {
+    uploadId: string;
+    /** Base64-encoded chunk data. */
+    data: string;
+    /** The inclusive start byte offset in the file for this chunk. */
+    start: number;
+    /** The exclusive end byte offset in the file for this chunk. */
+    end: number;
+}
+/**
+ * success: The chunk was uploaded successfully, proceed to next chunk.
+ * end: The upload has been completed.
+ * desync: This chunk did not arrive in correct order.
+ * 404: No upload was found for the provided uploadId.
+ * malsized: The start and end byte offsets did not align with the size of the chunk.
+ * hijack: The upload was started by a different connection than this one.
+ */
+export type ChunkedUploadStatus = "success" | "end" | "desync" | "404" | "malsized" | "hijack";
+export interface ChunkedUploadResponse {
+    status: ChunkedUploadStatus;
+}
+
 export const packetMap = new Map<number, Packet<any, any>>();
 
 let idCount = 1;
@@ -97,5 +129,8 @@ export namespace Packets {
     export const Mkdir = new Packet<PathData, void>();
     export const Rename = new Packet<RenameData, void>();
     export const Delete = new Packet<PathData, void>();
+    /** @deprecated Use chunked uploads */
     export const LargeUpload = new Packet<PathData, LargeUploadResponse>();
+    export const ChunkedUploadStart = new Packet<ChunkedUploadStartData, ChunkedUploadStartResponse>();
+    export const ChunkedUpload = new Packet<ChunkedUploadData, ChunkedUploadResponse>();
 }

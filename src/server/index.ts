@@ -2,8 +2,9 @@ import * as ftp from "basic-ftp";
 import { FTPError } from "basic-ftp";
 import { createServer } from "http";
 import * as ws from "ws";
-import { ErrorReply, ListReply, Packet, packetMap, Packets } from "../protocol/packets";
+import { ChunkedUploadStatus, ErrorReply, ListReply, Packet, packetMap, Packets } from "../protocol/packets";
 import { WritableMemoryStream, ReadableMemoryStream } from "./memoryStreams";
+import { PassThrough } from "stream";
 
 
 const PORT = parseInt(process.env.PORT) || 8081;
@@ -12,6 +13,7 @@ const PROTOCOL_VERSION = 1;
 type ProtocolType = "json";
 
 const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
+const CHUNK_SIZE = 2 * 1024 * 1024; // 5 MB
 
 interface LargeDownload {
     id: string;
@@ -25,8 +27,19 @@ interface LargeUpload {
     connection: Connection;
 }
 
+interface ChunkedUpload {
+    id: string;
+    path: string;
+    size: number;
+    connection: Connection;
+    stream: PassThrough;
+    uploadPromise: Promise<ftp.FTPResponse>;
+    offset: number;
+}
+
 const largeDownloads: LargeDownload[] = [];
 const largeUploads: LargeUpload[] = [];
+const chunkedUploads: ChunkedUpload[] = [];
 
 function showErrorToUser(error: any): string | null {
     if (error instanceof FTPError) {
@@ -364,6 +377,66 @@ handler(Packets.LargeUpload, async (packet, data, connection) => {
     });
 
     return { uploadId };
+});
+
+handler(Packets.ChunkedUploadStart, async (packet, data, connection) => {
+    const uploadId = Math.random().toString().substring(2);
+    const stream = new PassThrough();
+
+    const uploadPromise = connection.ftp.uploadFrom(stream, data.path);
+    // TODO handle timeouts in the data socket and in case that happens restart the
+    // upload with a smaller chunk size.
+
+    chunkedUploads.push({
+        id: uploadId,
+        path: data.path,
+        size: data.size,
+        connection,
+        stream,
+        uploadPromise,
+        offset: 0
+    });
+
+    return { uploadId };
+});
+
+handler(Packets.ChunkedUpload, async (packet, data, connection) => {
+    type Status = ChunkedUploadStatus;
+
+    const chunkedUpload = chunkedUploads.find(u => u.id === data.uploadId);
+    if (!chunkedUpload) {
+        return { status: "404" as Status };
+    }
+    if (chunkedUpload.connection !== connection) {
+        if (chunkedUpload.connection.ws.readyState === WebSocket.CLOSED) {
+            // The existing connection was closed. The client likely reconnected with a new
+            // connection to resume the upload.
+            connection.log(`Taking over chunked upload ${chunkedUpload.id} from ${chunkedUpload.connection.id}`);
+            chunkedUpload.connection = connection;
+        } else {
+            return { status: "hijack" as Status };
+        }
+    }
+
+    const buffer = Buffer.from(data.data, "base64");
+    if (buffer.byteLength !== data.end - data.start) {
+        return { status: "malsized" as Status };
+    }
+
+    if (chunkedUpload.offset !== data.start) {
+        return { status: "desync" as Status };
+    }
+
+    chunkedUpload.stream.write(buffer);
+    chunkedUpload.offset += buffer.length;
+
+    if (chunkedUpload.offset === chunkedUpload.size) {
+        chunkedUpload.stream.end();
+        await chunkedUpload.uploadPromise;
+        return { status: "end" as Status };
+    }
+
+    return { status: "success" as Status };
 });
 
 handler(Packets.Mkdir, async (packet, data, connection) => {

@@ -13,3 +13,31 @@ export function joinPath(a: string, b: string) {
     }
     return a + b;
 }
+
+export function dirname(path: string): string {
+    if (!path.includes("/")) {
+        return path;
+    }
+    return path.substring(0, path.lastIndexOf('/'));
+}
+
+export function filename(path: string): string {
+    if (!path.includes("/")) {
+        return path;
+    }
+    return path.substring(path.lastIndexOf('/') + 1 );
+}
+
+export function blobToBase64(blob: Blob): Promise<string> {
+    return new Promise<string>(function(resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const dataURL = (reader.result as string);
+            resolve(dataURL.substring(dataURL.indexOf(",") + 1));
+        }
+        reader.onerror = function () {
+            reject(new Error("Failed to read file."));
+        };
+        reader.readAsDataURL(blob);
+    });
+}
