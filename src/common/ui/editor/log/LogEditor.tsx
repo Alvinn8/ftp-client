@@ -57,7 +57,7 @@ function parseLogs(text: string): Line[] {
             text: formatLine(current),
         };
         const currentLower = current.toLowerCase();
-        if (/at ([ a-zA-Z0-9\.<>_\-$/@^#]+)\(.+\)/.exec(currentLower)) {
+        if (/at ([ a-zA-Z0-9\.<>_\-$/@^#\\]+)\(.+\)/.exec(currentLower)) {
             line.level = "error-stacktrace";
         } else if (["error", "severe", "exception", "caused by"].some(word => currentLower.includes(word))) {
             line.level = "error";
