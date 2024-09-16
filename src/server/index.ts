@@ -41,9 +41,12 @@ function showErrorToUser(error: any): string | null {
     if (error.code === "ECONNRESET") {
         return "Connection reset: " + error.toString();
     }
-    const str = error.toString();
+    const str = error.toString().trim();
     if (str === "Error: Timeout (data socket)" || str === "Error: Timeout (control socket)") {
         return str;
+    }
+    if (str === "None of the available transfer strategies work. Last error response was 'FTPError: 400 Unable to find valid port'.") {
+        return "Please try again later. (FTPError: 400 Unable to find valid port)";
     }
     return null;
 }
