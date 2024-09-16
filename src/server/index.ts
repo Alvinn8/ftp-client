@@ -41,6 +41,9 @@ function showErrorToUser(error: any): string | null {
     if (error.code === "ECONNRESET") {
         return "Connection reset: " + error.toString();
     }
+    if (error.code === "ERR_SSL_WRONG_VERSION_NUMBER") {
+        return "SSL error. Please try again. (ERR_SSL_WRONG_VERSION_NUMBER)";
+    }
     const str = error.toString().trim();
     if (str === "Error: Timeout (data socket)" || str === "Error: Timeout (control socket)") {
         return str;
