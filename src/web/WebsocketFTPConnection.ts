@@ -15,7 +15,15 @@ export const PROTOCOL_TYPE = "json";
 export const PROTOCOL_VERSION  = 1;
 
 const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
-const CHUNK_SIZE = 2 * 1024 * 1024; // 5 MB
+
+const CHUNK_SIZES = [
+    512 * 1024, // 512 kB
+    2 * 1024 * 1024, // 2 MB
+    8 * 1024 * 1024, // 8 MB
+];
+const DEFAULT_CHUNK_SIZE = CHUNK_SIZES[0];
+const DECREASE_CHUNK_SIZE_THRESHOLD = 5000; // 5 s
+const INCREASE_CHUNK_SIZE_THRESHOLD = 500; // 500 ms
 
 /**
  * The URL to the websocket to connect to.
@@ -65,7 +73,7 @@ function progressTracker(type: "download" | "upload", path: string) {
     return (event: ProgressEvent) => {
         const op: LargeFileOperationInterface = {
             type,
-            fileName: path.substring(path.lastIndexOf('/') + 1),
+            fileName: filename(path),
             hasProgress: false,
             loaded: 0,
             total: 0
@@ -211,11 +219,10 @@ export default class WebsocketFTPConnection implements FTPConnection {
 
     private async keepAlive(xhr: XMLHttpRequest) {
         // It is very important that the connection to the FTP server isn't closed
-        // while we are uploading or downloading large files. Since the websocket
+        // while we are downloading large files over HTTP. Since the websocket
         // connection isn't used for this process, we need to ensure the connection
         // isn't closed, because closing the connection causes the FTP connection
         // to close.
-        // TODO update comment
         // We therefore send ping messages during the upload or download.
         const intervalId = setInterval(() => {
             if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -283,38 +290,76 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 path,
                 size: blob.size
             });
-            const chunkCount = Math.ceil(blob.size / CHUNK_SIZE);
+            let chunkSize = DEFAULT_CHUNK_SIZE;
             
             let lastStatus = "";
-            for (let i = 0; i < chunkCount; i++) {
-                const start = i * CHUNK_SIZE;
-                const end = Math.min(start + CHUNK_SIZE, blob.size);
+            let offset = 0;
+            while (offset < blob.size) {
+                const start = offset;
+                const end = Math.min(start + chunkSize, blob.size);
                 const chunk = blob.slice(start, end);
                 const base64 = await blobToBase64(chunk);
 
-                console.log(`Uploading chunk ${i}/${chunkCount - 1}, bytes ${start} to ${end}.`);
-                const { status } = await this.send(Packets.ChunkedUpload, {
+                console.log(`Uploading chunk with bytes ${start} to ${end}.`);
+                const startTime = performance.now();
+                const response = await this.send(Packets.ChunkedUpload, {
                     uploadId,
                     data: base64,
                     start,
                     end
                 });
+                const status = response.status;
+                offset += chunk.size;
                 lastStatus = status;
                 if (status !== "success" && status !== "end") {
                     // TODO maybe error here straight away?
                     // currently we just let the file size check verify stuff.
+                    console.log("Status: " + status);
+                    if (status === "error") {
+                        console.error(response.error);
+                    }
                     break;
                 }
-                // TODO report progress
+                
+                // Progress bar
+                largeFileOperationStore.setValue({
+                    type: "upload",
+                    fileName: filename(path),
+                    hasProgress: true,
+                    loaded: end,
+                    total: blob.size
+                });
+
+                // Adjust chunk size if applicable
+                const endTime = performance.now();
+                const ms = endTime - startTime;
+                const chunkSizeIndex = CHUNK_SIZES.indexOf(chunkSize);
+                if (chunkSizeIndex > 0 && ms > DECREASE_CHUNK_SIZE_THRESHOLD) {
+                    // The chunk size can become smaller, and the decrease threshold was reached.
+                    chunkSize = CHUNK_SIZES[chunkSizeIndex - 1];
+                    console.log(`Chunk took ${Math.round(ms)} ms, decreasing chunk size.`);
+                 } else if (chunkSizeIndex < CHUNK_SIZES.length - 1 && ms < INCREASE_CHUNK_SIZE_THRESHOLD) {
+                    // The chunk size can become bigger, and the increase threshold was reached.
+                    chunkSize = CHUNK_SIZES[chunkSizeIndex + 1];
+                    console.log(`Chunk took ${Math.round(ms)} ms, increasing chunk size.`);
+                } else {
+                    console.log(`Chunk took ${Math.round(ms)} ms, chunk size is good.`);
+                }
             }
 
             // Verify file size
             const listResult = await this.send(Packets.List, {
                 path: dirname(path)
             });
+            largeFileOperationStore.setValue(null);
             const fileName = filename(path);
             const fileInfo = listResult.files.find(f => f.name === fileName);
-            if (!fileInfo || fileInfo.size !== blob.size) {
+            if (!fileInfo) {
+                await (new Promise<void>(resolve => {
+                    Dialog.message("Upload failed", "Unknown error", () => resolve());
+                }));
+                throw new Error("Chunked upload failed.");
+            } else if (fileInfo.size !== blob.size) {
                 await (new Promise<void>(resolve => {
                     Dialog.message(
                         "Partial upload failed",

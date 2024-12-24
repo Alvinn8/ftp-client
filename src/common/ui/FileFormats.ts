@@ -29,6 +29,7 @@ export function getIconFor(fileName: string): string {
         case ".yaml":
         case ".toml":
         case ".json":
+        case ".json5":
         case ".cfg":
         case ".conf":
         case ".ini":

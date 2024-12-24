@@ -88,16 +88,18 @@ export interface ChunkedUploadData {
     end: number;
 }
 /**
- * success: The chunk was uploaded successfully, proceed to next chunk.
+ * success: The chunk has been scheduled to uploaded successfully, proceed to next chunk.
  * end: The upload has been completed.
  * desync: This chunk did not arrive in correct order.
  * 404: No upload was found for the provided uploadId.
  * malsized: The start and end byte offsets did not align with the size of the chunk.
  * hijack: The upload was started by a different connection than this one.
+ * error: A previous chunk failed to upload to the server.
  */
-export type ChunkedUploadStatus = "success" | "end" | "desync" | "404" | "malsized" | "hijack";
+export type ChunkedUploadStatus = "success" | "end" | "desync" | "404" | "malsized" | "hijack" | "error";
 export interface ChunkedUploadResponse {
     status: ChunkedUploadStatus;
+    error?: string;
 }
 
 export const packetMap = new Map<number, Packet<any, any>>();

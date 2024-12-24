@@ -12,9 +12,6 @@ const PROTOCOL_VERSION = 1;
 
 type ProtocolType = "json";
 
-const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
-const CHUNK_SIZE = 2 * 1024 * 1024; // 5 MB
-
 interface LargeDownload {
     id: string;
     path: string;
@@ -35,6 +32,9 @@ interface ChunkedUpload {
     stream: PassThrough;
     uploadPromise: Promise<ftp.FTPResponse>;
     offset: number;
+    pendingChunks: number;
+    maxPendingChunks: number;
+    error: Error | null;
 }
 
 const largeDownloads: LargeDownload[] = [];
@@ -65,6 +65,10 @@ function showErrorToUser(error: any): string | null {
         return "Please try again later. (FTPError: 400 Unable to find valid port)";
     }
     return null;
+}
+
+function sleep(ms: number) {
+    return new Promise(resolve => setInterval(resolve, ms));
 }
 
 const httpServer = createServer(function (req, res) {
@@ -394,7 +398,10 @@ handler(Packets.ChunkedUploadStart, async (packet, data, connection) => {
         connection,
         stream,
         uploadPromise,
-        offset: 0
+        offset: 0,
+        pendingChunks: 0,
+        maxPendingChunks: 2,
+        error: null
     });
 
     return { uploadId };
@@ -418,6 +425,13 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
         }
     }
 
+    if (chunkedUpload.error) {
+        return {
+            status: "error" as Status,
+            error: showErrorToUser(chunkedUpload.error)
+        };
+    }
+
     const buffer = Buffer.from(data.data, "base64");
     if (buffer.byteLength !== data.end - data.start) {
         return { status: "malsized" as Status };
@@ -427,7 +441,27 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
         return { status: "desync" as Status };
     }
 
-    chunkedUpload.stream.write(buffer);
+    chunkedUpload.pendingChunks++;
+    chunkedUpload.stream.write(buffer, (err) => {
+        if (err) {
+            chunkedUpload.error = err;
+        }
+        chunkedUpload.pendingChunks--;
+    });
+
+    connection.log("pendingChunks = " + chunkedUpload.pendingChunks);
+
+
+    let sleepCount = 0;
+    while (chunkedUpload.pendingChunks >= chunkedUpload.maxPendingChunks && sleepCount++ < 1000) {
+        // We have a few chunks in the queue now. We can wait a little.
+        await sleep(50);
+    }
+
+    if (sleepCount > 1) {
+        connection.log("slept, pendingChunks = " + chunkedUpload.pendingChunks);
+    }
+
     chunkedUpload.offset += buffer.length;
 
     if (chunkedUpload.offset === chunkedUpload.size) {
