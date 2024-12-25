@@ -132,18 +132,55 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
     // Loop trough all directories to upload
     for (const subdirName in directory.directories) {
         const subdir = directory.directories[subdirName];
+        const subdirPath = joinPath(path.get(), subdirName);
         // Check if the folder already exists
         let folderExists = false;
         for (const existingFolder of list) {
-            if (existingFolder.name == subdirName && existingFolder.isDirectory()) {
+            if (existingFolder.name != subdirName) {
+                continue;
+            }
+            if (existingFolder.isDirectory()) {
                 folderExists = true;
                 break;
+            } else {
+                await new Promise<void>(async (resolve, reject) => {
+                    const shouldDelete = await Dialog.confirm(
+                        "Cannot create folder",
+                        `Wanted to create a folder at ${subdirPath} but there
+                        is a file at that location. Do you want to delete this file or cancel the upload?`,
+                        "Cancel upload",
+                        "Delete " + subdirName
+                    );
+                    if (shouldDelete) {
+                        await getApp().state.session.delete(Priority.LARGE_TASK, subdirPath);
+                        resolve();
+                    } else {
+                        reject(new Error("A file occupied the name of a folder, and the user decided to cancel."));
+                    }
+                });
             }
         }
         // If not, create the folder
         if (!folderExists) {
             task.progress(uploadCount, totalCount, "Creating " + subdirName);
-            await getApp().state.session.mkdir(Priority.LARGE_TASK, joinPath(path.get(), subdirName));
+            let attempt = 0;
+            let success = false;
+            let lastError: any = null;
+            while (attempt < 5) {
+                try {
+                    await getApp().state.session.mkdir(Priority.LARGE_TASK, joinPath(path.get(), subdirName));
+                    success = true;
+                    break;
+                } catch (e) {
+                    attempt++;
+                    console.log(`mkdir attempt ${attempt} got error:`, e);
+                    lastError = e;
+                    await sleep(1000);
+                }
+            }
+            if (!success) {
+                throw lastError || new Error(`Failed to create directory after ${attempt} attempts.`);
+            }
         }
         path.cd(subdirName);
         // Upload the folder contents recursively
