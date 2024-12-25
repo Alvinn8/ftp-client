@@ -165,7 +165,8 @@ export async function openTextEditor(folderEntry: FolderEntry) {
 
     wind["save"] = async (text: string) => {
         const blob = new Blob([text]);
-        await getApp().state.session.upload(Priority.QUICK, blob, absolutePath);
+        await getApp().state.session.uploadSmall(Priority.QUICK, blob, absolutePath);
+        // TODO what if the file is large?
         wind.postMessage({
             action: "save-callback"
         });
@@ -233,7 +234,7 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
         const absolutePath = folderEntry.path + "_ftp-client_nbt";
         wind["save"] = async function(blob: Blob) {
             const session = getApp().state.session;
-            await session.upload(Priority.QUICK, blob, absolutePath);
+            await session.uploadSmall(Priority.QUICK, blob, absolutePath);
             wind.postMessage({
                 action: "save-callback"
             });

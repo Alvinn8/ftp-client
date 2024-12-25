@@ -5,14 +5,8 @@
 import JSZip from "jszip";
 import * as React from "react";
 import Dialog from "../Dialog";
-import FolderContentProviders from "../folder/FolderContentProviders";
-import DirectoryPath from "../ftp/DirectoryPath";
-import Priority from "../ftp/Priority";
-import Task from "../task/Task";
-import TaskManager from "../task/TaskManager";
-import { getApp } from "../ui/App";
-import { joinPath } from "../utils";
 import Directory from "./Directory";
+import { upload } from "./uploadToServer";
 
 export namespace UploadSupport {
     /**
@@ -34,132 +28,6 @@ export namespace UploadSupport {
     && "DataTransferItemList" in window
     && "DataTransferItem" in window
     && "webkitGetAsEntry" in DataTransferItem.prototype;
-}
-
-/**
- * Upload the uploads to the current directory to the FTP server.
- *
- * @param uploads The contents to upload.
- */
-export async function upload(uploads: Directory) {
-    if (!TaskManager.requestNewTask()) return;
-
-    const hasDirectories = Object.keys(uploads.directories).length > 0;
-
-    if (!hasDirectories && uploads.files.length == 1) {
-        const task = new Task("Uploading " + uploads.files[0].name, "", false);
-        TaskManager.setTask(task);
-        const file = uploads.files[0];
-        const dir = getApp().state.workdir;
-        try {
-            await uploadFile(file, joinPath(dir, file.name));
-        } catch (e) {
-            task.complete();
-            getApp().refresh();
-            Dialog.message("Failed to upload", String(e) || "Unknown error");
-            return;
-        }
-        task.complete();
-        getApp().refresh();
-
-        // Check if the file now exists in the directory.
-        const content = await getApp().state.session.list(Priority.QUICK, dir);
-        if (!content.some(entry => entry.name === file.name)) {
-            Dialog.message("Failed to upload", "The file was not uploaded for an unknown reason.");
-        }
-    } else {
-        // Count the files for the task progress
-        const totalCount = countFilesRecursively(uploads);
-
-        const task = new Task("Uploading " + totalCount + " files", "", true);
-        TaskManager.setTask(task);
-
-        // Do the uploading
-        const path = new DirectoryPath(getApp().state.workdir);
-        await uploadDirectory(uploads, task, path, 0, totalCount);
-
-        // Refresh the current directory and clear cache
-        getApp().refresh(true);
-        
-        // Complete the task
-        task.complete();
-    }
-}
-
-/**
- * Upload a directory to the FTP server, recursively uploading subdirectories
- * if required.
- *
- * @param directory The directory to upload.
- * @param task The task for this upload.
- * @param path The current folder being uploaded to.
- * @param uploadCount The amount of files that have already been uploaded.
- * @param totalCount The total amount of files to upload.
- * @returns The new uploadCount, the new amount of files that have been uploaded.
- */
-async function uploadDirectory(directory: Directory, task: Task, path: DirectoryPath, uploadCount: number, totalCount: number): Promise<number> {
-    // Upload all files
-    for (const file of directory.files) {
-        await uploadFile(file, joinPath(path.get(), file.name));
-        uploadCount++;
-        task.progress(uploadCount, totalCount, "Uploading " + file.name);
-    }
-    // List the current folder so we can see if the following subdirectories exist
-    const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, path.get());
-    // Loop trough all directories to upload
-    for (const subdirName in directory.directories) {
-        const subdir = directory.directories[subdirName];
-        // Check if the folder already exists
-        let folderExists = false;
-        for (const existingFolder of list) {
-            if (existingFolder.name == subdirName && existingFolder.isDirectory()) {
-                folderExists = true;
-                break;
-            }
-        }
-        // If not, create the folder
-        if (!folderExists) {
-            task.progress(uploadCount, totalCount, "Creating " + subdirName);
-            await getApp().state.session.mkdir(Priority.LARGE_TASK, joinPath(path.get(), subdirName));
-        }
-        path.cd(subdirName);
-        // Upload the folder contents recursively
-        // also reassign the uploadCount variable to the new uploadCount
-        uploadCount = await uploadDirectory(subdir, task, path, uploadCount, totalCount);
-        // We are now done with the sub directory, cd back up.
-        path.cdup();
-    }
-    return uploadCount;
-}
-
-/**
- * Upload a file to the FTP server.
- * <p>
- * The connection can not be fetched from the session when a task is running,
- * without permission (providing the task), therefore the connection is injected
- * into this method instead.
- *
- * @param file The file to upload.
- * @param path The path on the server to upload the file to, including the file name.
- */
-async function uploadFile(file: File, path: string) {
-    console.log("Uploading " + file.name);
-    await getApp().state.session.upload(Priority.LARGE_TASK, file, path);
-}
-
-/**
- * Recursively count the files in the specified directory and all it's
- * subdirectories.
- *
- * @param directory The directory to count the files in.
- * @returns The amount of files in this directory and subdirectories.
- */
-function countFilesRecursively(directory: Directory): number {
-    let count = directory.files.length;
-    for (const subdir of Object.values(directory.directories)) {
-        count += countFilesRecursively(subdir);
-    }
-    return count;
 }
 
 // Drag and drop

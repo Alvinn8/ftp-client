@@ -1,3 +1,4 @@
+import { ChunkedUploadResponse } from "../../protocol/packets";
 import FolderEntry from "../folder/FolderEntry";
 
 /**
@@ -16,7 +17,9 @@ export default interface FTPConnection {
     /** @deprecated */
     cdup(): Promise<void>;
     download(folderEntry: FolderEntry): Promise<Blob>;
-    upload(blob: Blob, path: string): Promise<void>;
+    uploadSmall(blob: Blob, path: string): Promise<void>;
+    startChunkedUpload(path: string, size: number, startOffset: number | null): Promise<string>;
+    uploadChunk(uploadId: string, chunk: Blob, start: number, end: number): Promise<ChunkedUploadResponse>;
     mkdir(path: string): Promise<void>;
     rename(from: string, to: string): Promise<void>;
     delete(path: string): Promise<void>;

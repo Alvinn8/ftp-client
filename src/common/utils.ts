@@ -41,3 +41,7 @@ export function blobToBase64(blob: Blob): Promise<string> {
         reader.readAsDataURL(blob);
     });
 }
+
+export function sleep(ms: number) {
+    return new Promise(resolve => setInterval(resolve, ms));
+}

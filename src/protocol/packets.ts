@@ -72,6 +72,8 @@ export interface ChunkedUploadStartData {
     path: string;
     /** The total size in bytes of the file to upload. */
     size: number;
+    /** If present, append to an existing file at the specified start offset. */
+    startOffset: number | null;
 }
 
 export interface ChunkedUploadStartResponse {

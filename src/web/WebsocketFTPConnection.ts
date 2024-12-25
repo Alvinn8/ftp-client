@@ -1,29 +1,21 @@
 import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
 import FTPConnection from "../common/ftp/FTPConnection";
 import { addMessage } from "../common/ui/messages";
-import { blobToBase64, dirname, ensureAbsolute, filename } from "../common/utils";
-import { Packet, Packets } from "../protocol/packets";
+import { blobToBase64, ensureAbsolute, filename } from "../common/utils";
+import { ChunkedUploadResponse, Packet, Packets } from "../protocol/packets";
 import {LargeFileOperationInterface, largeFileOperationStore} from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
 
 interface PendingReply {
     requestId: string;
     handler: (data: any) => void;
+    reject: (error: Error) => void;
 };
 
 export const PROTOCOL_TYPE = "json";
 export const PROTOCOL_VERSION  = 1;
 
 const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
-
-const CHUNK_SIZES = [
-    512 * 1024, // 512 kB
-    2 * 1024 * 1024, // 2 MB
-    8 * 1024 * 1024, // 8 MB
-];
-const DEFAULT_CHUNK_SIZE = CHUNK_SIZES[0];
-const DECREASE_CHUNK_SIZE_THRESHOLD = 5000; // 5 s
-const INCREASE_CHUNK_SIZE_THRESHOLD = 500; // 500 ms
 
 /**
  * The URL to the websocket to connect to.
@@ -105,6 +97,23 @@ export default class WebsocketFTPConnection implements FTPConnection {
         // Ensure the server is ready
         await connectionPromise;
 
+        if (navigator.onLine === false || await attemptRequest().then(() => true).catch(() => false) === false) {
+            await new Promise<void>(async (resolve, reject) => {
+                const confirmed = await Dialog.confirm(
+                    "No internet connection",
+                    `It appears you are not connected to the internet, or the ftp-client is experiencing
+                    downtime. Double check you internet connection and press "Continue" when you are online.`,
+                    "Cancel",
+                    "Continue"
+                );
+                if (confirmed) {
+                    resolve();
+                } else {
+                    reject(new Error("No internet connection, and the user decided to cancel."));
+                }
+            });
+        }
+
         await new Promise<void>((resolve, reject) => {
             this.websocket = new WebSocket(WEBSOCKET_URL);
             this.websocket.addEventListener("message", e => {
@@ -125,10 +134,12 @@ export default class WebsocketFTPConnection implements FTPConnection {
             this.websocket.addEventListener("error", (e) => {
                 addMessage({
                     color: "danger",
-                    message: "Connection error: " + e,
+                    message: "Connection error",
                     stayForMillis: 5000
                 });
-                reject(e);
+                console.log("WebSocket connection error", e)
+                this.rejectPendingReplies(new Error("WebSocket connection error"));
+                reject(new Error("WebSocket connection error"));
             });
             this.websocket.addEventListener("close", e => {
                 let message = "Connection closed";
@@ -141,17 +152,20 @@ export default class WebsocketFTPConnection implements FTPConnection {
                     message: message,
                     stayForMillis: 5000
                 });
+                this.rejectPendingReplies(new Error(message));
             });
         });
     }
 
     send<Data, Response>(packet: Packet<Data, Response>, data: Data): Promise<Response> {
+        console.log("Sending", packet.id);
         return new Promise<Response>((resolve, reject) => {
             data["packetId"] = packet.id;
             const requestId = this.getRandomId();
             data["requestId"] = requestId;
             this.pendingReplies.push({
                 requestId,
+                reject,
                 handler: function (data) {
                     if (data.action == "error") {
                         addMessage({
@@ -162,7 +176,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                         reject(new Error(data.message));
                     }
                     else resolve(data);
-                }
+                },
             });
             this.websocket.send(JSON.stringify(data));
         });
@@ -170,6 +184,12 @@ export default class WebsocketFTPConnection implements FTPConnection {
 
     getRandomId(): string {
         return Math.random().toString().substring(2);
+    }
+
+    private rejectPendingReplies(error: Error) {
+        for (const pendingReply of this.pendingReplies) {
+            pendingReply.reject(error);
+        }
     }
 
     async connect(host: string, port: number, username: string, password: string, secure: boolean): Promise<void> {
@@ -282,104 +302,34 @@ export default class WebsocketFTPConnection implements FTPConnection {
         }
     }
 
-    async upload(blob: Blob, path: string): Promise<void> {
+    async uploadSmall(blob: Blob, path: string): Promise<void> {
         ensureAbsolute(path);
+        const base64 = await blobToBase64(blob);
 
-        if (blob.size > LARGE_FILE_THRESHOLD) {
-            const { uploadId } = await this.send(Packets.ChunkedUploadStart, {
-                path,
-                size: blob.size
-            });
-            let chunkSize = DEFAULT_CHUNK_SIZE;
-            
-            let lastStatus = "";
-            let offset = 0;
-            while (offset < blob.size) {
-                const start = offset;
-                const end = Math.min(start + chunkSize, blob.size);
-                const chunk = blob.slice(start, end);
-                const base64 = await blobToBase64(chunk);
+        await this.send(Packets.Upload, {
+            path: path,
+            data: base64
+        });
+    }
 
-                console.log(`Uploading chunk with bytes ${start} to ${end}.`);
-                const startTime = performance.now();
-                const response = await this.send(Packets.ChunkedUpload, {
-                    uploadId,
-                    data: base64,
-                    start,
-                    end
-                });
-                const status = response.status;
-                offset += chunk.size;
-                lastStatus = status;
-                if (status !== "success" && status !== "end") {
-                    // TODO maybe error here straight away?
-                    // currently we just let the file size check verify stuff.
-                    console.log("Status: " + status);
-                    if (status === "error") {
-                        console.error(response.error);
-                    }
-                    break;
-                }
-                
-                // Progress bar
-                largeFileOperationStore.setValue({
-                    type: "upload",
-                    fileName: filename(path),
-                    hasProgress: true,
-                    loaded: end,
-                    total: blob.size
-                });
+    async startChunkedUpload(path: string, size: number, startOffset: number | null): Promise<string> {
+        ensureAbsolute(path);
+        const { uploadId } = await this.send(Packets.ChunkedUploadStart, {
+            path,
+            size,
+            startOffset
+        });
+        return uploadId;
+    }
 
-                // Adjust chunk size if applicable
-                const endTime = performance.now();
-                const ms = endTime - startTime;
-                const chunkSizeIndex = CHUNK_SIZES.indexOf(chunkSize);
-                if (chunkSizeIndex > 0 && ms > DECREASE_CHUNK_SIZE_THRESHOLD) {
-                    // The chunk size can become smaller, and the decrease threshold was reached.
-                    chunkSize = CHUNK_SIZES[chunkSizeIndex - 1];
-                    console.log(`Chunk took ${Math.round(ms)} ms, decreasing chunk size.`);
-                 } else if (chunkSizeIndex < CHUNK_SIZES.length - 1 && ms < INCREASE_CHUNK_SIZE_THRESHOLD) {
-                    // The chunk size can become bigger, and the increase threshold was reached.
-                    chunkSize = CHUNK_SIZES[chunkSizeIndex + 1];
-                    console.log(`Chunk took ${Math.round(ms)} ms, increasing chunk size.`);
-                } else {
-                    console.log(`Chunk took ${Math.round(ms)} ms, chunk size is good.`);
-                }
-            }
-
-            // Verify file size
-            const listResult = await this.send(Packets.List, {
-                path: dirname(path)
-            });
-            largeFileOperationStore.setValue(null);
-            const fileName = filename(path);
-            const fileInfo = listResult.files.find(f => f.name === fileName);
-            if (!fileInfo) {
-                await (new Promise<void>(resolve => {
-                    Dialog.message("Upload failed", "Unknown error", () => resolve());
-                }));
-                throw new Error("Chunked upload failed.");
-            } else if (fileInfo.size !== blob.size) {
-                await (new Promise<void>(resolve => {
-                    Dialog.message(
-                        "Partial upload failed",
-                        `The file at ${path} failed to upload properly and might have corrupted due to
-                        only part of the file being uploaded correctly. Only ${Math.round(fileInfo.size / 1E6)} MB out of
-                        ${Math.round(blob.size / 1E6)} were actually uploaded. Please delete ${path} and try to
-                        upload it again. Last chunk status: ${lastStatus}`,
-                        () => resolve()
-                    );
-                }));
-                throw new Error("Chunked upload failed."); // TODO retry for grouped uploads and such
-            }
-        } else {
-            const base64 = await blobToBase64(blob);
-
-            await this.send(Packets.Upload, {
-                path: path,
-                data: base64
-            });
-        }
+    async uploadChunk(uploadId: string, chunk: Blob, start: number, end: number): Promise<ChunkedUploadResponse> {
+        const base64 = await blobToBase64(chunk);
+        return await this.send(Packets.ChunkedUpload, {
+            uploadId,
+            data: base64,
+            start,
+            end
+        });
     }
 
     async mkdir(path: string): Promise<void> {

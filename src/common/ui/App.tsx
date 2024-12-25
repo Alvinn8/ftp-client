@@ -90,6 +90,7 @@ export class App extends React.Component<AppProps, AppState> {
             console.warn("app has been re-rendered, this might cause problems.");
         }
         app = this;
+        window["app"] = this;
 
         this.state = {
             session: null,
@@ -282,5 +283,3 @@ export class App extends React.Component<AppProps, AppState> {
         );
     }
 }
-
-window["app"] = app;

@@ -259,6 +259,13 @@ server.on("connection", function(ws) {
             } catch (e) {
                 connection.log("Disconected during a task: " + e.message);
             }
+            for (let i = chunkedUploads.length - 1; i >= 0; i--) {
+                const chunkedUpload = chunkedUploads[i];
+                if (chunkedUpload.connection === connection) {
+                    chunkedUpload.stream.destroy();
+                    chunkedUploads.splice(i, 1);
+                }
+            }
         }
         connection = null;
     });
@@ -387,9 +394,9 @@ handler(Packets.ChunkedUploadStart, async (packet, data, connection) => {
     const uploadId = Math.random().toString().substring(2);
     const stream = new PassThrough();
 
-    const uploadPromise = connection.ftp.uploadFrom(stream, data.path);
-    // TODO handle timeouts in the data socket and in case that happens restart the
-    // upload with a smaller chunk size.
+    const uploadPromise = data.startOffset !== null
+        ? connection.ftp.appendFrom(stream, data.path)
+        : connection.ftp.uploadFrom(stream, data.path);
 
     chunkedUploads.push({
         id: uploadId,
@@ -398,7 +405,7 @@ handler(Packets.ChunkedUploadStart, async (packet, data, connection) => {
         connection,
         stream,
         uploadPromise,
-        offset: 0,
+        offset: data.startOffset !== null ? data.startOffset : 0,
         pendingChunks: 0,
         maxPendingChunks: 2,
         error: null
@@ -415,14 +422,7 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
         return { status: "404" as Status };
     }
     if (chunkedUpload.connection !== connection) {
-        if (chunkedUpload.connection.ws.readyState === WebSocket.CLOSED) {
-            // The existing connection was closed. The client likely reconnected with a new
-            // connection to resume the upload.
-            connection.log(`Taking over chunked upload ${chunkedUpload.id} from ${chunkedUpload.connection.id}`);
-            chunkedUpload.connection = connection;
-        } else {
-            return { status: "hijack" as Status };
-        }
+        return { status: "hijack" as Status };
     }
 
     if (chunkedUpload.error) {
