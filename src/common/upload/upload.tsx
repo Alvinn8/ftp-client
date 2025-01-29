@@ -33,7 +33,7 @@ export namespace UploadSupport {
 // Drag and drop
 
 function isZipFile(fileName: string) {
-    return fileName.endsWith(".zip") || fileName.endsWith(".mcworld") || fileName.endsWith(".mcpack");
+    return fileName.endsWith(".zip") || fileName.endsWith(".mcworld");
 }
 
 /**
