@@ -61,8 +61,12 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
     const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
     countTask.complete();
 
-    if (totalCount > 1 && !await Dialog.confirm("Delete " + totalCount + " files", "You are about to delete "
-        + totalCount + " files/folders. This can not be undone. Are you sure?")) {
+    const description = totalCount === 1 && entries[0]
+        ? entries[0].name
+        : totalCount + (totalCount === 1 ? " file" : " files");
+
+    if (!await Dialog.confirm("Delete " + description, "You are about to delete "
+        + description +". This can not be undone. Are you sure?")) {
         return;
     }
     
