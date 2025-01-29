@@ -1,6 +1,6 @@
 import * as React from "react";
 import { afterEach, beforeEach, vi, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, waitForElementToBeRemoved } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitForElementToBeRemoved, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { getApp, App, DeviceSize } from "../ui/App";
 import FTPSession from "../ftp/FTPSession";
@@ -106,8 +106,26 @@ describe("ftp-client tests", () => {
 
         await userEvent.click(await screen.findByText("test.txt"));
         await userEvent.click(await screen.findByRole("button", { name: "Delete" }));
+        const el = await screen.findByText("You are about to delete test.txt. This can not be undone. Are you sure?");
+        const ok = await within(el.parentElement.parentElement).findByRole("button", { name: "OK"});
+        await userEvent.click(ok);
 
         expect(connection.delete).toHaveBeenCalledWith("/test.txt");
+    });
+
+    it("delete file via button but cancel should not delete file", async () => {
+        connection.list.mockResolvedValueOnce([
+            new FolderEntry("/test.txt", "test.txt", 1, FolderEntryType.File, "")
+        ]);
+        render(<App session={session} />);
+
+        await userEvent.click(await screen.findByText("test.txt"));
+        await userEvent.click(await screen.findByRole("button", { name: "Delete" }));
+        const el = await screen.findByText("You are about to delete test.txt. This can not be undone. Are you sure?");
+        const cancel = await within(el.parentElement.parentElement).findByRole("button", { name: "Cancel"});
+        await userEvent.click(cancel);
+
+        expect(connection.delete).not.toHaveBeenCalled();
     });
 
     it("delete file via context menu", async () => {
@@ -118,6 +136,9 @@ describe("ftp-client tests", () => {
 
         fireEvent.contextMenu(await screen.findByText("test.txt"));
         await userEvent.click(await findContextMenuEntry("Delete"));
+        const el = await screen.findByText("You are about to delete test.txt. This can not be undone. Are you sure?");
+        const ok = await within(el.parentElement.parentElement).findByRole("button", { name: "OK"});
+        await userEvent.click(ok);
 
         expect(connection.delete).toHaveBeenCalledWith("/test.txt");
     });
