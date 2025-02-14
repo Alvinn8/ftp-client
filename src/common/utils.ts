@@ -15,10 +15,11 @@ export function joinPath(a: string, b: string) {
 }
 
 export function dirname(path: string): string {
-    if (!path.includes("/")) {
-        return path;
+    const index = path.lastIndexOf('/');
+    if (index <= 0) {
+        return "/";
     }
-    return path.substring(0, path.lastIndexOf('/'));
+    return path.substring(0, index);
 }
 
 export function filename(path: string): string {
