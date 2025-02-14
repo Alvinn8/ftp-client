@@ -246,8 +246,12 @@ async function uploadLargeFile(file: File, path: string) {
             lastError = e;
             getApp().state.session.unlockQueue(queueLockIdentifier);
 
+            // Avoid a failed upload from getting stuck in progress.
+            largeFileOperationStore.setValue(null);
+
             // Disconnect to ensure upload is fully aborted.
             // Also wait a bit just to be safe.
+            getApp().refresh(true);
             getApp().state.session.disconnect();
             await sleep(1000);
 
