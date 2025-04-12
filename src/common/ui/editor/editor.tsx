@@ -9,17 +9,26 @@ import { getApp } from "../App";
 import { addMessage } from "../messages";
 import { EventEmitter } from "eventemitter3";
 
-class EditorWindowsStore extends EventEmitter {
-    editorWindows: Window[] = [];
+interface EditorWindow {
+    window: Window;
+    folderEntry: FolderEntry;
+}
 
-    setEditorWindows(editorWindows: Window[]) {
+class EditorWindowsStore extends EventEmitter {
+    editorWindows: EditorWindow[] = [];
+
+    setEditorWindows(editorWindows: EditorWindow[]) {
         this.editorWindows = editorWindows;
         this.emit("change", this.editorWindows);
     }
 
+    addEditorWindow(editorWindow: EditorWindow) {
+        this.setEditorWindows([...this.editorWindows, editorWindow]);
+    }
+
     removeUnloaded() {
         const current = this.editorWindows;
-        const openWindows = current.filter(wind => !wind.closed);
+        const openWindows = current.filter(wind => !wind.window.closed);
         if (openWindows.length !== current.length) {
             this.setEditorWindows(openWindows);
         }
@@ -28,14 +37,14 @@ class EditorWindowsStore extends EventEmitter {
 export const editorWindowsStore = new EditorWindowsStore();
 
 window.addEventListener("beforeunload", (event) => {
-    if (editorWindowsStore.editorWindows.filter(wind => !wind.closed).length > 0) {
+    if (editorWindowsStore.editorWindows.filter(wind => !wind.window.closed).length > 0) {
         event.preventDefault();
         return (event.returnValue = "");
     }
 });
 
 window.addEventListener("unload", () => {
-    editorWindowsStore.editorWindows.forEach(wind => wind.close());
+    editorWindowsStore.editorWindows.forEach(wind => wind.window.close());
 });
 
 window.addEventListener("focus", () => {
@@ -48,16 +57,20 @@ window.addEventListener("focus", () => {
  * @param name The name of the window. A window being created with an existing
  * name will replace the old window.
  * @param url The url to open.
+ * @param folderEntry The folder entry that is being edited.
  * @returns The window object of the created window.
  */
-function openWindow(name: string, url: string): Window {
+function openWindow(name: string, url: string, folderEntry: FolderEntry): Window {
     let wind: Window = null;
     if (window.innerWidth > 600) {
         // Try open popup window on desktop
         wind = window.open(url, name, "width=600,height=600");
         if (wind) {
             // Add to list of open popup windows
-            editorWindowsStore.setEditorWindows([...editorWindowsStore.editorWindows, wind]);
+            editorWindowsStore.addEditorWindow({
+                window: wind,
+                folderEntry
+            });
         }
     }
     // If the popup failed to open, open an iframe instead.
@@ -90,6 +103,15 @@ function openWindow(name: string, url: string): Window {
         }, 100);
     });
     return wind;
+}
+
+function openExistingWindow(folderEntry: FolderEntry): boolean {
+    const wind = editorWindowsStore.editorWindows.find(wind => wind.folderEntry.path == folderEntry.path);
+    if (wind) {
+        wind.window.focus();
+        return true;
+    }
+    return false;
 }
 
 async function chooseEditor(folderEntry: FolderEntry): Promise<FileType | null> {
@@ -138,6 +160,8 @@ export async function openChosenEditor(folderEntry: FolderEntry) {
 }
 
 export async function openTextEditor(folderEntry: FolderEntry) {
+    if (openExistingWindow(folderEntry)) return;
+
     const fileInfo = await getFile(folderEntry);
     if (fileInfo == null) return;
 
@@ -148,7 +172,7 @@ export async function openTextEditor(folderEntry: FolderEntry) {
         textEditor = "codemirror";
     }
 
-    const wind = openWindow(folderEntry.name, "editor/text/"+ textEditor +".html");
+    const wind = openWindow(folderEntry.name, "editor/text/"+ textEditor +".html", folderEntry);
 
     const textPromise = new Promise<string>(function (resolve, reject) {
         const reader = new FileReader();
@@ -186,9 +210,11 @@ export async function openTextEditor(folderEntry: FolderEntry) {
  * @param folderEntry The folder entry to view as an image.
  */
 export async function openImageEditor(folderEntry: FolderEntry) {
+    if (openExistingWindow(folderEntry)) return;
+
     const blob = await getFile(folderEntry);
     if (blob == null) return;
-    const wind = openWindow(folderEntry.name, "editor/image.html");
+    const wind = openWindow(folderEntry.name, "editor/image.html", folderEntry);
     const url = URL.createObjectURL(blob.blob);
     wind["imageEditorData"] = {
         url,
@@ -202,6 +228,8 @@ export async function openImageEditor(folderEntry: FolderEntry) {
  * @param folderEntry The folder entry to open as nbt.
  */
 export async function openNbtEditor(folderEntry: FolderEntry) {
+    if (openExistingWindow(folderEntry)) return;
+
     const fileInfo = await getFile(folderEntry);
     if (fileInfo == null) return;
     let nbt: NbtData;
@@ -228,7 +256,7 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
             allowSaving = false;
     }
 
-    const wind = openWindow(folderEntry.name, "editor/nbt.html");
+    const wind = openWindow(folderEntry.name, "editor/nbt.html", folderEntry);
 
     if (allowSaving) {
         const absolutePath = folderEntry.path + "_ftp-client_nbt";
@@ -258,9 +286,12 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
  * @param folderEntry The folder entry to open.
  */
 export async function openLogEditor(folderEntry: FolderEntry) {
+    if (openExistingWindow(folderEntry)) return;
+
     const fileInfo = await getFile(folderEntry);
     if (fileInfo == null) return;
-    const wind = openWindow(folderEntry.name, "editor/log.html");
+
+    const wind = openWindow(folderEntry.name, "editor/log.html", folderEntry);
     
     const textPromise = new Promise<string>(function (resolve, reject) {
         const reader = new FileReader();

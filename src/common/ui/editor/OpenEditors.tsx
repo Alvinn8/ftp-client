@@ -6,7 +6,7 @@ const OpenEditors = () => {
     const [editorWindows, setEditorWindows] = useState<Window[]>([]);
 
     editorWindowsStore.on("change", (editorWindows) => {
-        setEditorWindows(editorWindows);
+        setEditorWindows(editorWindows.map(editorWindow => editorWindow.window));
     });
 
     const openWindows = editorWindows.filter(wind => !wind.closed);
