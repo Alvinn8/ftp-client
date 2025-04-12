@@ -62,7 +62,7 @@ describe("ftp-client tests", () => {
     it("mkdir", async () => {
         render(<App session={session} />);
 
-        userEvent.click(screen.getByRole("button", { name: "New Folder" }));
+        userEvent.click(screen.getByRole("button", { name: "Create Folder" }));
         await userEvent.type(await findPromptInput("Enter the name of the new folder"), "test_mkdir_folder");
         connection.list.mockResolvedValueOnce([
             new FolderEntry("/test_mkdir_folder", "test_mkdir_folder", 1, FolderEntryType.Directory, "")
@@ -236,7 +236,7 @@ describe("ftp-client tests", () => {
         expect(screen.getByRole("button", { name: "Current folder path" })).toBeVisible();
         
         await userEvent.click(screen.getByRole("button", { name: "Selection information and actions" }));
-        expect(screen.getByRole("button", { name: "New Folder" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Create Folder" })).toBeInTheDocument();
 
         await userEvent.click(screen.getByRole("button", { name: "Folder explorer" }));
         expect(screen.getByText("/")).toBeInTheDocument();
