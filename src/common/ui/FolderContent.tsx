@@ -69,6 +69,9 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         this.setState({
             dragAndDrop: true
         });
+        if (this.props.selection.length > 0) {
+            this.props.unselectAll();
+        }
     }
 
     onDragLeave(e: DragEvent) {
