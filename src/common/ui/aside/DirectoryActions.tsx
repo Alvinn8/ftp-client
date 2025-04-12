@@ -4,6 +4,7 @@ import Priority from "../../ftp/Priority";
 import { directoryUpload, fileUpload, setZipUploadMode } from "../../upload/upload";
 import { joinPath } from "../../utils";
 import { getApp } from "../App";
+import FolderContentProviders from "../../folder/FolderContentProviders";
 
 interface DirectoryActionsProps {
     workdir: string;
@@ -15,8 +16,20 @@ interface DirectoryActionsProps {
  */
 const DirectoryActions: React.FC<DirectoryActionsProps> = (props) => {
     function mkdir() {
-        Dialog.prompt("New Folder", "Enter the name of the new folder", "OK", "", async name => {
+        Dialog.prompt("Create New Folder", "Enter the name of the new folder", "OK", "", async name => {
             await getApp().state.session.mkdir(Priority.QUICK, joinPath(props.workdir, name));
+            getApp().refresh();
+        });
+    }
+
+    function createFile() {
+        Dialog.prompt("Create New File", "Enter the name of the new file", "OK", "", async name => {
+            const entries = await FolderContentProviders.FTP.getFolderEntries(Priority.QUICK, props.workdir);
+            if (entries.find(entry => entry.name == name)) {
+                Dialog.message("File already exists", "A file with this name already exists in this folder.");
+                return;
+            }
+            await getApp().state.session.uploadSmall(Priority.QUICK, new Blob([""]), joinPath(props.workdir, name));
             getApp().refresh();
         });
     }
@@ -46,13 +59,15 @@ const DirectoryActions: React.FC<DirectoryActionsProps> = (props) => {
 
     return (
         <div>
-            <button className="btn btn-primary m-2" onClick={mkdir}>New Folder</button>
+            <button className="btn btn-primary m-2" onClick={mkdir}>Create Folder</button>
+            <button className="btn btn-primary m-2" onClick={createFile}>Create File</button>
+            <br />
             <button className="btn btn-info m-2" onClick={upload}>Upload</button>
-            <p>You can also upload files and folders by dragging and dropping them.</p>
             <button className="btn btn-secondary m-2" onClick={refresh}>
                 <i className="bi bi-arrow-clockwise"></i>
                 <span>&nbsp;Refresh</span>
             </button>
+            <p className="m-2">You can also upload files and folders by dragging and dropping them.</p>
         </div>
     );
 };
