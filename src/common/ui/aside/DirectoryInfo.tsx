@@ -15,7 +15,7 @@ export default class DirectoryInfo extends React.Component<DirectoryInfoProps, {
         return (
             <div>
                 <p>File name: { entry.name }</p>
-                <CompuseSize selection={[entry]} />
+                <CompuseSize selection={[entry]} key={Math.random()} />
                 <p>Last modified: { entry.modifiedAt }</p>
             </div>
         );
