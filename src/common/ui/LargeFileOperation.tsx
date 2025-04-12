@@ -21,6 +21,13 @@ class LargeFileOperationStore extends EventEmitter {
 }
 export const largeFileOperationStore = new LargeFileOperationStore();
 
+window.addEventListener("beforeunload", (event) => {
+    if (largeFileOperationStore.value) {
+        event.preventDefault();
+        return (event.returnValue = "");
+    }
+});
+
 const LargeFileOperation: React.FC = () => {
     const [value, setValue] = useState<LargeFileOperationInterface>(null);
     

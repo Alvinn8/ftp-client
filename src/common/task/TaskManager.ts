@@ -71,4 +71,13 @@ class TaskManager extends EventEmitter {
     }
 }
 
-export default new TaskManager();
+const fileManager = new TaskManager();
+
+window.addEventListener("beforeunload", (event) => {
+    if (fileManager.hasTask()) {
+        event.preventDefault();
+        return (event.returnValue = "");
+    }
+});
+
+export default fileManager;
