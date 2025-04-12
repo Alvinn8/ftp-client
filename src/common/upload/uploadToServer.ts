@@ -175,7 +175,7 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
                     attempt++;
                     console.log(`mkdir attempt ${attempt} got error:`, e);
                     lastError = e;
-                    await sleep(1000);
+                    await sleep(1000 * attempt);
                 }
             }
             if (!success) {
@@ -216,7 +216,7 @@ async function uploadSmallFile(file: File, path: string) {
             attempt++;
             console.log(`Attempt ${attempt} got error:`, e);
             lastError = e;
-            await sleep(1000);
+            await sleep(1000 * attempt);
         }
     }
     if (!success) {
@@ -253,7 +253,7 @@ async function uploadLargeFile(file: File, path: string) {
             // Also wait a bit just to be safe.
             getApp().refresh(true);
             getApp().state.session.disconnect();
-            await sleep(1000);
+            await sleep(1000 * attempt);
 
             // Restart partial upload.
             const fileInfo = await getFileInfo(path);

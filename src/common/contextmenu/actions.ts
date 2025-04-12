@@ -8,6 +8,7 @@ import Priority from "../ftp/Priority";
 import Task from "../task/Task";
 import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
+import { sleep } from "../utils";
 
 export async function downloadFolderEntry(entry: FolderEntry) {
     try {
@@ -144,14 +145,23 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     TaskManager.setTask(task);
     const zip = new JSZip();
     const path = getDirectoryPath(entries);
-    await downloadRecursively(entries, zip, task, path, 0, totalCount);
+    
+    try {
+        await downloadRecursively(entries, zip, task, path, 0, totalCount);
 
-    // Create and download zip
-    task.progress(totalCount, totalCount, "Creating zip");
-    const zipFile = await zip.generateAsync({ type: "blob" });
+        // Create and download zip
+        task.progress(totalCount, totalCount, "Creating zip");
+        const zipFile = await zip.generateAsync({ type: "blob" });
 
-    download(zipFile, entries.length == 1 ? entries[0].name + ".zip" : "files.zip");
-    task.complete();
+        download(zipFile, entries.length == 1 ? entries[0].name + ".zip" : "files.zip");
+        task.complete();
+    } catch (e) {
+        Dialog.message(
+            "Download failed",
+            `The download failed even after several attempts. Error: ${e}`
+        );
+        task.complete();
+    }
 }
 
 async function downloadRecursively(entries: FolderEntry[], zip: JSZip, task: Task, path: DirectoryPath, downloadCount: number, totalCount: number): Promise<number> {
@@ -159,8 +169,34 @@ async function downloadRecursively(entries: FolderEntry[], zip: JSZip, task: Tas
         if (entry.isFile()) {
             // A file, download it and place in the zip
             task.progress(downloadCount, totalCount, "Downloading " + entry.name);
-            const blob = await getApp().state.session.download(Priority.LARGE_TASK, entry);
-            zip.file(entry.name, blob);
+            
+            // Try downloading the file up to 5 times
+            let attempt = 0;
+            const maxAttempts = 5;
+            let success = false;
+            let lastError: Error | null = null;
+            
+            while (attempt < maxAttempts) {
+                try {
+                    const blob = await getApp().state.session.download(Priority.LARGE_TASK, entry);
+                    zip.file(entry.name, blob);
+                    success = true;
+                    break;
+                } catch (e) {
+                    lastError = e as Error;
+                    attempt++;
+                    if (attempt < maxAttempts) {
+                        task.progress(downloadCount, totalCount, `Retrying download of ${entry.name} (attempt ${attempt + 1}/${maxAttempts})`);
+                        await sleep(1000 * attempt);
+                    }
+                }
+            }
+            
+            if (!success) {
+                console.error(`Failed to download ${entry.name} after ${attempt} attempts. lastError =`, lastError);
+                throw lastError || new Error(`Failed to download ${entry.name} after ${attempt} attempts.`);
+            }
+            
         } else if (entry.isDirectory()) {
             path.cd(entry.name);
             const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, path.get());
