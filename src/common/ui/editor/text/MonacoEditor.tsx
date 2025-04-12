@@ -25,6 +25,16 @@ const MonacoEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvi
             const onResize = () => editor.layout();
             window.addEventListener("resize", onResize);
 
+            if (absolutePath.endsWith(".sk")) {
+                import("./syntax/skript-syntax").then(({ registerSkriptLanguage }) => {
+                    registerSkriptLanguage(editor);
+                });
+            } else if (absolutePath.endsWith(".mcfunction")) {
+                import("./syntax/mcfunction-syntax").then(({ registerMcfunctionLanguage }) => {
+                    registerMcfunctionLanguage(editor);
+                });
+            }
+
             return () => {
                 editor.dispose();
                 window.removeEventListener("resize", onResize);

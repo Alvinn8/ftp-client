@@ -47,6 +47,7 @@ export function getIconFor(fileName: string): string {
         case ".mcfunction":
         case ".sh":
         case ".ps1":
+        case ".sk":
             return "file-earmark-text";
 
         case ".pdf":
