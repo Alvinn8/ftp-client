@@ -5,6 +5,7 @@ import { blobToBase64, ensureAbsolute, filename } from "../common/utils";
 import { ChunkedUploadResponse, Packet, Packets } from "../protocol/packets";
 import {LargeFileOperationInterface, largeFileOperationStore} from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
+import TaskManager from "../common/task/TaskManager";
 
 interface PendingReply {
     requestId: string;
@@ -147,6 +148,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 // matter since it will reconnect. There is no need to worry the user that
                 // something abnormal happened, since it is, in fact, very normal.
                 if (e.code != 1000 && e.code != 1006) message = "Connection closed: " + e.code + " " + e.reason;
+                if (message == "Connection closed" && !TaskManager.hasTask()) return;
                 addMessage({
                     color: "danger",
                     message: message,

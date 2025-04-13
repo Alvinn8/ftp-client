@@ -48,6 +48,7 @@ export function getIconFor(fileName: string): string {
         case ".sh":
         case ".ps1":
         case ".sk":
+        case ".php":
             return "file-earmark-text";
 
         case ".pdf":
