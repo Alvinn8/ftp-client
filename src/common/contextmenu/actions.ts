@@ -54,12 +54,21 @@ function getDirectoryPath(entries: FolderEntry[]) {
 
 export async function deleteFolderEntries(entries: FolderEntry[]) {
     if (!TaskManager.requestNewTask()) return;
-
     
     // Counting can sometimes take a bit, start a task.
     const countTask = new CountTask("Delete", "Counting files to delete", false);
     TaskManager.setTask(countTask);
-    const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
+    let totalCount: number | null = null;
+    try {
+        totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
+    } catch (e) {
+        countTask.complete();
+        Dialog.message(
+            "Delete failed",
+            `Failed to count files to delete. Error: ${e}`
+        );
+        return;
+    }
     countTask.complete();
 
     const description = totalCount === 1 && entries[0]
@@ -123,7 +132,20 @@ async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath
         // If it's a directory, count all files inside
         if (entry.isDirectory()) {
             path.cd(entry.name);
-            const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, path.get());
+            let list: FolderEntry[] | null = null;
+            let attempt = 0;
+            while (attempt < 5) {
+                try {
+                    list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, path.get());
+                    break;
+                } catch (e) {
+                    attempt++;
+                    await sleep(1000 * attempt);
+                }
+            }
+            if (list === null) {
+                throw new Error("Failed to count files in " + path.get());
+            }
             count += await countFilesRecursively(list, path, countTask);
             path.cdup();
         }
@@ -137,7 +159,17 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     // Counting can sometimes take a bit, start a task.
     const countTask = new CountTask("Download", "Counting files to download", false);
     TaskManager.setTask(countTask);
-    const totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
+    let totalCount: number | null = null;
+    try {
+        totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
+    } catch (e) {
+        countTask.complete();
+        Dialog.message(
+            "Download failed",
+            `Failed to count files to download. Error: ${e}`
+        );
+        return;
+    }
     countTask.complete();
 
     // Download
