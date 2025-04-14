@@ -183,8 +183,11 @@ export async function downloadAsZip(entries: FolderEntry[]) {
 
         // Create and download zip
         task.progress(totalCount, totalCount, "Creating zip");
-        const zipFile = await zip.generateAsync({ type: "blob" });
+        const zipFile = await zip.generateAsync({ type: "blob" }, (metadata) => {
+            task.progress(metadata.percent, 100, "Creating zip");
+        });
 
+        task.progress(100, 100, "Downloading zip");
         download(zipFile, entries.length == 1 ? entries[0].name + ".zip" : "files.zip");
         task.complete();
     } catch (e) {
