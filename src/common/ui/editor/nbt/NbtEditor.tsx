@@ -13,7 +13,9 @@ const NbtEditor = () => {
         const data = window["nbtEditorData"];
         if (!data) {
             window.close();
+            return;
         }
+        console.log(data.editionData);
         const read = async () => {
             setNbt(await readNbt(data.blob));
             setAllowSaving(data.allowSaving);

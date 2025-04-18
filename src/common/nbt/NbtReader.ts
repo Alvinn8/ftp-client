@@ -29,6 +29,13 @@ export default class NbtReader {
     }
 
     /**
+     * Check if the reader has read all the data.
+     */
+    isAtEnd(): boolean {
+        return this.index >= this.bytes.length;
+    }
+
+    /**
      * Read an signed byte.
      */
     read1(): number {

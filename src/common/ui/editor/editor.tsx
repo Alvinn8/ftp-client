@@ -252,7 +252,7 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
     }
     if (nbt.editionData.edition == "bedrock"
         && (nbt.editionData as BedrockEdition).isLevelDat
-        && (nbt.editionData as BedrockLevelDat).headerVersion != 9) {
+        && (nbt.editionData as BedrockLevelDat).headerVersion != 10) {
             allowSaving = false;
     }
 

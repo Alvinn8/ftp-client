@@ -28,6 +28,24 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     
     const reader = new NbtReader(data);
 
+    // Bedrock edition level.dat?
+    reader.littleEndian = true;
+    reader.index = 0;
+    const headerVersion = reader.read4();
+    const fileSize = reader.read4();
+    if (fileSize == data.byteLength - 8) {
+        editionData = {
+            edition: "bedrock",
+            littleEndian: true,
+            isLevelDat: true,
+            headerVersion
+        } as BedrockLevelDat;
+        tag = await attemptReadNbtTag(reader);
+        if (reader.isAtEnd()) {
+            return { tag, compression, editionData };
+        }
+    }
+
     // Java edition?
     editionData = {
         edition: "java",
@@ -36,44 +54,23 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     reader.littleEndian = false;
     reader.index = 0;
     tag = await attemptReadNbtTag(reader);
+    if (tag != null && reader.isAtEnd()) {
+        return { tag, compression, editionData };
+    }
 
     // Bedrock edition?
-    if (tag == null) {
-        editionData = {
-            edition: "bedrock",
-            littleEndian: true
-        };
-        reader.littleEndian = true;
-        reader.index = 0;
-        tag = await attemptReadNbtTag(reader);
-    }
-
-    // Bedrock edition level.dat?
-    if (tag == null) {
-        reader.littleEndian = true;
-        reader.index = 0;
-        const headerVersion = reader.read4();
-        const fileSize = reader.read4();
-        if (fileSize == data.byteLength - 8) {
-            editionData = {
-                edition: "bedrock",
-                littleEndian: true,
-                isLevelDat: true,
-                headerVersion
-            } as BedrockLevelDat;
-            tag = await attemptReadNbtTag(reader);
-        }
-    }
-
-    if (tag == null) {
-        throw new Error("That is not an nbt file.");
-    }
-
-    return {
-        tag,
-        compression,
-        editionData
+    editionData = {
+        edition: "bedrock",
+        littleEndian: true
     };
+    reader.littleEndian = true;
+    reader.index = 0;
+    tag = await attemptReadNbtTag(reader);
+    if (tag != null && reader.isAtEnd()) {
+        return { tag, compression, editionData };
+    }
+
+    throw new Error("That is not an nbt file.");
 }
 
 async function attemptReadNbtTag(reader: NbtReader) {
