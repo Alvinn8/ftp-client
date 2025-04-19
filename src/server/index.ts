@@ -57,6 +57,9 @@ function showErrorToUser(error: any): string | null {
     if (error.code === "ERR_SSL_WRONG_VERSION_NUMBER") {
         return "SSL error. Please try again. (ERR_SSL_WRONG_VERSION_NUMBER)";
     }
+    if (error.code === "CERT_HAS_EXPIRED") {
+        return "SSL error. Please try again or contact support. (CERT_HAS_EXPIRED)";
+    }
     const str = error.toString().trim();
     if (str === "Error: Timeout (data socket)" || str === "Error: Timeout (control socket)") {
         return str;
