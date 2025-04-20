@@ -61,11 +61,58 @@ export class NbtCompound extends NbtTag {
     getKeys(): string[] {
         return this.orderedKeys.slice(0);
     }
+
+    /**
+     * Rename a key while keeping it in the same position.
+     */
+    renameKey(oldKey: string, newKey: string): void {
+        const index = this.orderedKeys.indexOf(oldKey);
+        if (index == -1) {
+            throw new Error("Key not found");
+        }
+        this.orderedKeys[index] = newKey;
+        this.data[newKey] = this.data[oldKey];
+        delete this.data[oldKey];
+    }
+
+    /**
+     * Remove a key from the compound.
+     */
+    remove(key: string): void {
+        const index = this.orderedKeys.indexOf(key);
+        if (index == -1) {
+            throw new Error("Key not found");
+        }
+        this.orderedKeys.splice(index, 1);
+        delete this.data[key];
+    }
+
+    /**
+     * Replace a key with a new tag while keeping it in the same position.
+     */
+    replace(key: string, newTag: NbtTag): void {
+        const index = this.orderedKeys.indexOf(key);
+        if (index == -1) {
+            throw new Error("Key not found");
+        }
+        this.data[key] = newTag;
+    }
+
+    /**
+     * Add a new key to the compound.
+     */
+    add(key: string, newTag: NbtTag): void {
+        if (this.data[key]) {
+            throw new Error("Key already exists");
+        }
+        this.data[key] = newTag;
+        this.orderedKeys.push(key);
+    }
 }
 
 export class NbtList extends NbtTag {
-    listTypeId: number;
-    data: NbtTag[];
+    listTypeId: number = 0;
+    data: NbtTag[] = [];
     
     read(reader: NbtReader): void {
         this.listTypeId = reader.readU1();
@@ -73,16 +120,13 @@ export class NbtList extends NbtTag {
         const size = reader.read4();
         this.data = new Array(size);
 
-        if (this.listTypeId == 0) {
+        if (this.listTypeId == 0 && size !== 0) {
             // Null tags are only allowed as a type if the list is empty.
-            if (size > 0) {
-                throw new Error("Cannot have a non-empty list of end tags.");
-            }
-            return;
+            throw new Error("Cannot have a non-empty list of end tags.");
         }
         
         for (let i = 0; i < size; i++) {
-            const tag = getTagFromId(this.listTypeId);;
+            const tag = getTagFromId(this.listTypeId);
             tag.read(reader);
             this.data[i] = tag;
         }
@@ -97,6 +141,32 @@ export class NbtList extends NbtTag {
             tag.write(writer);
         }
     }
+
+    changeListType(newTypeId: number): void {
+        this.listTypeId = newTypeId;
+        this.data = [];
+    }
+
+    remove(index: number): void {
+        this.data.splice(index, 1);
+    }
+
+    move(oldIndex: number, newIndex: number): void {
+        const tag = this.data[oldIndex];
+        this.remove(oldIndex);
+        this.data.splice(newIndex, 0, tag);
+    }
+
+    replace(index: number, newTag: NbtTag): void {
+        this.data[index] = newTag;
+    }
+
+    add(tag: NbtTag): void {
+        if (this.listTypeId !== getIdFromTag(tag)) {
+            throw new Error("Cannot add a tag of a different type to a list.");
+        }
+        this.data.push(tag);
+    }
 }
 
 export const NbtEnd: NbtTag = {
@@ -109,7 +179,7 @@ export const NbtEnd: NbtTag = {
 };
 
 export class NbtString extends NbtTag {
-    value: string;
+    value: string = "";
     
     read(reader: NbtReader): void {
         this.value = reader.readString();
@@ -128,10 +198,15 @@ export abstract class ArrayNbtTag extends NbtTag {
      * Get the length of the array.
      */
     abstract length(): number;
+
+    /**
+     * Get the array formatted in SNBT.
+     */
+    abstract toSNBT(): string;
 }
 
 export class NbtByteArray extends ArrayNbtTag {
-    data: Int8Array;
+    data: Int8Array = new Int8Array();
 
     read(reader: NbtReader): void {
         const size = reader.read4();
@@ -142,19 +217,31 @@ export class NbtByteArray extends ArrayNbtTag {
     }
 
     write(writer: NbtWriter): void {
-        writer.write4(this.data.byteLength);
-        for (let i = 0; i < this.data.byteLength; i++) {
+        writer.write4(this.data.length);
+        for (let i = 0; i < this.data.length; i++) {
             writer.write1(this.data[i]);
         }
     }
 
     length(): number {
-        return this.data.byteLength;
+        return this.data.length;
+    }
+
+    toSNBT(): string {
+        let str = "[B;";
+        for (let i = 0; i < this.data.length; i++) {
+            str += this.data[i] + "b, ";
+        }
+        if (this.data.length > 0) {
+            str = str.slice(0, -2);
+        }
+        str += "]";
+        return str;
     }
 }
 
 export class NbtIntArray extends ArrayNbtTag {
-    data: Int32Array;
+    data: Int32Array = new Int32Array();
     
     read(reader: NbtReader): void {
         const size = reader.read4();
@@ -165,19 +252,31 @@ export class NbtIntArray extends ArrayNbtTag {
     }
 
     write(writer: NbtWriter): void {
-        writer.write4(this.data.byteLength);
-        for (let i = 0; i < this.data.byteLength; i++) {
+        writer.write4(this.data.length);
+        for (let i = 0; i < this.data.length; i++) {
             writer.write4(this.data[i]);
         }
     }
 
     length(): number {
-        return this.data.byteLength;
+        return this.data.length;
+    }
+
+    toSNBT(): string {
+        let str = "[I;";
+        for (let i = 0; i < this.data.length; i++) {
+            str += this.data[i] + ", ";
+        }
+        if (this.data.length > 0) {
+            str = str.slice(0, -2);
+        }
+        str += "]";
+        return str;
     }
 }
 
 export class NbtLongArray extends ArrayNbtTag {
-    data: BigInt64Array;
+    data: BigInt64Array = new BigInt64Array();
     
     read(reader: NbtReader): void {
         const size = reader.read4();
@@ -188,14 +287,26 @@ export class NbtLongArray extends ArrayNbtTag {
     }
 
     write(writer: NbtWriter): void {
-        writer.write4(this.data.byteLength);
-        for (let i = 0; i < this.data.byteLength; i++) {
+        writer.write4(this.data.length);
+        for (let i = 0; i < this.data.length; i++) {
             writer.write8(this.data[i]);
         }
     }
 
     length(): number {
-        return this.data.byteLength;
+        return this.data.length;
+    }
+
+    toSNBT(): string {
+        let str = "[L;";
+        for (let i = 0; i < this.data.length; i++) {
+            str += this.data[i] + "l, ";
+        }
+        if (this.data.length > 0) {
+            str = str.slice(0, -2);
+        }
+        str += "]";
+        return str;
     }
 }
 
@@ -214,7 +325,7 @@ export abstract class NumberNbtTag extends NbtTag {
 }
 
 export class NbtByte extends NumberNbtTag {
-    value: number;
+    value: number = 0;
 
     read(reader: NbtReader): void {
         this.value = reader.read1();
@@ -234,7 +345,7 @@ export class NbtByte extends NumberNbtTag {
 }
 
 export class NbtShort extends NumberNbtTag {
-    value: number;
+    value: number = 0;
     
     read(reader: NbtReader): void {
         this.value = reader.read2();
@@ -254,7 +365,7 @@ export class NbtShort extends NumberNbtTag {
 }
 
 export class NbtInt extends NumberNbtTag {
-    value: number;
+    value: number = 0;
     
     read(reader: NbtReader): void {
         this.value = reader.read4();
@@ -274,7 +385,7 @@ export class NbtInt extends NumberNbtTag {
 }
 
 export class NbtLong extends NumberNbtTag {
-    value: bigint;
+    value: bigint = BigInt(0);
     
     read(reader: NbtReader): void {
         this.value = reader.read8();
@@ -294,7 +405,7 @@ export class NbtLong extends NumberNbtTag {
 }
 
 export class NbtFloat extends NumberNbtTag {
-    value: number;
+    value: number = 0;
     
     read(reader: NbtReader): void {
         this.value = reader.readFloat();
@@ -314,7 +425,7 @@ export class NbtFloat extends NumberNbtTag {
 }
 
 export class NbtDouble extends NumberNbtTag {
-    value: number;
+    value: number = 0;
     
     read(reader: NbtReader): void {
         this.value = reader.readDouble();

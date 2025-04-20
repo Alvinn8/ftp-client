@@ -27,9 +27,9 @@ export function UiNbtString(props: { value: string }) {
     let escapedString = JSON.stringify(props.value);
     escapedString = escapedString.substring(1); // Remove first "
     escapedString = escapedString.substring(0, escapedString.length - 1); // remove last "
-    let suffix;
+    let suffix: string | null = null;
     const length = escapedString.length;
-    if (length > 50) {
+    if (length > 40 + 16) {
         escapedString = escapedString.substring(0, 40);
         suffix = " ... and " + (length - 40) + " more characters";
     }

@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as ReactDOM from "react-dom";
 import ContextMenuPopulator from "../contextmenu/ContextMenuPopulator";
 
 /**
@@ -18,6 +19,26 @@ export function removeContextMenu() {
     if (contextMenu != null) {
         contextMenu.container.remove();
         contextMenu = null;
+    }
+}
+
+export function createContextMenu(populator: ContextMenuPopulator, x: number, y: number) {
+    console.log("Creating context menu at ", x, y);
+    const element = document.createElement("div");
+    element.style.position = "fixed";
+    element.style.left = x + "px";
+    element.style.top = y + "px";
+    document.body.appendChild(element);
+
+    ReactDOM.render(<ContextMenu populator={ populator } />, element);
+    setContextMenu({
+        container: element
+    });
+
+    // If the element is outside of the screen, move it in to the screen
+    const box = element.firstElementChild.getBoundingClientRect();
+    if (box.bottom > document.body.clientHeight) {
+        element.style.top = document.body.clientHeight - box.height + "px";
     }
 }
 

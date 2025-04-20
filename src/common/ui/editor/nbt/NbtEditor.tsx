@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import NbtData from "../../../nbt/NbtData";
+import NbtData, { BedrockEdition, BedrockLevelDat } from "../../../nbt/NbtData";
 import EditorControls from "../EditorControls";
 import UiNbtTag from "./UiNbtTag";
 import "./NbtEditor.css";
-import { readNbt, writeNbt } from "../../../nbt/nbt";
+import { readNbt, sanityCheckNbt, writeNbt } from "../../../nbt/nbt";
+import Dialog from "../../../Dialog";
 
 const NbtEditor = () => {
     const [nbt, setNbt] = useState<NbtData>(null);
@@ -27,7 +28,12 @@ const NbtEditor = () => {
     const handleSave = async () => {
         // Call save function created by editor.tsx
         const blob = await writeNbt(nbt);
-        window["save"](blob);
+        // Sanity check that the written file is valid.
+        sanityCheckNbt(blob, nbt).then(() => {
+            window["save"](blob);
+        }).catch((err) => {
+            Dialog.message("Error", "Failed to save NBT file. Please contact support if you wish to modify this file. Error: " + err);
+        });
     };
 
     if (!nbt) return <p>Loading...</p>;
@@ -35,13 +41,36 @@ const NbtEditor = () => {
     return (
         <div className="grid">
             <div className="ms-5 nbt-editor">
-                <UiNbtTag tag={nbt.tag} root={true} />
+                <div className="mb-2">
+                    <span className="badge bg-secondary mt-3">{editionText(nbt)}</span>
+                    {!allowSaving && (
+                        <div className="text-bg-warning rounded p-2 my-3" style={{ maxWidth: "400px", fontSize: "0.75em" }}>This NBT file cannot be modified and saved. Please contact support if you wish to modify this file.</div>
+                    )}
+                </div>
+                <UiNbtTag tag={nbt.tag} root={true} parent={null} />
             </div>
             <div className="editor-controls">
-                <EditorControls allowSaving={allowSaving && false} onSave={handleSave} />
+                <EditorControls allowSaving={allowSaving} onSave={handleSave} />
             </div>
         </div>
     );
 };
+
+function editionText(nbtData: NbtData) {
+    let txt = nbtData.editionData.edition === "java" ? "Java Edition" : "Bedrock Edition";
+    if (nbtData.editionData.edition === "bedrock" && (nbtData.editionData as BedrockEdition).isLevelDat) {
+        txt += " level.dat version " + (nbtData.editionData as BedrockLevelDat).headerVersion;
+    } else {
+        txt += " NBT";
+    }
+    if (nbtData.compression != null) {
+        if (nbtData.compression.type === "gzip") {
+            txt += " (gzipped)";
+        } else if (nbtData.compression.type === "zlib") {
+            txt += " (zlib encoded)";
+        }
+    }
+    return txt;
+}
 
 export default NbtEditor;

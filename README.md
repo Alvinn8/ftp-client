@@ -78,8 +78,8 @@ Mobile
 - [x] Nicer dialogs
 - [x] Prevent saving gzipped files.
 - [ ] Nbt reading and writing
-    - [ ] Nbt editing
-    - [ ] Nbt writing
+    - [x] Nbt editing
+    - [x] Nbt writing
     - [ ] Copying nbt as snbt and binary nbt in the editor
     - [ ] Reading region files
 

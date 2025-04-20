@@ -2,7 +2,7 @@
     display: grid;
     /* Desktop */
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr 50px;
+    grid-template-rows: 1fr 100px;
     grid-template-areas: "nbt-editor"
                          "controls";
 }
@@ -25,6 +25,11 @@
     body {
         background-color: var(--bs-dark) !important;
         color: var(--bs-light) !important;
+    }
+
+    .modal-content {
+        background-color: var(--bs-dark);
+        color: var(--bs-light);
     }
 }
 

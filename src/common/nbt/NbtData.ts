@@ -7,7 +7,12 @@ export default interface NbtData {
     compression: Compression;
 }
 
-export type Compression = "none" | "gzip" | "zlib";
+export type GzipCompression = {
+    type: "gzip";
+    headerOperatingSystem: number;
+};
+export type ZlibCompression = { type: "zlib" };
+export type Compression = GzipCompression | ZlibCompression | null;
 
 export interface EditionData {
     edition: Edition;

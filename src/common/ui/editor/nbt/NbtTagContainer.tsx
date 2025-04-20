@@ -1,11 +1,12 @@
 import * as React from "react";
-
+import { createContextMenu, removeContextMenu } from "../../ContextMenu";
+import ContextMenuPopulator from "../../../contextmenu/ContextMenuPopulator";
 interface Props {
     label: React.ReactNode | null;
+    populator?: ContextMenuPopulator;
 }
 
 interface State {
-    selected: boolean;
 }
 
 export default class NbtTagContainer extends React.Component<Props, State> {
@@ -14,11 +15,18 @@ export default class NbtTagContainer extends React.Component<Props, State> {
     }
 
     render() {
+        const handleClick = (e: React.MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            removeContextMenu();
+            createContextMenu(this.props.populator || { getEntries: () => [] }, e.clientX, e.clientY);
+        };
+
         return (
             <div
-                className={"tag-container" + (this.state.selected ? " selected" : "")}
-                onClick={() => this.setState({ selected: !this.state.selected })}
-                // TODO proper selecting
+                className={"tag-container"}
+                onClick={handleClick}
+                onContextMenu={handleClick}
             >
                 {this.props.label != null && (
                     <span>{this.props.label}: </span>

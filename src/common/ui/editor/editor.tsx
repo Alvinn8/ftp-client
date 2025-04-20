@@ -2,8 +2,8 @@ import { ungzip as pakoUngzip } from "pako";
 import Dialog from "../../Dialog";
 import FolderEntry from "../../folder/FolderEntry";
 import Priority from "../../ftp/Priority";
-import { readNbt } from "../../nbt/nbt";
-import NbtData, { BedrockEdition, BedrockLevelDat } from "../../nbt/NbtData";
+import { readNbt, validateNbtParsing } from "../../nbt/nbt";
+import NbtData from "../../nbt/NbtData";
 import { FileType, getFileType } from "../FileFormats";
 import { getApp } from "../App";
 import { addMessage } from "../messages";
@@ -242,24 +242,13 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
         );
         return;
     }
-    
-    // We are very strict on which nbt files we allow being edited. Nbt editing is
-    // experimental and we therefore only allow saving for some specific files that
-    // we know work.
-    let allowSaving = true;
-    if (nbt.compression != "none") {
-        allowSaving = false;
-    }
-    if (nbt.editionData.edition == "bedrock"
-        && (nbt.editionData as BedrockEdition).isLevelDat
-        && (nbt.editionData as BedrockLevelDat).headerVersion != 10) {
-            allowSaving = false;
-    }
+
+    const allowSaving = await validateNbtParsing(fileInfo.blob, nbt);
 
     const wind = openWindow(folderEntry.name, "editor/nbt.html", folderEntry);
 
     if (allowSaving) {
-        const absolutePath = folderEntry.path + "_ftp-client_nbt";
+        const absolutePath = folderEntry.path;
         wind["save"] = async function(blob: Blob) {
             const session = getApp().state.session;
             await session.uploadSmall(Priority.QUICK, blob, absolutePath);

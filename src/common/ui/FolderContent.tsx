@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as ReactDOM from "react-dom";
 import ContextMenuPopulator from "../contextmenu/ContextMenuPopulator";
 import FolderEntriesPopulator from "../contextmenu/FolderEntriesPopulator";
 import FolderEntryPopulator from "../contextmenu/FolderEntryPopulator";
@@ -7,7 +6,7 @@ import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry from "../folder/FolderEntry";
 import Priority from "../ftp/Priority";
 import { handleOnDrop } from "../upload/upload";
-import { ContextMenu, removeContextMenu, setContextMenu } from "./ContextMenu";
+import { createContextMenu, removeContextMenu } from "./ContextMenu";
 import DropZone from "./DropZone";
 import FolderEntryComponent from "./FolderEntryComponent";
 
@@ -115,12 +114,6 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         e.preventDefault();
         removeContextMenu();
 
-        const element = document.createElement("div");
-        element.style.position = "fixed";
-        element.style.left = e.clientX + "px";
-        element.style.top = e.clientY + "px";
-        document.body.appendChild(element);
-
         const selection = this.props.selection;
         const selected = selection.includes(entry);
 
@@ -147,16 +140,7 @@ export default class FolderContent extends React.Component<FolderContentProps, F
             this.props.selectOnly(entry);
         }
 
-        ReactDOM.render(<ContextMenu populator={ populator } />, element);
-        setContextMenu({
-            container: element
-        });
-
-        // If the element is outside of the screen, move it in to the screen
-        const box = element.firstElementChild.getBoundingClientRect();
-        if (box.bottom > document.body.clientHeight) {
-            element.style.top = document.body.clientHeight - box.height + "px";
-        }
+        createContextMenu(populator, e.clientX, e.clientY);
     }
 
     render() {
