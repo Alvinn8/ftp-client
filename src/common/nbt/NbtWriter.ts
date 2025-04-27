@@ -42,9 +42,9 @@
                 if (newLength < 100) {
                     newLength = 100;
                 }
-				newLength *= 1.25;
+				newLength *= 2;
 			}
-            console.log("Expanding buffer " + oldLength + " --> " + newLength);
+            // console.log("Expanding buffer " + oldLength + " --> " + newLength);
             const newBytes = new Uint8Array(newLength);
             // Write old data to new
             newBytes.set(this.bytes);

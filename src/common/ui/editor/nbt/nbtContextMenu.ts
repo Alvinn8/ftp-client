@@ -291,7 +291,7 @@ export function contextMenuForList(tag: NbtList, parent: ParentData, reRenderUi:
     return {
         getEntries: () => [
             {
-                name: "Change Type of elements in list",
+                name: "Change type of elements in list",
                 handler: async () => {
                     const tagId = await chooseType("Change Type", "Choose the type of the tag. Current type is: " + getListTypeName(tag.listTypeId) + (tag.data.length > 0 ? ". Keep in mind that this will delete all existing data and empty the list." : ""), true);
                     if (tagId != null) {

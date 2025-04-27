@@ -29,20 +29,22 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     const reader = new NbtReader(data);
 
     // Bedrock edition level.dat?
-    reader.littleEndian = true;
-    reader.index = 0;
-    const headerVersion = reader.read4();
-    const fileSize = reader.read4();
-    if (fileSize == data.byteLength - 8) {
-        editionData = {
-            edition: "bedrock",
-            littleEndian: true,
-            isLevelDat: true,
-            headerVersion
-        } as BedrockLevelDat;
-        tag = await attemptReadNbtTag(reader);
-        if (reader.isAtEnd()) {
-            return { tag, compression, editionData };
+    if (data.byteLength >= 8) {
+        reader.littleEndian = true;
+        reader.index = 0;
+        const headerVersion = reader.read4();
+        const fileSize = reader.read4();
+        if (fileSize == data.byteLength - 8) {
+            editionData = {
+                edition: "bedrock",
+                littleEndian: true,
+                isLevelDat: true,
+                headerVersion
+            } as BedrockLevelDat;
+            tag = await attemptReadNbtTag(reader);
+            if (reader.isAtEnd()) {
+                return { tag, compression, editionData };
+            }
         }
     }
 

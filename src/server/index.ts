@@ -67,6 +67,9 @@ function showErrorToUser(error: any): string | null {
     if (str === "None of the available transfer strategies work. Last error response was 'FTPError: 400 Unable to find valid port'.") {
         return "Please try again later. (FTPError: 400 Unable to find valid port)";
     }
+    if (str === "Error: This socket has been ended by the other party") {
+        return str;
+    }
     return null;
 }
 
@@ -461,8 +464,8 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
         await sleep(50);
     }
 
-    if (sleepCount > 1) {
-        connection.log("slept, pendingChunks = " + chunkedUpload.pendingChunks);
+    if (sleepCount > 0) {
+        connection.log("slept " + sleepCount + " times, pendingChunks = " + chunkedUpload.pendingChunks);
     }
 
     chunkedUpload.offset += buffer.length;

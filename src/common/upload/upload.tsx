@@ -276,7 +276,17 @@ async function getUploadsFromZip(zip): Promise<Directory> {
  * @param file The zip file.
  */
 async function handleZip(file: File) {
-    const zip = await JSZip.loadAsync(file);
+    let zip: JSZip;
+    try {
+        zip = await JSZip.loadAsync(file);
+    } catch (e) {
+        Dialog.message(
+            "Failed to load zip file",
+            "Are you sure the zip file is a zip file? If it another type of archive " +
+            "(such as a .rar file) you cannot just rename it and change it to .zip. The error is: " + String(e)
+        );
+        return;
+    }
     const uploads = await getUploadsFromZip(zip);
     upload(uploads);
 }

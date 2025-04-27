@@ -37,7 +37,7 @@ export function blobToBase64(blob: Blob): Promise<string> {
             resolve(dataURL.substring(dataURL.indexOf(",") + 1));
         }
         reader.onerror = function () {
-            reject(new Error("Failed to read file."));
+            reject(reader.error ? reader.error : new Error("Failed to read file."));
         };
         reader.readAsDataURL(blob);
     });

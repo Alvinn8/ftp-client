@@ -164,6 +164,10 @@ export async function openTextEditor(folderEntry: FolderEntry) {
 
     const fileInfo = await getFile(folderEntry);
     if (fileInfo == null) return;
+    if (!(fileInfo.blob instanceof Blob)) {
+        Dialog.message("Failed to read file.", "Reading the file produced: " + fileInfo.blob);
+        throw new Error("Failed to read file, got non-blob type: " + fileInfo.blob);
+    }
 
     let textEditor = "monaco";
     if (window.innerWidth < 1000 && "ontouchstart" in document.documentElement) {
@@ -180,7 +184,7 @@ export async function openTextEditor(folderEntry: FolderEntry) {
             resolve(reader.result as string);
         };
         reader.onerror = function () {
-            reject("Failed to read file.");
+            reject(reader.error ? reader.error : new Error("Failed to read file."));
         };
         reader.readAsText(fileInfo.blob);
     });
@@ -279,6 +283,10 @@ export async function openLogEditor(folderEntry: FolderEntry) {
 
     const fileInfo = await getFile(folderEntry);
     if (fileInfo == null) return;
+    if (!(fileInfo.blob instanceof Blob)) {
+        Dialog.message("Failed to read file.", "Reading the file produced: " + fileInfo.blob);
+        throw new Error("Failed to read file, got non-blob type: " + fileInfo.blob);
+    }
 
     const wind = openWindow(folderEntry.name, "editor/log.html", folderEntry);
     
@@ -288,7 +296,7 @@ export async function openLogEditor(folderEntry: FolderEntry) {
             resolve(reader.result as string);
         };
         reader.onerror = function () {
-            reject("Failed to read file.");
+            reject(reader.error ? reader.error : new Error("Failed to read file."));
         };
         reader.readAsText(fileInfo.blob);
     });
@@ -334,7 +342,7 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
     const isgzipped = folderEntry.name.endsWith(".gz");
     if (isgzipped && !await confirmOpenGzip(folderEntry)) return null;
 
-    let blob;
+    let blob: Blob;
     try {
         blob = await getApp().state.session.download(Priority.QUICK, folderEntry)
     } catch(e) {
