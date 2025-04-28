@@ -41,6 +41,23 @@ const largeDownloads: LargeDownload[] = [];
 const largeUploads: LargeUpload[] = [];
 const chunkedUploads: ChunkedUpload[] = [];
 
+if (true) {
+    const originalCloseWithError = ftp.FTPContext.prototype.closeWithError;
+    ftp.FTPContext.prototype.closeWithError = function(error) {
+        console.log("FTPContext.closeWithError called with:", error);
+        return originalCloseWithError.apply(this, arguments);
+    }
+    // @ts-ignore
+    const originalPassToHandler = ftp.FTPContext.prototype._passToHandler;
+    // @ts-ignore
+    ftp.FTPContext.prototype._passToHandler = function(response) {
+        if (response instanceof Error && !String(response).includes("Command requires authentication:")) {
+            console.log("FTPContext._passToHandler called with:", response, " and task stack ", this._task ? this._task.stack : null); 
+        }
+        return originalPassToHandler.apply(this, arguments);
+    }
+}
+
 function showErrorToUser(error: any): string | null {
     if (error instanceof FTPError) {
         return error.toString();
@@ -243,7 +260,8 @@ server.on("connection", function(ws) {
                             switch (strErr) {
                                 case "Error: Client is closed":
                                 case "Error: User closed client during task":
-                                case "Error: Client is closed because User closed client": {
+                                case "Error: Client is closed because User closed client":
+                                case "Error: None of the available transfer strategies work. Last error response was 'Error: Client is closed because User closed client'.": {
                                     // Ignore when the user closes the tab during a task.
                                     return;
                                 }

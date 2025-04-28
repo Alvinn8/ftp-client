@@ -167,8 +167,11 @@ export default class WebsocketFTPConnection implements FTPConnection {
             this.pendingReplies.push({
                 requestId,
                 reject,
-                handler: function (data) {
+                handler: (data) => {
                     if (data.action == "error") {
+                        if (data.message == "Not connected") {
+                            this.websocket.close();
+                        }
                         addMessage({
                             color: "danger",
                             message: data.message,
