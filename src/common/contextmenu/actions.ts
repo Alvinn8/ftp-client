@@ -84,7 +84,13 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
     const task = new Task("Deleting " + totalCount + " file" + (totalCount == 1 ? "" : "s"), "", true);
     TaskManager.setTask(task);
     const path = getDirectoryPath(entries);
-    await deleteRecursively(entries, task, path, 0, totalCount);
+    try {
+        await deleteRecursively(entries, task, path, 0, totalCount);
+    } catch (e) {
+        if (String(e) != "Error: Use chose to cancel.") {
+            Dialog.message("Unexpected error while deleting", String(e));
+        }
+    }
     task.complete();
     getApp().refresh(true);
 }
@@ -94,7 +100,18 @@ async function deleteRecursively(entries: FolderEntry[], task: Task, path: Direc
         if (entry.isFile()) {
             // A file, delete it
             task.progress(deletedCount, totalCount, "Deleting " + entry.name);
-            await getApp().state.session.delete(Priority.LARGE_TASK, entry.path);
+            try {
+                await getApp().state.session.delete(Priority.LARGE_TASK, entry.path);
+            } catch (e) {
+                if (String(e).includes("ENOENT")) {
+                    // Ignore, it looks like this has already been deleted.
+                } else {
+                    const shouldContinue = Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + e + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
+                    if (!shouldContinue) {
+                        throw new Error("Use chose to cancel.");
+                    }
+                }
+            }
         } else if (entry.isDirectory()) {
             // A directory, we need to recursivly delete all files in there
             path.cd(entry.name);
@@ -103,7 +120,21 @@ async function deleteRecursively(entries: FolderEntry[], task: Task, path: Direc
             path.cdup();
             // then delete the directory
             task.progress(deletedCount, totalCount, "Deleting " + entry.name);
-            await getApp().state.session.delete(Priority.LARGE_TASK, entry.path);
+            try {
+                await getApp().state.session.delete(Priority.LARGE_TASK, entry.path);
+            } catch (e) {
+                if (String(e).includes("ENOENT")) {
+                    // Ignore, it looks like this has already been deleted.
+                } else if (String(e).includes("ENOTEMPTY")) {
+                    Dialog.message("Files changed while deleting", "It appears new files were added while trying to delete files. Please refresh and try deleting again. If your server is running, you may want to concider stopping it if you are deleting files that the server is using and writing to.");
+                    throw new Error("Use chose to cancel.");
+                } else {
+                    const shouldContinue = Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + e + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
+                    if (!shouldContinue) {
+                        throw new Error("Use chose to cancel.");
+                    }
+                }
+            }
         }
         deletedCount++;
     }

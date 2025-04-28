@@ -23,7 +23,6 @@ export function removeContextMenu() {
 }
 
 export function createContextMenu(populator: ContextMenuPopulator, x: number, y: number) {
-    console.log("Creating context menu at ", x, y);
     const element = document.createElement("div");
     element.style.position = "fixed";
     element.style.left = x + "px";
