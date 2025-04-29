@@ -5,6 +5,7 @@ import UiNbtTag from "./UiNbtTag";
 import "./NbtEditor.css";
 import { readNbt, sanityCheckNbt, writeNbt } from "../../../nbt/nbt";
 import Dialog from "../../../Dialog";
+import { unexpectedErrorHandler } from "../../../error";
 
 const NbtEditor = () => {
     const [nbt, setNbt] = useState<NbtData>(null);
@@ -21,13 +22,13 @@ const NbtEditor = () => {
             setNbt(await readNbt(data.blob));
             setAllowSaving(data.allowSaving);
         };
-        read();
+        read().catch(unexpectedErrorHandler("Failed to Read NBT"));
         document.title = data.title;
     }, []);
 
-    const handleSave = async () => {
+    const handleSave = () => {
         // Call save function created by editor.tsx
-        const blob = await writeNbt(nbt);
+        const blob = writeNbt(nbt);
         // Sanity check that the written file is valid.
         sanityCheckNbt(blob, nbt).then(() => {
             window["save"](blob);

@@ -7,6 +7,7 @@ import * as React from "react";
 import Dialog from "../Dialog";
 import Directory from "./Directory";
 import { upload } from "./uploadToServer";
+import { unexpectedErrorHandler } from "../error";
 
 export namespace UploadSupport {
     /**
@@ -159,11 +160,11 @@ export function setZipUploadMode(value: boolean) {
  *
  * @param event The input event.
  */
-export async function handleInputUpload(event: InputEvent) {
+export function handleInputUpload(event: InputEvent) {
     if (zipUploadMode) {
         const file = event.target.files[0];
         if (file != null) {
-            await handleZip(file);
+            handleZip(file).catch(unexpectedErrorHandler("Failed to upload zip file"));
         }
         return;
     }
@@ -191,7 +192,7 @@ export async function handleInputUpload(event: InputEvent) {
     setZipUploadMode(false);
 
     // Upload
-    await upload(root);
+    upload(root).catch(unexpectedErrorHandler("Failed to upload"));
 }
 
 /**
@@ -288,5 +289,5 @@ async function handleZip(file: File) {
         return;
     }
     const uploads = await getUploadsFromZip(zip);
-    upload(uploads);
+    await upload(uploads).catch(unexpectedErrorHandler("Failed to upload"));
 }

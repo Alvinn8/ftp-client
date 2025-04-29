@@ -9,6 +9,10 @@ import { handleOnDrop } from "../upload/upload";
 import { createContextMenu, removeContextMenu } from "./ContextMenu";
 import DropZone from "./DropZone";
 import FolderEntryComponent from "./FolderEntryComponent";
+import { dirname, parentdir } from "../utils";
+import Dialog from "../Dialog";
+import { getApp } from "./App";
+import { unexpectedErrorHandler } from "../error";
 
 interface FolderContentProps {
     workdir: string;
@@ -39,14 +43,24 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         };
     }
 
-    async componentDidMount() {
+    componentDidMount() {
         this.ref.current.ondragenter = this.onDragEnter.bind(this);
         this.ref.current.ondragleave = this.onDragLeave.bind(this);
         this.ref.current.ondrop = () => {};
         // noop event listener, we just need to listen for ondrop
         // to make the element a valid drag and drop target.
         
-        await this.getEntries();
+        this.getEntries().catch(err => {
+            if (String(err).includes("ENOENT")) {
+                Dialog.message("This folder has been deleted", "It appears the folder you were trying to go to has been deleted. The full error is: " + err);
+                this.props.onChangeDirectory(parentdir(this.props.workdir));
+                setTimeout(() => {
+                    getApp().refresh(true);
+                }, 1000);
+            } else {
+                unexpectedErrorHandler("Failed to fetch files")(err);
+            }
+        });
     }
 
     async getEntries() {
@@ -91,7 +105,7 @@ export default class FolderContent extends React.Component<FolderContentProps, F
 
     onDrop(e: DragEvent) {
         // Read and upload
-        handleOnDrop(e);
+        handleOnDrop(e).catch(unexpectedErrorHandler("Failed to upload"));
 
         this.setState({
             dragAndDrop: false

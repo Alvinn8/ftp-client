@@ -1,3 +1,5 @@
+import Dialog from "../Dialog";
+import { unexpectedErrorHandler } from "../error";
 import FolderEntry from "../folder/FolderEntry";
 import { openChosenEditor, openEditor, openImageEditor } from "../ui/editor/editor";
 import { getFileType } from "../ui/FileFormats";
@@ -31,29 +33,29 @@ export default class FolderEntryPopulator implements ContextMenuPopulator {
             if (fileType == "image") {
                 entries.push({
                     name: "View Image",
-                    handler: e => {
-                        openImageEditor(this.entry);
+                    handler: () => {
+                        openImageEditor(this.entry).catch(unexpectedErrorHandler("Failed to view image"));
                     }
                 });
             } else {
                 entries.push({
                     name: "Open",
-                    handler: e => {
-                        openEditor(this.entry);
+                    handler: () => {
+                        openEditor(this.entry).catch(unexpectedErrorHandler("Failed to open"));
                     }
                 });
                 entries.push({
                     name: "Open as",
-                    handler: e => {
-                        openChosenEditor(this.entry);
+                    handler: () => {
+                        openChosenEditor(this.entry).catch(unexpectedErrorHandler("Failed to open"));
                     }
                 });
             }
 
             entries.push({
                 name: "Download",
-                handler: async e => {
-                    downloadFolderEntry(this.entry);
+                handler: () => {
+                    downloadFolderEntry(this.entry).catch(unexpectedErrorHandler("Failed to download"));
                 }
             });
         } else if (this.entry.isDirectory()) {
@@ -65,8 +67,8 @@ export default class FolderEntryPopulator implements ContextMenuPopulator {
             });
             entries.push({
                 name: "Download",
-                handler: async e => {
-                    downloadAsZip([ this.entry ]);
+                handler: () => {
+                    downloadAsZip([ this.entry ]).catch(unexpectedErrorHandler("Failed to download"));
                 }
             });
         }
@@ -80,8 +82,8 @@ export default class FolderEntryPopulator implements ContextMenuPopulator {
 
         entries.push({
             name: "Delete",
-            handler: async e => {
-                deleteFolderEntries([ this.entry ]);
+            handler: () => {
+                deleteFolderEntries([ this.entry ]).catch(unexpectedErrorHandler("Failed to delete"));
             }
         });
 

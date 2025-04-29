@@ -119,8 +119,11 @@ export default class FTPSession {
         this.queueLock = lockIdentifier;
     }
 
-    requestQueueLock(priority: number, lockIdentifier: string): Promise<void> {
-        return this.addToQueue(priority, async () => this.lockQueueNow(lockIdentifier));
+    async requestQueueLock(priority: number, lockIdentifier: string): Promise<void> {
+        return await this.addToQueue(priority, async () => {
+            this.lockQueueNow(lockIdentifier);
+            return await Promise.resolve();
+        });
     }
 
     unlockQueue(lockIdentifier: string) {
@@ -149,8 +152,8 @@ export default class FTPSession {
         }
     }
 
-    private addToQueue<T>(priority: number, executor: (connection: FTPConnection) => Promise<T>, bypassLockIdentifier?: string): Promise<T> {
-        return new Promise((resolve, reject) => {
+    private async addToQueue<T>(priority: number, executor: (connection: FTPConnection) => Promise<T> | T, bypassLockIdentifier?: string): Promise<T> {
+        return await new Promise((resolve, reject) => {
             const request = new FTPRequest(priority, executor, resolve, reject);
             if (this.queueLock && bypassLockIdentifier === this.queueLock) {
                 this.bypassLockQueue.push(request);
@@ -189,81 +192,74 @@ export default class FTPSession {
         }
     }
 
-    private async executeRequest() {
+    private executeRequest() {
         // sort decending, highest priority first
         const queue = this.getEffectiveQueue();
         queue.sort((a, b) => b.priority - a.priority);
         const request = queue[0];
 
-        let connection: FTPConnection;
-        try {
-            connection = await this.getConnection();
-        } catch (e) {
+        this.getConnection().then(connection => {
+            Promise.resolve(request.executor(connection)).then((t) => {
+                request.resolve(t);
+                this.removeFromQueue(request);
+            }, (err) => {
+                request.reject(err);
+                this.removeFromQueue(request);
+            });
+        }, err => {
             // If we reach this point we failed to reconnect and we will not attempt to
             // reconnect again. We therefore need to fail all requests in the queue.
             for (const request of this.queue) {
-                request.reject(e);
+                request.reject(err);
             }
-            return Promise.reject(e);
-        }
-
-        const promise = request.executor(connection);
-        promise.then((t) => {
-            request.resolve(t);
-            this.removeFromQueue(request);
         });
-        promise.catch(e => {
-            request.reject(e);
-            this.removeFromQueue(request);
-        });
-        return promise;
     }
 
-    list(priority: number, path: string) {
-        return this.addToQueue(priority, connection => (
-            connection.list(path)
+    async list(priority: number, path: string) {
+        return await this.addToQueue(priority, async connection => (
+            await connection.list(path)
         ));
     }
 
-    download(priority: number, folderEntry: FolderEntry) {
-        return this.addToQueue(priority, connection => (
-            connection.download(folderEntry)
+    async download(priority: number, folderEntry: FolderEntry) {
+        return await this.addToQueue(priority, async connection => (
+            await connection.download(folderEntry)
         ))
     }
 
-    uploadSmall(priority: number, blob: Blob, path: string) {
-        return this.addToQueue(priority, connection => (
-            connection.uploadSmall(blob, path)
+    async uploadSmall(priority: number, blob: Blob, path: string) {
+        return await this.addToQueue(priority, async connection => (
+            await connection.uploadSmall(blob, path)
         ))
     }
 
-    startChunkedUpload(priority: number, bypassLockIdentifier: string, path: string, size: number, startOffset: number | null) {
-        return this.addToQueue(priority, connection => (
-            connection.startChunkedUpload(path, size, startOffset)
+    async startChunkedUpload(priority: number, bypassLockIdentifier: string, path: string, size: number, startOffset: number | null) {
+        return await this.addToQueue(priority, async connection => (
+            await connection.startChunkedUpload(path, size, startOffset)
         ), bypassLockIdentifier)
     }
 
-    uploadChunk(priority: number, bypassLockIdentifier: string, uploadId: string, chunk: Blob, start: number, end: number) {
-        return this.addToQueue(priority, connection => (
-            connection.uploadChunk(uploadId, chunk, start, end)
+    async uploadChunk(priority: number, bypassLockIdentifier: string, uploadId: string, chunk: Blob, start: number, end: number) {
+        return await this.addToQueue(priority, async connection => (
+            await connection.uploadChunk(uploadId, chunk, start, end)
         ), bypassLockIdentifier)
     }
 
-    mkdir(priority: number, path: string) {
-        return this.addToQueue(priority, connection => (
-            connection.mkdir(path)
+    async mkdir(priority: number, path: string) {
+        return await this.addToQueue(priority, async connection => (
+            await connection.mkdir(path)
         ));
     }
 
-    rename(priority: number, from: string, to: string) {
-        return this.addToQueue(priority, connection => (
-            connection.rename(from, to)
+    async rename(priority: number, from: string, to: string) {
+        return await this.addToQueue(priority, async connection => (
+            await connection.rename(from, to)
         ));
     }
 
-    delete(priority: number, path: string) {
-        return this.addToQueue(priority, connection => (
-            connection.delete(path)
+    async delete(priority: number, path: string) {
+        return await this.addToQueue(priority, async connection => (
+            await connection.delete(path)
         ));
     }
 }

@@ -43,16 +43,16 @@ const chunkedUploads: ChunkedUpload[] = [];
 
 if (true) {
     const originalCloseWithError = ftp.FTPContext.prototype.closeWithError;
-    ftp.FTPContext.prototype.closeWithError = function(error) {
-        console.log("FTPContext.closeWithError called with:", error);
+    ftp.FTPContext.prototype.closeWithError = function(error: unknown) {
+        console.log("DEBUG FTPContext.closeWithError called with:", error);
         return originalCloseWithError.apply(this, arguments);
     }
     // @ts-ignore
     const originalPassToHandler = ftp.FTPContext.prototype._passToHandler;
     // @ts-ignore
-    ftp.FTPContext.prototype._passToHandler = function(response) {
+    ftp.FTPContext.prototype._passToHandler = function(response: unknown) {
         if (response instanceof Error && !String(response).includes("Command requires authentication:")) {
-            console.log("FTPContext._passToHandler called with:", response, " and task stack ", this._task ? this._task.stack : null); 
+            console.log("DEBUG FTPContext._passToHandler called with stack ", this._task ? this._task.stack : null);
         }
         return originalPassToHandler.apply(this, arguments);
     }
@@ -90,8 +90,8 @@ function showErrorToUser(error: any): string | null {
     return null;
 }
 
-function sleep(ms: number) {
-    return new Promise(resolve => setInterval(resolve, ms));
+async function sleep(ms: number) {
+    return await new Promise(resolve => setInterval(resolve, ms));
 }
 
 const httpServer = createServer(function (req, res) {
@@ -223,7 +223,9 @@ server.on("connection", function(ws) {
                     // If they exist...
                     if (packet != null && handler != null) {
                         // ...call the handler
-                        const promise = handler(packet, json, connection);
+                        // If the handler is an async function it returns a promise. Otherwise we wrap
+                        // it. Either way, we now have a promise.
+                        const promise = Promise.resolve(handler(packet, json, connection));
 
                         // Check if the client is awaiting a response from the server
                         const requestId = json["requestId"];
@@ -318,15 +320,15 @@ class Connection {
     }
 }
 
-const packetHandlers = new Map< Packet<any, any>, <Data, Response>(packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response> >();
+const packetHandlers = new Map< Packet<any, any>, <Data, Response>(packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response> | Response >();
 
-function handler<Data, Response>(packet: Packet<Data, Response>, handler: (packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response>) {
+function handler<Data, Response>(packet: Packet<Data, Response>, handler: (packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response> | Response) {
     // Too many genercs here for typescript, we know what we're doing though.
     // @ts-ignore
     packetHandlers.set(packet, handler);
 }
 
-handler(Packets.Ping, async (packet, data, connection) => {
+handler(Packets.Ping, (packet, data, connection) => {
     return {
         isFTPConnected: connection.ftp == null ? false : !connection.ftp.closed
     };
@@ -402,7 +404,7 @@ handler(Packets.Upload, async (packet, data, connection) => {
     await connection.ftp.uploadFrom(stream, data.path);
 });
 
-handler(Packets.LargeUpload, async (packet, data, connection) => {
+handler(Packets.LargeUpload, (packet, data, connection) => {
     const uploadId = Math.random().toString().substring(2);
 
     largeUploads.push({
@@ -414,7 +416,7 @@ handler(Packets.LargeUpload, async (packet, data, connection) => {
     return { uploadId };
 });
 
-handler(Packets.ChunkedUploadStart, async (packet, data, connection) => {
+handler(Packets.ChunkedUploadStart, (packet, data, connection) => {
     const uploadId = Math.random().toString().substring(2);
     const stream = new PassThrough();
 

@@ -17,7 +17,7 @@ export default class CacheFolderContentProvider implements FolderContentProvider
         if (session != null) {
             const cacheData = session.cache[path];
             if (cacheData != null) {
-                return cacheData;
+                return await Promise.resolve(cacheData);
             }
         }
         throw new NotCachedError();

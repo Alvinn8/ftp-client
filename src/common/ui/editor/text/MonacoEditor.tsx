@@ -2,6 +2,7 @@ import { editor as monacoEditor, Uri } from "monaco-editor";
 import React, { useEffect, useRef } from "react";
 import { isDarkTheme } from "../../theme";
 import { TextEditorData } from "./TextEditor";
+import { unexpectedErrorHandler } from "../../../error";
 
 const MonacoEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvider }) => {
     const ref = useRef<HTMLDivElement>(null);
@@ -27,12 +28,14 @@ const MonacoEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvi
 
             if (absolutePath.endsWith(".sk")) {
                 import("./syntax/skript-syntax").then(({ registerSkriptLanguage }) => {
-                    registerSkriptLanguage(editor);
-                });
+                    registerSkriptLanguage(editor)
+                        .catch(unexpectedErrorHandler("Failed to Register skript syntax highlighting"));
+                }).catch(unexpectedErrorHandler("Failed to Load skript syntax highlighting"));
             } else if (absolutePath.endsWith(".mcfunction")) {
                 import("./syntax/mcfunction-syntax").then(({ registerMcfunctionLanguage }) => {
-                    registerMcfunctionLanguage(editor);
-                });
+                    registerMcfunctionLanguage(editor)
+                        .catch(unexpectedErrorHandler("Failed to Register mcfunction syntax highlighting"));
+                }).catch(unexpectedErrorHandler("Failed to Load mcfunction syntax highlighting"));
             }
 
             return () => {

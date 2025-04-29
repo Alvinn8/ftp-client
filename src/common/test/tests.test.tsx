@@ -18,7 +18,7 @@ describe("ftp-client tests", () => {
     let session: FTPSession;
     let connection: TestFTPConnection;
 
-    beforeEach(async () => {
+    beforeEach(() => {
         const profile = new FTPProfile("", 21, "", "", false);
         session = profile.startSession();
         connection = new TestFTPConnection();
@@ -35,7 +35,7 @@ describe("ftp-client tests", () => {
         cleanup();
     });
 
-    it("connect form is rendered", async () => {
+    it("connect form is rendered", () => {
         render(<App />);
         expect(screen.getByText(/Log in to the ftp server/)).toBeInTheDocument();
     });
@@ -62,7 +62,7 @@ describe("ftp-client tests", () => {
     it("mkdir", async () => {
         render(<App session={session} />);
 
-        userEvent.click(screen.getByRole("button", { name: "Create Folder" }));
+        await userEvent.click(screen.getByRole("button", { name: "Create Folder" }));
         await userEvent.type(await findPromptInput("Enter the name of the new folder"), "test_mkdir_folder");
         connection.list.mockResolvedValueOnce([
             new FolderEntry("/test_mkdir_folder", "test_mkdir_folder", 1, FolderEntryType.Directory, "")
@@ -179,7 +179,7 @@ describe("ftp-client tests", () => {
     });
 
     async function naviateToSubfolderTest(activator: () => Promise<void>) {
-        connection.list.mockImplementation(async (path: string) => {
+        connection.list.mockImplementation((path: string) => {
             if (path === "/") {
                 return [
                     new FolderEntry("/test_folder", "test_folder", 1, FolderEntryType.Directory, "")
@@ -243,7 +243,7 @@ describe("ftp-client tests", () => {
     });
 
     it("compute size", async () => {
-        connection.list.mockImplementation(async (path: string) => {
+        connection.list.mockImplementation((path: string) => {
             if (path === "/") {
                 return [
                     new FolderEntry("/test_folder", "test_folder", 1, FolderEntryType.Directory, "")

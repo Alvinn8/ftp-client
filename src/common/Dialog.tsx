@@ -150,7 +150,7 @@ namespace Dialog {
      * @returns The id of the option the user chose, or null if they cancelled.
      */
     export async function choose(title: string, text: string, options: Option[], allowCancel = true): Promise<string> {
-        return new Promise(function (resolve, reject) {
+        return await new Promise(function (resolve, reject) {
             const ref: React.RefObject<HTMLDivElement> = React.createRef();
             const modalElement =
                 <div className="modal" tabIndex={-1} ref={ref}>
@@ -207,7 +207,7 @@ namespace Dialog {
      * @param confirmButtonText The text on the confirm button.
      */
     export async function confirm(title: string, text: string, cancelButtonText = "Cancel", confirmButtonText = "OK"): Promise<boolean> {
-        return new Promise(function (resolve, reject) {
+        return await new Promise(function (resolve, reject) {
             let confirmed = false;
             const ref: React.RefObject<HTMLDivElement> = React.createRef();
             const modalElement =

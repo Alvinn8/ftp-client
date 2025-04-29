@@ -61,14 +61,18 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
         if (!success2) return;
 
         this.props.onConnect(session);
-    } catch(e) {
-        console.error(e);
-        this.props.onError(e);
+    }
+
+    tryConnect() {
+        this.connect().catch(err => {
+            console.error(err);
+            this.props.onError(err);
+        });
     }
 
     componentDidMount() {
         if (url.searchParams.has("host"), url.searchParams.has("user"), url.searchParams.has("password")) {
-            this.connect();
+            this.tryConnect();
             // Remove the credentials from the url
             url.search = "";
             history.replaceState(null, "", url.href);
@@ -97,7 +101,7 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
                     <input type="checkbox" id="secure" className="form-check-input me-2" />
                     <label htmlFor="secure" className="form-label">Secure</label>
                 </div>
-                <button onClick={this.connect.bind(this)} className="btn btn-success">Connect</button>
+                <button onClick={this.tryConnect.bind(this)} className="btn btn-success">Connect</button>
             </div>
         );
     }

@@ -4,6 +4,7 @@ import FolderEntry from "../../folder/FolderEntry";
 import Priority from "../../ftp/Priority";
 import TaskManager from "../../task/TaskManager";
 import { getApp } from "../App";
+import { unexpectedErrorHandler } from "../../error";
 
 interface FolderComponentProps {
     folderEntry: FolderEntry;
@@ -82,7 +83,7 @@ export default class FolderComponent extends React.Component<FolderComponentProp
         );
     }
 
-    async getContent() {
+    getContent() {
         if (!TaskManager.requestNewTask()) {
             this.setState({
                 open: false,
@@ -90,14 +91,16 @@ export default class FolderComponent extends React.Component<FolderComponentProp
             });
             return;
         }
-        const content: FolderEntry[] = [];
-        for (const folderEntry of await FolderContentProviders.MAIN.getFolderEntries(Priority.QUICK, this.path)) {
-            if (folderEntry.isDirectory()) content.push(folderEntry);
-        }
-        this.setState({
-            content,
-            fetchingContent: false
-        });
+        (async () => {
+            const content: FolderEntry[] = [];
+            for (const folderEntry of await FolderContentProviders.MAIN.getFolderEntries(Priority.QUICK, this.path)) {
+                if (folderEntry.isDirectory()) content.push(folderEntry);
+            }
+            this.setState({
+                content,
+                fetchingContent: false
+            });
+        })().catch(unexpectedErrorHandler("Failed to fetch folders"));
     }
 
     toggleOpen() {

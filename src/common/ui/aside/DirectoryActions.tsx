@@ -5,6 +5,7 @@ import { directoryUpload, fileUpload, setZipUploadMode } from "../../upload/uplo
 import { joinPath } from "../../utils";
 import { getApp } from "../App";
 import FolderContentProviders from "../../folder/FolderContentProviders";
+import { unexpectedErrorHandler } from "../../error";
 
 interface DirectoryActionsProps {
     workdir: string;
@@ -16,43 +17,55 @@ interface DirectoryActionsProps {
  */
 const DirectoryActions: React.FC<DirectoryActionsProps> = (props) => {
     function mkdir() {
-        Dialog.prompt("Create New Folder", "Enter the name of the new folder", "OK", "", async name => {
-            await getApp().state.session.mkdir(Priority.QUICK, joinPath(props.workdir, name));
-            getApp().refresh();
+        Dialog.prompt("Create New Folder", "Enter the name of the new folder", "OK", "", name => {
+            getApp().state.session.mkdir(Priority.QUICK, joinPath(props.workdir, name))
+                .then(() => getApp().refresh())
+                .catch(err => {
+                    if (String(err).includes("EEXIST")) {
+                        Dialog.message("Folder already exists", "A folder (or file) with that name already exists.");
+                        getApp().refresh(true);
+                    } else {
+                        unexpectedErrorHandler("Failed to Create New Folder")(err);
+                    }
+                });
         });
     }
 
     function createFile() {
-        Dialog.prompt("Create New File", "Enter the name of the new file", "OK", "", async name => {
-            const entries = await FolderContentProviders.FTP.getFolderEntries(Priority.QUICK, props.workdir);
-            if (entries.find(entry => entry.name == name)) {
-                Dialog.message("File already exists", "A file with this name already exists in this folder.");
-                return;
-            }
-            await getApp().state.session.uploadSmall(Priority.QUICK, new Blob([""]), joinPath(props.workdir, name));
-            getApp().refresh();
+        Dialog.prompt("Create New File", "Enter the name of the new file", "OK", "", name => {
+            (async () => {
+                const entries = await FolderContentProviders.FTP.getFolderEntries(Priority.QUICK, props.workdir);
+                if (entries.find(entry => entry.name == name)) {
+                    Dialog.message("File already exists", "A file with this name already exists in this folder.");
+                    return;
+                }
+                await getApp().state.session.uploadSmall(Priority.QUICK, new Blob([""]), joinPath(props.workdir, name));
+                getApp().refresh();
+            })().catch(unexpectedErrorHandler("Failed to Create New File"));
         });
     }
 
-    async function upload() {
-        const choice = await Dialog.choose("Upload", "Do you want to upload files or folders?", [
-            { id: "file", name: "Upload Files" },
-            { id: "folder", name: "Upload Folders" },
-            { id: "zip", name: "Extract and upload zip file" }
-        ]);
-        // Clean up from potentialy previous zip uploads
-        setZipUploadMode(false);
-        if (choice == "file") {
-            fileUpload.click();
-        } else if (choice == "folder") {
-            directoryUpload.click();
-        } else if (choice == "zip") {
-            setZipUploadMode(true);
-            fileUpload.click();
-        }
+    function upload() {
+        (async () => {
+            const choice = await Dialog.choose("Upload", "Do you want to upload files or folders?", [
+                { id: "file", name: "Upload Files" },
+                { id: "folder", name: "Upload Folders" },
+                { id: "zip", name: "Extract and upload zip file" }
+            ]);
+            // Clean up from potentialy previous zip uploads
+            setZipUploadMode(false);
+            if (choice == "file") {
+                fileUpload.click();
+            } else if (choice == "folder") {
+                directoryUpload.click();
+            } else if (choice == "zip") {
+                setZipUploadMode(true);
+                fileUpload.click();
+            }
+        })().catch(unexpectedErrorHandler("Failed to prepare upload"));
     }
 
-    async function refresh() {
+    function refresh() {
         getApp().state.session.clearCache();
         getApp().refresh();
     }

@@ -1,6 +1,7 @@
 import ContextMenuEntry from "../../../contextmenu/ContextMenuEntry";
 import ContextMenuPopulator from "../../../contextmenu/ContextMenuPopulator";
 import Dialog from "../../../Dialog";
+import { unexpectedErrorHandler } from "../../../error";
 import { getTagFromId } from "../../../nbt/nbt";
 import { ArrayNbtTag, NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtFloat, NbtInt, NbtIntArray, NbtList, NbtLong, NbtLongArray, NbtShort, NbtString, NumberNbtTag } from "../../../nbt/nbtTags";
 import { copyToClipboard } from "../../../utils";
@@ -35,12 +36,14 @@ function contextMenuForCompoundParent(parent: CompoundParentData): ContextMenuEn
         },
         {
             name: "Change Type",
-            handler: async () => {
-                const tagId = await chooseType("Change Type", "Choose the type of the tag. Keep in mind that this will delete all existing data in the tag.");
-                if (tagId != null) {
-                    parent.parent.replace(parent.key, getTagFromId(tagId));
-                    parent.reRenderUi();
-                }
+            handler: () => {
+                (async () => {
+                    const tagId = await chooseType("Change Type", "Choose the type of the tag. Keep in mind that this will delete all existing data in the tag.");
+                    if (tagId != null) {
+                        parent.parent.replace(parent.key, getTagFromId(tagId));
+                        parent.reRenderUi();
+                    }
+                })().catch(unexpectedErrorHandler("Failed to choose NBT tag type"));
             }
         },
         {
@@ -265,20 +268,22 @@ export function contextMenuForCompound(tag: NbtCompound, parent: ParentData, reR
             {
                 name: "Add",
                 handler: () => {
-                    Dialog.prompt("Add Tag", "Enter the name of the tag.", "Done", "", async (name) => {
-                        if (!name) {
-                            return;
-                        }
-                        if (tag.get(name) !== null) {
-                            Dialog.message("Error", "A tag with this name already exists. Please delete the existing tag first or choose a different name.");
-                            return;
-                        }
-                        const tagId = await chooseType("Choose Type", "Choose the type of the tag.");
-                        if (!tagId) {
-                            return;
-                        }
-                        tag.add(name, getTagFromId(tagId));
-                        reRenderUi();
+                    Dialog.prompt("Add Tag", "Enter the name of the tag.", "Done", "", (name) => {
+                        (async () => {
+                            if (!name) {
+                                return;
+                            }
+                            if (tag.get(name) !== null) {
+                                Dialog.message("Error", "A tag with this name already exists. Please delete the existing tag first or choose a different name.");
+                                return;
+                            }
+                            const tagId = await chooseType("Choose Type", "Choose the type of the tag.");
+                            if (!tagId) {
+                                return;
+                            }
+                            tag.add(name, getTagFromId(tagId));
+                            reRenderUi();
+                        })().catch(unexpectedErrorHandler("Failed to choose tag"));
                     });
                 }
             },
@@ -292,26 +297,30 @@ export function contextMenuForList(tag: NbtList, parent: ParentData, reRenderUi:
         getEntries: () => [
             {
                 name: "Change type of elements in list",
-                handler: async () => {
-                    const tagId = await chooseType("Change Type", "Choose the type of the tag. Current type is: " + getListTypeName(tag.listTypeId) + (tag.data.length > 0 ? ". Keep in mind that this will delete all existing data and empty the list." : ""), true);
-                    if (tagId != null) {
-                        tag.changeListType(tagId);
-                        reRenderUi();
-                    }
+                handler: () => {
+                    (async () => {
+                        const tagId = await chooseType("Change Type", "Choose the type of the tag. Current type is: " + getListTypeName(tag.listTypeId) + (tag.data.length > 0 ? ". Keep in mind that this will delete all existing data and empty the list." : ""), true);
+                        if (tagId != null) {
+                            tag.changeListType(tagId);
+                            reRenderUi();
+                        }
+                    })().catch(unexpectedErrorHandler("Failed to choose tag type"));
                 }
             },
             {
                 name: "Add",
-                handler: async () => {
-                    if (tag.listTypeId === 0) {
-                        const tagId = await chooseType("Choose Type", "Choose the type of the elements in the list.");
-                        if (!tagId) {
-                            return;
+                handler: () => {
+                    (async () => {
+                        if (tag.listTypeId === 0) {
+                            const tagId = await chooseType("Choose Type", "Choose the type of the elements in the list.");
+                            if (!tagId) {
+                                return;
+                            }
+                            tag.changeListType(tagId);
                         }
-                        tag.changeListType(tagId);
-                    }
-                    tag.add(getTagFromId(tag.listTypeId));
-                    reRenderUi();
+                        tag.add(getTagFromId(tag.listTypeId));
+                        reRenderUi();
+                    })().catch(unexpectedErrorHandler("Failed to choose tag type"));
                 }
             },
             ...contextMenuForParent(parent)

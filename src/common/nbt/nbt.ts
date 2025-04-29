@@ -41,7 +41,7 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
                 isLevelDat: true,
                 headerVersion
             } as BedrockLevelDat;
-            tag = await attemptReadNbtTag(reader);
+            tag = attemptReadNbtTag(reader);
             if (reader.isAtEnd()) {
                 return { tag, compression, editionData };
             }
@@ -55,7 +55,7 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     };
     reader.littleEndian = false;
     reader.index = 0;
-    tag = await attemptReadNbtTag(reader);
+    tag = attemptReadNbtTag(reader);
     if (tag != null && reader.isAtEnd()) {
         return { tag, compression, editionData };
     }
@@ -67,7 +67,7 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     };
     reader.littleEndian = true;
     reader.index = 0;
-    tag = await attemptReadNbtTag(reader);
+    tag = attemptReadNbtTag(reader);
     if (tag != null && reader.isAtEnd()) {
         return { tag, compression, editionData };
     }
@@ -75,7 +75,7 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     throw new Error("That is not an nbt file.");
 }
 
-async function attemptReadNbtTag(reader: NbtReader) {
+function attemptReadNbtTag(reader: NbtReader) {
     try {
         const tagId = reader.readU1();
         const tag = getTagFromId(tagId);
@@ -125,7 +125,7 @@ export function getIdFromTag(tag: NbtTag) {
     throw new Error("Unknown tag: " + tag);
 }
 
-export async function writeNbt(nbt: NbtData): Promise<Blob> {
+export function writeNbt(nbt: NbtData): Blob {
     const writer = new NbtWriter(new Uint8Array(100), nbt.editionData.littleEndian);
 
     // Write extra data for bedrock edition level.dat
@@ -192,11 +192,11 @@ export async function writeNbt(nbt: NbtData): Promise<Blob> {
  * correctly back to the same bytes that were originally read.
  */
 export async function validateNbtParsing(originalBlob: Blob, nbt: NbtData, strict: boolean = false): Promise<boolean> {
-    const serializedNbt = await writeNbt(nbt);
+    const serializedNbt = writeNbt(nbt);
     const originalBytes = new Uint8Array(await originalBlob.arrayBuffer());
     const serializedBytes = new Uint8Array(await serializedNbt.arrayBuffer());
     const compressionName = nbt.compression ? nbt.compression.type : "none";
-    if (await arrayBuffersEqual(originalBytes, serializedBytes)) {
+    if (arrayBuffersEqual(originalBytes, serializedBytes)) {
         console.log("Passed test directly with compression " + compressionName);
         return true;
     }
@@ -206,7 +206,7 @@ export async function validateNbtParsing(originalBlob: Blob, nbt: NbtData, stric
             // Let's try inflating the file and see if they are equal when inflated.
             const inflatedOriginalBytes = inflate(originalBytes);
             const inflatedSerializedBytes = inflate(serializedBytes);
-            if (await arrayBuffersEqual(inflatedOriginalBytes, inflatedSerializedBytes)) {
+            if (arrayBuffersEqual(inflatedOriginalBytes, inflatedSerializedBytes)) {
                 console.log("Passed test after inflating with compression " + compressionName);
                 return true;
             }
@@ -218,7 +218,7 @@ export async function validateNbtParsing(originalBlob: Blob, nbt: NbtData, stric
     return false;
 }
 
-async function arrayBuffersEqual(array1: Uint8Array, array2: Uint8Array): Promise<boolean> {
+function arrayBuffersEqual(array1: Uint8Array, array2: Uint8Array): boolean {
     return array1.byteLength == array2.byteLength && array1.every((value, index) => value == array2[index]);
 }
 

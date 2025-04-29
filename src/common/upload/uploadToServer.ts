@@ -143,21 +143,19 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
                 folderExists = true;
                 break;
             } else {
-                await new Promise<void>(async (resolve, reject) => {
-                    const shouldDelete = await Dialog.confirm(
-                        "Cannot create folder",
-                        `Wanted to create a folder at ${subdirPath} but there
-                        is a file at that location. Do you want to delete this file or cancel the upload?`,
-                        "Cancel upload",
-                        "Delete " + subdirName
-                    );
-                    if (shouldDelete) {
-                        await getApp().state.session.delete(Priority.LARGE_TASK, subdirPath);
-                        resolve();
-                    } else {
-                        reject(new Error("A file occupied the name of a folder, and the user decided to cancel."));
-                    }
-                });
+                const shouldDelete = await Dialog.confirm(
+                    "Cannot create folder", 
+                    `Wanted to create a folder at ${subdirPath} but there
+                    is a file at that location. Do you want to delete this file or cancel the upload?`,
+                    "Cancel upload",
+                    "Delete " + subdirName
+                );
+
+                if (!shouldDelete) {
+                    throw new Error("A file occupied the name of a folder, and the user decided to cancel.");
+                }
+
+                await getApp().state.session.delete(Priority.LARGE_TASK, subdirPath);
             }
         }
         // If not, create the folder

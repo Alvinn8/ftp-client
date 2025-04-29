@@ -2,6 +2,7 @@ import * as React from "react";
 import FolderEntry from "../folder/FolderEntry";
 import { openEditor } from "./editor/editor";
 import { getIconFor } from "./FileFormats";
+import { unexpectedErrorHandler } from "../error";
 
 interface FolderEntryComponentProps {
     entry: FolderEntry;
@@ -38,12 +39,12 @@ export default class FolderEntryComponent extends React.Component<FolderEntryCom
         );
     }
 
-    async handleDoubleClick(e: React.MouseEvent) {
+    handleDoubleClick(e: React.MouseEvent) {
         e.preventDefault();
         if (this.props.entry.isDirectory()) {
             this.props.onChangeDirectory(this.props.entry.path);
         } else if (this.props.entry.isFile()) {
-            openEditor(this.props.entry);
+            openEditor(this.props.entry).catch(unexpectedErrorHandler("Failed to open"));
         }
     }
 }

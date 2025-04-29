@@ -1,3 +1,4 @@
+import { unexpectedErrorHandler } from "../error";
 import FolderEntry from "../folder/FolderEntry";
 import { deleteFolderEntries, downloadAsZip } from "./actions";
 import ContextMenuEntry from "./ContextMenuEntry";
@@ -23,15 +24,15 @@ export default class FolderEntriesPopulator implements ContextMenuPopulator {
 
         entries.push({
             name: "Download as zip",
-            handler: async e => {
-                downloadAsZip(this.entries);
+            handler: () => {
+                downloadAsZip(this.entries).catch(unexpectedErrorHandler("Failed to download"));
             }
         });
 
         entries.push({
             name: "Delete",
-            handler: async e => {
-                deleteFolderEntries(this.entries);
+            handler: () => {
+                deleteFolderEntries(this.entries).catch(unexpectedErrorHandler("Failed to delete"));
             }
         });
 

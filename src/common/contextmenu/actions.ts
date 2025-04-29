@@ -9,6 +9,7 @@ import Task from "../task/Task";
 import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
 import { sleep } from "../utils";
+import { unexpectedErrorHandler } from "../error";
 
 export async function downloadFolderEntry(entry: FolderEntry) {
     try {
@@ -20,10 +21,13 @@ export async function downloadFolderEntry(entry: FolderEntry) {
 }
 
 export function rename(entry: FolderEntry) {
-    Dialog.prompt("Rename "+ entry.name, "Enter the new name of the file", "Rename", entry.name, async newName => {
+    Dialog.prompt("Rename "+ entry.name, "Enter the new name of the file", "Rename", entry.name, newName => {
         const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
-        await getApp().state.session.rename(Priority.QUICK, entry.path, newPath);
-        getApp().refresh();
+        getApp().state.session.rename(Priority.QUICK, entry.path, newPath)
+            .catch(unexpectedErrorHandler("Failed to rename"))
+            .finally(() => {
+                getApp().refresh();
+            });
     });
 }
 
@@ -106,7 +110,7 @@ async function deleteRecursively(entries: FolderEntry[], task: Task, path: Direc
                 if (String(e).includes("ENOENT")) {
                     // Ignore, it looks like this has already been deleted.
                 } else {
-                    const shouldContinue = Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + e + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
+                    const shouldContinue = await Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + e + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
                     if (!shouldContinue) {
                         throw new Error("Use chose to cancel.");
                     }
@@ -129,7 +133,7 @@ async function deleteRecursively(entries: FolderEntry[], task: Task, path: Direc
                     Dialog.message("Files changed while deleting", "It appears new files were added while trying to delete files. Please refresh and try deleting again. If your server is running, you may want to concider stopping it if you are deleting files that the server is using and writing to.");
                     throw new Error("Use chose to cancel.");
                 } else {
-                    const shouldContinue = Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + e + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
+                    const shouldContinue = await Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + e + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
                     if (!shouldContinue) {
                         throw new Error("Use chose to cancel.");
                     }

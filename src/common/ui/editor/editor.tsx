@@ -144,13 +144,13 @@ export async function openEditor(folderEntry: FolderEntry, fileType?: FileType) 
     }
 
     if (fileType == "text") {
-        openTextEditor(folderEntry);
+        await openTextEditor(folderEntry);
     } else if (fileType == "image") {
-        openImageEditor(folderEntry);
+        await openImageEditor(folderEntry);
     } else if (fileType == "nbt") {
-        openNbtEditor(folderEntry);
+        await openNbtEditor(folderEntry);
     } else if (fileType == "log") {
-        openLogEditor(folderEntry);
+        await openLogEditor(folderEntry);
     }
 }
 
@@ -370,8 +370,8 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
  * @param folderEntry The file in question.
  * @returns Whether the user wants to open the file.
  */
-function confirmOpenGzip(folderEntry: FolderEntry): Promise<boolean> {
-    return Dialog.confirm("Open gzipped file?", "The file " + folderEntry.name + " is gzipped, do you want to view it ungzipped? The file will not be changed on the server.");
+async function confirmOpenGzip(folderEntry: FolderEntry): Promise<boolean> {
+    return await Dialog.confirm("Open gzipped file?", "The file " + folderEntry.name + " is gzipped, do you want to view it ungzipped? The file will not be changed on the server.");
 }
 
 /**

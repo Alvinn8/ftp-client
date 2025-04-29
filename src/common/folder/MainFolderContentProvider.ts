@@ -21,7 +21,7 @@ export default class MainFolderContentProvider implements FolderContentProvider 
             if (e instanceof NotCachedError) {
                 // This folder was not cached, fetch from the ftp server.
                 const pendingRequest = this.pendingRequests[path];
-                if (pendingRequest) {
+                if (Boolean(pendingRequest)) {
                     return await pendingRequest;
                 } else {
                     const promise = FolderContentProviders.FTP.getFolderEntries(priority, path);

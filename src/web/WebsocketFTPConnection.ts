@@ -1,9 +1,9 @@
 import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
 import FTPConnection from "../common/ftp/FTPConnection";
 import { addMessage } from "../common/ui/messages";
-import { blobToBase64, ensureAbsolute, filename } from "../common/utils";
+import { blobToBase64, ensureAbsolute, filename, sleep } from "../common/utils";
 import { ChunkedUploadResponse, Packet, Packets } from "../protocol/packets";
-import {LargeFileOperationInterface, largeFileOperationStore} from "../common/ui/LargeFileOperation";
+ import {LargeFileOperationInterface, largeFileOperationStore } from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
 import TaskManager from "../common/task/TaskManager";
 
@@ -32,35 +32,21 @@ async function attemptRequest() {
     }
 }
 
-function sleep(ms) {
-    return new Promise(function(resolve, reject) {
-        setTimeout(resolve, ms);
-    });
-}
-
-export const connectionPromise = new Promise<void>(async function(resolve, reject) {
+export async function pingBackend() {
+    let err: unknown;
     while (attempts < 5) {
         try {
             await attemptRequest();
-            // No error yet? Nice, resolve
-            resolve();
+            // No error yet? Nice, return
             return;
-        } catch {
+        } catch (e) {
             console.log("Request failed, trying again in 5 seconds. Attempt: " + attempts);
             await sleep(5000);
+            err = e;
         }
     }
-    reject();
-});
-connectionPromise.catch(function(e) {
-    addMessage({
-        color: "danger",
-        message: "Failed to connect to the server.",
-        stayForMillis: 30000
-    });
-    throw e;
-});
-window["connectionPromise"] = connectionPromise;
+    throw err;
+}
 
 function progressTracker(type: "download" | "upload", path: string) {
     return (event: ProgressEvent) => {
@@ -95,24 +81,17 @@ export default class WebsocketFTPConnection implements FTPConnection {
      * Connect to the websocket.
      */
     async connectToWebsocket() {
-        // Ensure the server is ready
-        await connectionPromise;
-
-        if (navigator.onLine === false || await attemptRequest().then(() => true).catch(() => false) === false) {
-            await new Promise<void>(async (resolve, reject) => {
-                const confirmed = await Dialog.confirm(
-                    "No internet connection",
-                    `It appears you are not connected to the internet, or the ftp-client is experiencing
-                    downtime. Double check you internet connection and press "Continue" when you are online.`,
-                    "Cancel",
-                    "Continue"
-                );
-                if (confirmed) {
-                    resolve();
-                } else {
-                    reject(new Error("No internet connection, and the user decided to cancel."));
-                }
-            });
+        if (navigator.onLine === false || await pingBackend().then(() => true).catch(() => false) === false) {
+            const confirmed = await Dialog.confirm(
+                "No internet connection",
+                `It appears you are not connected to the internet, or the ftp-client is experiencing
+                downtime. Double check you internet connection and press "Continue" when you are online.`,
+                "Cancel",
+                "Continue"
+            );
+            if (!confirmed) {
+                throw new Error("No internet connection, and the user decided to cancel.");
+            }
         }
 
         await new Promise<void>((resolve, reject) => {
@@ -159,8 +138,8 @@ export default class WebsocketFTPConnection implements FTPConnection {
         });
     }
 
-    send<Data, Response>(packet: Packet<Data, Response>, data: Data): Promise<Response> {
-        return new Promise<Response>((resolve, reject) => {
+    async send<Data, Response>(packet: Packet<Data, Response>, data: Data): Promise<Response> {
+        return await new Promise<Response>((resolve, reject) => {
             data["packetId"] = packet.id;
             const requestId = this.getRandomId();
             data["requestId"] = requestId;
@@ -241,7 +220,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
         await this.send(Packets.CDUP, {});
     }
 
-    private async keepAlive(xhr: XMLHttpRequest) {
+    private keepAlive(xhr: XMLHttpRequest) {
         // It is very important that the connection to the FTP server isn't closed
         // while we are downloading large files over HTTP. Since the websocket
         // connection isn't used for this process, we need to ensure the connection
@@ -258,7 +237,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
             console.log("Pinging");
             this.isConnected().then(val => {
                 if (!val) {
-                    console.warn("FTP not connected while still uploading.");
+                    console.warn("FTP not connected while still downloading.");
                 }
             }).catch(e => {
                 console.error("Failed to ping", e);
@@ -287,7 +266,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 });
                 xhr.addEventListener("error", event => {
                     largeFileOperationStore.setValue(null);
-                    reject(event);
+                    reject(new Error("Network error while downloading large file"));
                 })
                 xhr.open("GET", url);
                 xhr.send();

@@ -27,4 +27,4 @@ jobs:
       - name: Test
         run: pnpm run test
       - name: Lint
-        run: pnpx run eslint .
+        run: pnpm run lint
