@@ -1,4 +1,4 @@
-name: Test
+name: Test & Lint
 
 on:
   push:
@@ -26,3 +26,5 @@ jobs:
         run: pnpm run build
       - name: Test
         run: pnpm run test
+      - name: Lint
+        run: pnpx run eslint .
