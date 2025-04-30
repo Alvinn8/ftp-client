@@ -11,6 +11,7 @@ import * as downloadModule from "../download";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import Priority from "../ftp/Priority";
 import VERSION from "../version";
+import { sleep } from "../utils";
 
 vi.spyOn(downloadModule, "default").mockImplementation(() => { });
 
@@ -216,9 +217,8 @@ describe("ftp-client tests", () => {
 
     it("navigate to subfolder via folder explorer", async () => {
         await naviateToSubfolderTest(async () => {
-            await waitForElementToBeRemoved(screen.getByText("Loading..."));
-            const folders = Array.from(document.getElementById("file-explorer").querySelectorAll("span"));
-            const folder = folders.find(el => el.textContent.includes("test_folder"));
+            await sleep(50);
+            const folder = (await screen.findAllByText("test_folder")).find(e => e.parentElement.classList.contains("folder-explorer-entry"));
             expect(folder).toBeInTheDocument();
             await userEvent.click(folder);
         });

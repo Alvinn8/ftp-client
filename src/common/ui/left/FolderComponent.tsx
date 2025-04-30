@@ -56,7 +56,7 @@ export default class FolderComponent extends React.Component<FolderComponentProp
                 <div className="d-inline-block p-1 folder-component-arrow" onClick={this.toggleOpen.bind(this)}>
                     <i className={"bi bi-chevron-" + (this.state.open ? "down" : "right")}></i>
                 </div>
-                <div className="d-inline-block cursor-pointer" onClick={this.goto.bind(this)}>
+                <div className="d-inline-block cursor-pointer folder-explorer-entry" onClick={this.goto.bind(this)}>
                     <i className="bi bi-folder-fill text-primary me-1"></i>
                     <span>{this.props.folderEntry.name}</span>
                 </div>
@@ -75,7 +75,15 @@ export default class FolderComponent extends React.Component<FolderComponentProp
                             })
                         )}
                         {this.state.content == null && (
-                            <small>Loading...</small>
+                            <div className="text-nowrap">
+                                <div className="d-inline-block p-1 folder-component-arrow">
+                                    <i className={"bi bi-chevron-right"}></i>
+                                </div>
+                                <div className="d-inline-block cursor-pointer">
+                                    <i className="skeleton me-1" style={{ width: "14px", height: "17px" }}></i>
+                                    <span className="skeleton" style={{ width: "40px", height: "17px" }}></span>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}

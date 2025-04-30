@@ -29,7 +29,8 @@ export default tseslint.config(
             "require-await": "off", // disable eslint variant because the tslint one is better
             "@typescript-eslint/require-await": "error",
             "@typescript-eslint/return-await": ["error", "always"],
-            "@typescript-eslint/await-thenable": "error"
+            "@typescript-eslint/await-thenable": "error",
+            "no-async-promise-executor": "error",
         }
     }
 );

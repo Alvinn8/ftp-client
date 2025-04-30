@@ -9,7 +9,7 @@ import { handleOnDrop } from "../upload/upload";
 import { createContextMenu, removeContextMenu } from "./ContextMenu";
 import DropZone from "./DropZone";
 import FolderEntryComponent from "./FolderEntryComponent";
-import { dirname, parentdir } from "../utils";
+import { parentdir, randomBetween, range } from "../utils";
 import Dialog from "../Dialog";
 import { getApp } from "./App";
 import { unexpectedErrorHandler } from "../error";
@@ -172,7 +172,12 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         }
         return (
             <div className="py-3" ref={this.ref}>
-                {this.state.entries == null && <p>Loading files...</p> }
+                {this.state.entries == null && range(randomBetween(2, 8)).map(key => (
+                    <div className="folder-entry" key={key}>
+                        <div className="skeleton" style={{ width: "16px", height: "18px" }}></div>
+                        <span className="skeleton" style={{ width: "150px", height: "18px" }}></span>
+                    </div>
+                )) }
                 {this.state.entries != null &&
                     this.state.entries.map((value, index) => {
                         return (

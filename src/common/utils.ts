@@ -71,3 +71,11 @@ export function copyToClipboard(text: string) {
         document.body.removeChild(textArea);
     }
 }
+
+export function range(length: number) {
+    return Array(length).fill(0).map((_, i) => i + 1);
+}
+
+export function randomBetween(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
