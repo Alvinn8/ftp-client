@@ -13,7 +13,7 @@ export default class FileInfo extends React.Component<FileInfoProps, {}> {
     render() {
         const entry = this.props.entry;
         return (
-            <div>
+            <div className="m-2">
                 <p>File name: { entry.name }</p>
                 <p>Size: <Size size={entry.size} /></p>
                 <p>Last modified: { entry.modifiedAt }</p>

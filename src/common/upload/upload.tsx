@@ -7,7 +7,7 @@ import * as React from "react";
 import Dialog from "../Dialog";
 import Directory from "./Directory";
 import { upload } from "./uploadToServer";
-import { unexpectedErrorHandler } from "../error";
+import { formatError, unexpectedErrorHandler } from "../error";
 
 export namespace UploadSupport {
     /**
@@ -46,6 +46,7 @@ function isZipFile(fileName: string) {
  */
 export async function handleOnDrop(event: React.DragEvent<HTMLDivElement> | DragEvent) {
     event.preventDefault();
+    console.log("Drag and drop");
     
     // We have to get the uploads sync, otherwise they disappear.
     const uploads = await getDropEventFiles(event);
@@ -56,6 +57,7 @@ export async function handleOnDrop(event: React.DragEvent<HTMLDivElement> | Drag
         const file = uploads.files[0];
         const extractAndUpload = await Dialog.confirm("Extract and upload?", "Do you want to extract the contents of " + file.name + " and upload the contents, or do you want to upload the zip file?", "Upload zip file", "Extract and upload contents");
         if (extractAndUpload) {
+            console.log("Zip upload via drag and drop.")
             await handleZip(file);
             return;
         }
@@ -106,7 +108,7 @@ async function getDropEventFiles(event: React.DragEvent | DragEvent): Promise<Di
 async function handleItem(item: FileSystemEntry, directory: Directory) {
     if (item.isFile) {
         const file = await (new Promise<File>(function(resolve, reject) {
-            (item as FileSystemFileEntry).file(resolve);
+            (item as FileSystemFileEntry).file(resolve, reject);
         }));
         directory.files.push(file);
     } else if (item.isDirectory) {
@@ -230,14 +232,14 @@ export const directoryUpload = document.createElement("input");
  * @param zip The JSZip object.
  * @returns The uploads.
  */
-async function getUploadsFromZip(zip): Promise<Directory> {
+async function getUploadsFromZip(zip: JSZip): Promise<Directory> {
     const root = new Directory();
     for (let path in zip.files) {
         const zipObject = zip.files[path];
         if (path.endsWith("/")) path = path.substring(0, path.length - 1);
 
         let directory = root;
-        let fileName;
+        let fileName: string | null = null;
         if (path.includes("/")) {
             // There are subdirectories, navigate to the directory the file is in.
             const parts = path.split("/");
@@ -277,14 +279,15 @@ async function getUploadsFromZip(zip): Promise<Directory> {
  * @param file The zip file.
  */
 async function handleZip(file: File) {
+    console.log("Zip upload");
     let zip: JSZip;
     try {
         zip = await JSZip.loadAsync(file);
-    } catch (e) {
+    } catch (err) {
         Dialog.message(
             "Failed to load zip file",
             "Are you sure the zip file is a zip file? If it another type of archive " +
-            "(such as a .rar file) you cannot just rename it and change it to .zip. The error is: " + String(e)
+            "(such as a .rar file) you cannot just rename it and change it to .zip. The error is: " + formatError(err)
         );
         return;
     }

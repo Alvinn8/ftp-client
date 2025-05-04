@@ -49,7 +49,8 @@ export async function blobToBase64(blob: Blob): Promise<string> {
             resolve(dataURL.substring(dataURL.indexOf(",") + 1));
         }
         reader.onerror = function () {
-            reject(reader.error ? reader.error : new Error("Failed to read file."));
+            const name = blob instanceof File ? blob.name : "blob";
+            reject(new Error(`Failed to read ${name} with size ${blob.size}`, { cause: reader.error }));
         };
         reader.readAsDataURL(blob);
     });
@@ -78,4 +79,17 @@ export function range(length: number) {
 
 export function randomBetween(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export function formatByteSize(size: number) {
+    if (size > 10**9) {
+        return (size / 10 ** 9).toFixed(2) + " GB";
+    }
+    if (size > 10**6) {
+        return (size / 10 ** 6).toFixed(2) + " MB";
+    }
+    if (size > 1000) {
+        return (size / 1000).toFixed(2) + " kB";
+    }
+    return size + " B";
 }

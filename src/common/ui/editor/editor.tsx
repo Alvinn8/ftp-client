@@ -8,6 +8,7 @@ import { FileType, getFileType } from "../FileFormats";
 import { getApp } from "../App";
 import { addMessage } from "../messages";
 import { EventEmitter } from "eventemitter3";
+import { formatError } from "../../error";
 
 interface EditorWindow {
     window: Window;
@@ -239,10 +240,10 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
     let nbt: NbtData;
     try {
         nbt = await readNbt(fileInfo.blob);
-    } catch(e) {
+    } catch(err) {
         Dialog.message(
             "Error reading NBT",
-            "There was an error reading the NBT file. " + String(e)
+            "There was an error reading the NBT file. " + formatError(err)
         );
         return;
     }
@@ -345,8 +346,8 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
     let blob: Blob;
     try {
         blob = await getApp().state.session.download(Priority.QUICK, folderEntry)
-    } catch(e) {
-        Dialog.message("Failed to open file", String(e));
+    } catch(err) {
+        Dialog.message("Failed to open file", formatError(err));
         return null;
     }
     if (isgzipped) {

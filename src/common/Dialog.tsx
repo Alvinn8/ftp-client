@@ -14,6 +14,7 @@ namespace Dialog {
      * @param text The text displayed to the user.
      */
      export function message(title: string, text: string, onClose?: () => void) {
+        console.log("Opening message dialog", { title, text });
         const modalRef: React.RefObject<HTMLDivElement> = React.createRef();
         const modalElement =
             <div className="modal" tabIndex={-1} ref={modalRef}>
@@ -71,6 +72,7 @@ namespace Dialog {
      * @param onCancel A callback called when the user clicks cancel.
      */
     export function prompt(title: string, text: string, submitButtonText: string, defaultValue: string, onOk: (result: string) => void, onCancel?: () => void) {
+        console.log("Opening prompt dialog", { title, text });
         let done = false;
         const modalRef: React.RefObject<HTMLDivElement> = React.createRef();
         const inputRef: React.RefObject<HTMLInputElement> = React.createRef();
@@ -150,6 +152,7 @@ namespace Dialog {
      * @returns The id of the option the user chose, or null if they cancelled.
      */
     export async function choose(title: string, text: string, options: Option[], allowCancel = true): Promise<string> {
+        console.log("Opening choose dialog", { title, text });
         return await new Promise(function (resolve, reject) {
             const ref: React.RefObject<HTMLDivElement> = React.createRef();
             const modalElement =
@@ -207,6 +210,7 @@ namespace Dialog {
      * @param confirmButtonText The text on the confirm button.
      */
     export async function confirm(title: string, text: string, cancelButtonText = "Cancel", confirmButtonText = "OK"): Promise<boolean> {
+        console.log("Opening confirm dialog", { title, text });
         return await new Promise(function (resolve, reject) {
             let confirmed = false;
             const ref: React.RefObject<HTMLDivElement> = React.createRef();

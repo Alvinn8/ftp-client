@@ -51,6 +51,9 @@ if (true) {
     const originalPassToHandler = ftp.FTPContext.prototype._passToHandler;
     // @ts-ignore
     ftp.FTPContext.prototype._passToHandler = function(response: unknown) {
+        if (response instanceof Error) {
+            response["taskStack"] = this._task ? this._task.stack : null;
+        }
         if (response instanceof Error && !String(response).includes("Command requires authentication:")) {
             console.log("DEBUG FTPContext._passToHandler called with stack ", this._task ? this._task.stack : null);
         }
@@ -90,6 +93,20 @@ function showErrorToUser(error: any): string | null {
     return null;
 }
 
+function shouldIgnoreError(error: any): boolean {
+    const strErr = String(error);
+    switch (strErr) {
+        case "Error: Client is closed":
+        case "Error: User closed client during task":
+        case "Error: Client is closed because User closed client":
+        case "Error: None of the available transfer strategies work. Last error response was 'Error: Client is closed because User closed client'.": {
+            // Ignore when the user closes the tab during a task.
+            return true;
+        }
+    }
+    return false;
+}
+
 async function sleep(ms: number) {
     return await new Promise(resolve => setInterval(resolve, ms));
 }
@@ -116,7 +133,9 @@ const httpServer = createServer(function (req, res) {
                     await largeDownload.connection.ftp.downloadTo(res, largeDownload.path);
                     res.end();
                 })().catch(err => {
-                    largeDownload.connection.log("Download error " + err);
+                    if (shouldIgnoreError(err)) {
+                        largeDownload.connection.log("Download error " + err);
+                    }
                 });
                 return;
             }
@@ -258,15 +277,8 @@ server.on("connection", function(ws) {
                                 // This error has already been displayed to the user.
                                 return;
                             }
-                            const strErr = String(err);
-                            switch (strErr) {
-                                case "Error: Client is closed":
-                                case "Error: User closed client during task":
-                                case "Error: Client is closed because User closed client":
-                                case "Error: None of the available transfer strategies work. Last error response was 'Error: Client is closed because User closed client'.": {
-                                    // Ignore when the user closes the tab during a task.
-                                    return;
-                                }
+                            if (shouldIgnoreError(err)) {
+                                return;
                             }
                             console.error(`[${connection ? connection.id : '?'}] Non ftp error in packet handler`);
                             console.error(err);
@@ -282,8 +294,8 @@ server.on("connection", function(ws) {
             connection.log("Left, disconnecting ftp");
             try {
                 connection.ftp.close();
-            } catch (e) {
-                connection.log("Disconected during a task: " + e.message);
+            } catch (err) {
+                connection.log("Disconected during a task: " + err.message);
             }
             for (let i = chunkedUploads.length - 1; i >= 0; i--) {
                 const chunkedUpload = chunkedUploads[i];
@@ -420,22 +432,28 @@ handler(Packets.ChunkedUploadStart, (packet, data, connection) => {
     const uploadId = Math.random().toString().substring(2);
     const stream = new PassThrough();
 
-    const uploadPromise = data.startOffset !== null
-        ? connection.ftp.appendFrom(stream, data.path)
-        : connection.ftp.uploadFrom(stream, data.path);
-
-    chunkedUploads.push({
+    const chunkedUpload = {
         id: uploadId,
         path: data.path,
         size: data.size,
         connection,
         stream,
-        uploadPromise,
+        uploadPromise: null,
         offset: data.startOffset !== null ? data.startOffset : 0,
         pendingChunks: 0,
         maxPendingChunks: 2,
         error: null
-    });
+    } satisfies Partial<ChunkedUpload>;
+
+    const uploadPromise = (data.startOffset !== null
+        ? connection.ftp.appendFrom(stream, data.path)
+        : connection.ftp.uploadFrom(stream, data.path)).catch(err => {
+            chunkedUpload.error = err;
+        });
+    
+    chunkedUpload.uploadPromise = uploadPromise;
+
+    chunkedUploads.push(chunkedUpload);
 
     return { uploadId };
 });
@@ -475,8 +493,9 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
         chunkedUpload.pendingChunks--;
     });
 
-    connection.log("pendingChunks = " + chunkedUpload.pendingChunks);
-
+    if (chunkedUpload.pendingChunks > 1) {
+        connection.log("pendingChunks = " + chunkedUpload.pendingChunks);
+    }
 
     let sleepCount = 0;
     while (chunkedUpload.pendingChunks >= chunkedUpload.maxPendingChunks && sleepCount++ < 1000) {

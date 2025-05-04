@@ -1,4 +1,5 @@
 import Dialog from "../Dialog";
+import { formatError } from "../error";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
@@ -51,10 +52,10 @@ export async function upload(uploads: Directory) {
     
         // Complete the task
         task.complete();
-    } catch (e) {
+    } catch (err) {
         Dialog.message(
             "Upload failed",
-            `The upload failed even after several attempts. Error: ${e}`
+            `The upload failed even after several attempts. ${formatError(err)}`
         );
 
         // While we didn't "complete" the task, we mark it as complete to avoid being completely stuck.
@@ -169,15 +170,15 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
                     await getApp().state.session.mkdir(Priority.LARGE_TASK, joinPath(path.get(), subdirName));
                     success = true;
                     break;
-                } catch (e) {
+                } catch (err) {
                     attempt++;
-                    console.log(`mkdir attempt ${attempt} got error:`, e);
-                    lastError = e;
+                    console.log(`mkdir attempt ${attempt} got error:`, err);
+                    lastError = err;
                     await sleep(1000 * attempt);
                 }
             }
             if (!success) {
-                throw lastError || new Error(`Failed to create directory after ${attempt} attempts.`);
+                throw new Error(`Failed to create directory after ${attempt} attempts.`, { cause: lastError });
             }
         }
         path.cd(subdirName);
@@ -210,16 +211,16 @@ async function uploadSmallFile(file: File, path: string) {
             await getApp().state.session.uploadSmall(Priority.LARGE_TASK, file, path);
             success = true;
             break;
-        } catch (e) {
+        } catch (err) {
             attempt++;
-            console.log(`Attempt ${attempt} got error:`, e);
-            lastError = e;
+            console.log(`Attempt ${attempt} got error:`, err);
+            lastError = err;
             await sleep(1000 * attempt);
         }
     }
     if (!success) {
-        console.error(`Failed to upload after ${attempt} attempts. lastError =`, lastError);
-        throw lastError || new Error(`Failed to upload after ${attempt} attempts.`);
+        console.error(`Failed to upload after ${attempt} with size ${file.size} attempts. lastError =`, lastError);
+        throw new Error(`Failed to upload ${file.name} after ${attempt} attempts.`, { cause: lastError });
     }
 }
 
@@ -238,10 +239,10 @@ async function uploadLargeFile(file: File, path: string) {
             await uploadLargeFile0(file, path, startOffset, queueLockIdentifier);
             success = true;
             break;
-        } catch (e) {
+        } catch (err) {
             attempt++;
-            console.log(`Attempt ${attempt} got error:`, e);
-            lastError = e;
+            console.log(`Attempt ${attempt} got error:`, err);
+            lastError = err;
             getApp().state.session.unlockQueue(queueLockIdentifier);
 
             // Avoid a failed upload from getting stuck in progress.
@@ -261,7 +262,7 @@ async function uploadLargeFile(file: File, path: string) {
         }
     }
     if (!success) {
-        console.error(`Failed to upload after ${attempt} attempts. lastError =`, lastError);
+        console.error(`Failed to upload after ${attempt} with size ${file.size} attempts. lastError =`, lastError);
 
         // If the file has been partially uploaded we need to warn the user.
         const fileInfo = await getFileInfo(path);
@@ -277,7 +278,7 @@ async function uploadLargeFile(file: File, path: string) {
                 );
             }));
         }
-        throw lastError || new Error(`Failed to upload after ${attempt} attempts.`);
+        throw new Error(`Failed to upload ${file.name} after ${attempt} attempts.`, lastError);
     }
 }
 

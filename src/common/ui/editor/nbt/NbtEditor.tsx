@@ -5,7 +5,7 @@ import UiNbtTag from "./UiNbtTag";
 import "./NbtEditor.css";
 import { readNbt, sanityCheckNbt, writeNbt } from "../../../nbt/nbt";
 import Dialog from "../../../Dialog";
-import { unexpectedErrorHandler } from "../../../error";
+import { formatError, unexpectedErrorHandler } from "../../../error";
 
 const NbtEditor = () => {
     const [nbt, setNbt] = useState<NbtData>(null);
@@ -33,7 +33,7 @@ const NbtEditor = () => {
         sanityCheckNbt(blob, nbt).then(() => {
             window["save"](blob);
         }).catch((err) => {
-            Dialog.message("Error", "Failed to save NBT file. Please contact support if you wish to modify this file. Error: " + err);
+            Dialog.message("Error", "Failed to save NBT file. Please contact support if you wish to modify this file. " + formatError(err));
         });
     };
 

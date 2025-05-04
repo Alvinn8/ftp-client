@@ -39,10 +39,10 @@ export async function pingBackend() {
             await attemptRequest();
             // No error yet? Nice, return
             return;
-        } catch (e) {
+        } catch (err) {
             console.log("Request failed, trying again in 5 seconds. Attempt: " + attempts);
             await sleep(5000);
-            err = e;
+            err = err;
         }
     }
     throw err;

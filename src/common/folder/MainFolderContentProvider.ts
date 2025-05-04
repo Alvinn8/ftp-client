@@ -17,8 +17,8 @@ export default class MainFolderContentProvider implements FolderContentProvider 
         try {
             // Try get the files from the cache.
             return await FolderContentProviders.CACHE.getFolderEntries(priority, path);
-        } catch (e) {
-            if (e instanceof NotCachedError) {
+        } catch (err) {
+            if (err instanceof NotCachedError) {
                 // This folder was not cached, fetch from the ftp server.
                 const pendingRequest = this.pendingRequests[path];
                 if (Boolean(pendingRequest)) {
@@ -31,7 +31,7 @@ export default class MainFolderContentProvider implements FolderContentProvider 
                     return result;
                 }
             } else {
-                throw e;
+                throw err;
             }
         }
     }

@@ -9,20 +9,22 @@ import Task from "../task/Task";
 import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
 import { sleep } from "../utils";
-import { unexpectedErrorHandler } from "../error";
+import { formatError, unexpectedErrorHandler } from "../error";
 
 export async function downloadFolderEntry(entry: FolderEntry) {
+    console.log("Download one folder entry");
     try {
         const blob = await getApp().state.session.download(Priority.QUICK, entry);
         download(blob, entry.name);
-    } catch(e) {
-        Dialog.message("Failed to download", String(e));
+    } catch(err) {
+        Dialog.message("Failed to download", formatError(err));
     }
 }
 
 export function rename(entry: FolderEntry) {
     Dialog.prompt("Rename "+ entry.name, "Enter the new name of the file", "Rename", entry.name, newName => {
         const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
+        console.log("Renaming", entry.path, "to", newPath);
         getApp().state.session.rename(Priority.QUICK, entry.path, newPath)
             .catch(unexpectedErrorHandler("Failed to rename"))
             .finally(() => {
@@ -65,11 +67,11 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
     let totalCount: number | null = null;
     try {
         totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
-    } catch (e) {
+    } catch (err) {
         countTask.complete();
         Dialog.message(
             "Delete failed",
-            `Failed to count files to delete. Error: ${e}`
+            `Failed to count files to delete. ${formatError(err)}`
         );
         return;
     }
@@ -90,9 +92,9 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
     const path = getDirectoryPath(entries);
     try {
         await deleteRecursively(entries, task, path, 0, totalCount);
-    } catch (e) {
-        if (String(e) != "Error: Use chose to cancel.") {
-            Dialog.message("Unexpected error while deleting", String(e));
+    } catch (err) {
+        if (String(err) != "Error: Use chose to cancel.") {
+            Dialog.message("Unexpected error while deleting", formatError(err));
         }
     }
     task.complete();
@@ -106,11 +108,11 @@ async function deleteRecursively(entries: FolderEntry[], task: Task, path: Direc
             task.progress(deletedCount, totalCount, "Deleting " + entry.name);
             try {
                 await getApp().state.session.delete(Priority.LARGE_TASK, entry.path);
-            } catch (e) {
-                if (String(e).includes("ENOENT")) {
+            } catch (err) {
+                if (String(err).includes("ENOENT")) {
                     // Ignore, it looks like this has already been deleted.
                 } else {
-                    const shouldContinue = await Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + e + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
+                    const shouldContinue = await Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + err + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
                     if (!shouldContinue) {
                         throw new Error("Use chose to cancel.");
                     }
@@ -126,14 +128,14 @@ async function deleteRecursively(entries: FolderEntry[], task: Task, path: Direc
             task.progress(deletedCount, totalCount, "Deleting " + entry.name);
             try {
                 await getApp().state.session.delete(Priority.LARGE_TASK, entry.path);
-            } catch (e) {
-                if (String(e).includes("ENOENT")) {
+            } catch (err) {
+                if (String(err).includes("ENOENT")) {
                     // Ignore, it looks like this has already been deleted.
-                } else if (String(e).includes("ENOTEMPTY")) {
+                } else if (String(err).includes("ENOTEMPTY")) {
                     Dialog.message("Files changed while deleting", "It appears new files were added while trying to delete files. Please refresh and try deleting again. If your server is running, you may want to concider stopping it if you are deleting files that the server is using and writing to.");
                     throw new Error("Use chose to cancel.");
                 } else {
-                    const shouldContinue = await Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + e + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
+                    const shouldContinue = await Dialog.confirm("Failed to delete", "Failed to delete " + entry.path + ". The error was: " + formatError(err) + ". Do you want to continue deleting or cancel?", "Cancel", "Continue deleting");
                     if (!shouldContinue) {
                         throw new Error("Use chose to cancel.");
                     }
@@ -169,17 +171,19 @@ async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath
             path.cd(entry.name);
             let list: FolderEntry[] | null = null;
             let attempt = 0;
+            let lastError: unknown;
             while (attempt < 5) {
                 try {
                     list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, path.get());
                     break;
-                } catch (e) {
+                } catch (err) {
                     attempt++;
+                    lastError = err;
                     await sleep(1000 * attempt);
                 }
             }
             if (list === null) {
-                throw new Error("Failed to count files in " + path.get());
+                throw new Error("Failed to count files in " + path.get(), { cause: lastError });
             }
             count += await countFilesRecursively(list, path, countTask);
             path.cdup();
@@ -197,11 +201,11 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     let totalCount: number | null = null;
     try {
         totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
-    } catch (e) {
+    } catch (err) {
         countTask.complete();
         Dialog.message(
             "Download failed",
-            `Failed to count files to download. Error: ${e}`
+            `Failed to count files to download. ${formatError(err)}`
         );
         return;
     }
@@ -225,10 +229,10 @@ export async function downloadAsZip(entries: FolderEntry[]) {
         task.progress(100, 100, "Downloading zip");
         download(zipFile, entries.length == 1 ? entries[0].name + ".zip" : "files.zip");
         task.complete();
-    } catch (e) {
+    } catch (err) {
         Dialog.message(
             "Download failed",
-            `The download failed even after several attempts. Error: ${e}`
+            `The download failed even after several attempts. ${formatError(err)}`
         );
         task.complete();
     }
@@ -252,8 +256,8 @@ async function downloadRecursively(entries: FolderEntry[], zip: JSZip, task: Tas
                     zip.file(entry.name, blob);
                     success = true;
                     break;
-                } catch (e) {
-                    lastError = e as Error;
+                } catch (err) {
+                    lastError = err as Error;
                     attempt++;
                     if (attempt < maxAttempts) {
                         task.progress(downloadCount, totalCount, `Retrying download of ${entry.name} (attempt ${attempt + 1}/${maxAttempts})`);
@@ -264,7 +268,7 @@ async function downloadRecursively(entries: FolderEntry[], zip: JSZip, task: Tas
             
             if (!success) {
                 console.error(`Failed to download ${entry.name} after ${attempt} attempts. lastError =`, lastError);
-                throw lastError || new Error(`Failed to download ${entry.name} after ${attempt} attempts.`);
+                throw new Error(`Failed to download ${entry.name} with size ${entry.size} after ${attempt} attempts.`, { cause: lastError });
             }
             
         } else if (entry.isDirectory()) {

@@ -12,7 +12,7 @@ import FolderEntryComponent from "./FolderEntryComponent";
 import { parentdir, randomBetween, range } from "../utils";
 import Dialog from "../Dialog";
 import { getApp } from "./App";
-import { unexpectedErrorHandler } from "../error";
+import { formatError, unexpectedErrorHandler } from "../error";
 
 interface FolderContentProps {
     workdir: string;
@@ -52,7 +52,7 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         
         this.getEntries().catch(err => {
             if (String(err).includes("ENOENT")) {
-                Dialog.message("This folder has been deleted", "It appears the folder you were trying to go to has been deleted. The full error is: " + err);
+                Dialog.message("This folder has been deleted", "It appears the folder you were trying to go to has been deleted. The full error is: " + formatError(err));
                 this.props.onChangeDirectory(parentdir(this.props.workdir));
                 setTimeout(() => {
                     getApp().refresh(true);

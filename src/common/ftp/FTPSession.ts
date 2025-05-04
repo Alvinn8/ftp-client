@@ -86,9 +86,9 @@ export default class FTPSession {
                 });
                 success = true;
                 break;
-            } catch (e) {
-                lastError = e;
-                console.log("Failed to get connection, attempt = " + attempt + " error = ", e);
+            } catch (err) {
+                lastError = err;
+                console.log("Failed to get connection, attempt = " + attempt + " error = ", err);
                 await sleep(5000);
             }
         }

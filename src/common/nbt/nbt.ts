@@ -210,8 +210,8 @@ export async function validateNbtParsing(originalBlob: Blob, nbt: NbtData, stric
                 console.log("Passed test after inflating with compression " + compressionName);
                 return true;
             }
-        } catch (e) {
-            console.log("Failed to inflate with compression " + compressionName + ": " + e);
+        } catch (err) {
+            console.log("Failed to inflate with compression " + compressionName + ": ", err);
         }
     }
     console.log("Failed test with compression " + compressionName);
@@ -232,8 +232,8 @@ export async function sanityCheckNbt(blob: Blob, nbt: NbtData): Promise<void> {
     let parsedNbt: NbtData;
     try {
         parsedNbt = await readNbt(blob);
-    } catch (e) {
-        throw new Error("The serialized NBT file is not valid NBT. Error: " + e);
+    } catch (err) {
+        throw new Error("The serialized NBT file is not valid NBT.", { cause: err });
     }
 
     // We do not have a way to compare the two nbt objects, so we just check that

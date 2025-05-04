@@ -2,6 +2,7 @@ import * as React from "react";
 import { readNbt } from "../../../nbt/nbt";
 import { NbtCompound } from "../../../nbt/nbtTags";
 import UiNbtCompound from "./UiNbtCompound";
+import { formatError } from "../../../error";
 
 interface State {
     tag: NbtCompound;
@@ -41,10 +42,10 @@ export default class NbtTest extends React.Component<{}, State> {
                 tag,
                 error: null
             });
-        } catch(e) {
+        } catch(err) {
             this.setState({
                 tag: null,
-                error: e.toString()
+                error: formatError(err)
             });
         }
     }
