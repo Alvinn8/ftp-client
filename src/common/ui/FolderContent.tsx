@@ -21,6 +21,7 @@ interface FolderContentProps {
     toggleSelected: (entry: FolderEntry) => void;
     selectOnly: (entry: FolderEntry) => void;
     unselectAll: () => void;
+    setSelection: (entries: FolderEntry[]) => void;
 }
 
 interface FolderContentState {
@@ -113,7 +114,27 @@ export default class FolderContent extends React.Component<FolderContentProps, F
     }
 
     handleClick(entry: FolderEntry, e: React.MouseEvent) {
-        if (this.props.selection.length > 0 && !(e.shiftKey || e.metaKey || e.ctrlKey || e.altKey)) {
+        if (e.shiftKey && this.props.selection.length > 0) {
+            // Find index of last selected item and current item
+            const lastSelected = this.props.selection[this.props.selection.length - 1];
+            const lastIndex = this.state.entries.indexOf(lastSelected);
+            const currentIndex = this.state.entries.indexOf(entry);
+            
+            // Select all items between last selected and current
+            const start = Math.min(lastIndex, currentIndex);
+            const end = Math.max(lastIndex, currentIndex);
+            const toSelect = this.state.entries.slice(start, end + 1);
+
+            const newSelection = this.props.selection.slice();
+            
+            for (const entry of toSelect) {
+                if (!newSelection.includes(entry)) {
+                    newSelection.push(entry);
+                }
+            }
+            this.props.setSelection(newSelection);
+        }
+        else if (this.props.selection.length > 0 && !(e.metaKey || e.ctrlKey || e.altKey)) {
             if (this.props.selection.includes(entry)) {
                 this.props.unselectAll();
             } else {

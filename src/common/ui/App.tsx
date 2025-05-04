@@ -18,6 +18,7 @@ import LargeFileOperation from "./LargeFileOperation";
 import ConnectingScreen from "./ConnectingScreen";
 import ErrorScreen from "./ErrorScreen";
 import VERSION from "../version";
+import { dirname } from "../utils";
 
 let app: App;
 
@@ -115,6 +116,7 @@ export class App extends React.Component<AppProps, AppState> {
         this.toggleSelected = this.toggleSelected.bind(this);
         this.selectOnly = this.selectOnly.bind(this);
         this.unselectAll = this.unselectAll.bind(this);
+        this.setSelection = this.setSelection.bind(this);
         this.cd = this.cd.bind(this);
         this.cdup = this.cdup.bind(this);
     }
@@ -153,6 +155,7 @@ export class App extends React.Component<AppProps, AppState> {
     }
 
     toggleSelected(entry: FolderEntry) {
+        console.log("Toggle " + entry.name);
         const selection = this.state.selection.slice();
         if (selection.includes(entry)) {
             selection.splice(selection.indexOf(entry), 1);
@@ -174,6 +177,20 @@ export class App extends React.Component<AppProps, AppState> {
         this.setState({
             selection: []
         });
+    }
+
+    setSelection(selection: FolderEntry[]) {
+        if (selection.length > 0) {
+            let parent: string = dirname(selection[0].path);
+            for (const entry of selection) {
+                if (dirname(entry.path) !== parent) {
+                    throw new Error("Invalid selection. Different directories, a: " + parent + ", b: " + dirname(entry.path));
+                }
+            }
+        }
+        this.setState({
+            selection
+        })
     }
 
     refresh(clearCacheDeep = false) {
@@ -222,6 +239,7 @@ export class App extends React.Component<AppProps, AppState> {
                                 toggleSelected={this.toggleSelected}
                                 selectOnly={this.selectOnly}
                                 unselectAll={this.unselectAll}
+                                setSelection={this.setSelection}
                             />
                         </div>
 

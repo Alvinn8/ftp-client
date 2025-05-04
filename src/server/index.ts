@@ -133,7 +133,7 @@ const httpServer = createServer(function (req, res) {
                     await largeDownload.connection.ftp.downloadTo(res, largeDownload.path);
                     res.end();
                 })().catch(err => {
-                    if (shouldIgnoreError(err)) {
+                    if (!shouldIgnoreError(err)) {
                         largeDownload.connection.log("Download error " + err);
                     }
                 });
