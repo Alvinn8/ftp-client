@@ -5,6 +5,7 @@ import * as ws from "ws";
 import { ChunkedUploadStatus, ErrorReply, ListReply, Packet, packetMap, Packets } from "../protocol/packets";
 import { WritableMemoryStream, ReadableMemoryStream } from "./memoryStreams";
 import { PassThrough } from "stream";
+import VERSION from "../protocol/version";
 
 
 const PORT = parseInt(process.env.PORT) || 8081;
@@ -145,7 +146,7 @@ const httpServer = createServer(function (req, res) {
             return;
         }
         res.writeHead(200, headers);
-        res.write("pong");
+        res.write("Server is up. Version is " + VERSION);
         res.end();
     } else if (req.method === "POST") {
         if (req.url && req.url.startsWith("/upload/")) {

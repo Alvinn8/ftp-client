@@ -17,7 +17,7 @@ import OpenEditors from "./editor/OpenEditors";
 import LargeFileOperation from "./LargeFileOperation";
 import ConnectingScreen from "./ConnectingScreen";
 import ErrorScreen from "./ErrorScreen";
-import VERSION from "../version";
+import VERSION from "../../protocol/version";
 import { dirname } from "../utils";
 
 let app: App;

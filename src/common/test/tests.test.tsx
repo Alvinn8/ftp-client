@@ -10,7 +10,7 @@ import FolderEntry, { FolderEntryType } from "../folder/FolderEntry";
 import * as downloadModule from "../download";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import Priority from "../ftp/Priority";
-import VERSION from "../version";
+import VERSION from "../../protocol/version";
 import { sleep } from "../utils";
 
 vi.spyOn(downloadModule, "default").mockImplementation(() => { });
