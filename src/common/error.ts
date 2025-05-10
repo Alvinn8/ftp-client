@@ -11,7 +11,7 @@ export function formatError(error: unknown) {
     if (error instanceof Error && error.cause) {
         str += " Caused by: " + formatError(error.cause);
     }
-    if (!/^[A-Za-z]Error:/.test(str)) {
+    if (!/^[A-Za-z]*Error:/.test(str)) {
         str = "Error: " + str;
     }
     return str;
