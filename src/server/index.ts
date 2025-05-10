@@ -81,6 +81,9 @@ function showErrorToUser(error: any): string | null {
     if (error.code === "CERT_HAS_EXPIRED") {
         return "SSL error. Please try again or contact support. (CERT_HAS_EXPIRED)";
     }
+    if (error.code === "ENOTFOUND") {
+        return "Please try again. (" + error + ")";
+    }
     const str = error.toString().trim();
     if (str === "Error: Timeout (data socket)" || str === "Error: Timeout (control socket)") {
         return str;
@@ -92,20 +95,6 @@ function showErrorToUser(error: any): string | null {
         return str;
     }
     return null;
-}
-
-function shouldIgnoreError(error: any): boolean {
-    const strErr = String(error);
-    switch (strErr) {
-        case "Error: Client is closed":
-        case "Error: User closed client during task":
-        case "Error: Client is closed because User closed client":
-        case "Error: None of the available transfer strategies work. Last error response was 'Error: Client is closed because User closed client'.": {
-            // Ignore when the user closes the tab during a task.
-            return true;
-        }
-    }
-    return false;
 }
 
 async function sleep(ms: number) {
@@ -134,7 +123,8 @@ const httpServer = createServer(function (req, res) {
                     await largeDownload.connection.ftp.downloadTo(res, largeDownload.path);
                     res.end();
                 })().catch(err => {
-                    if (!shouldIgnoreError(err)) {
+                    if (!largeDownload.connection.userClosed) {
+                        // The connection was not closed, but we still got an unexpected error.
                         largeDownload.connection.log("Download error " + err);
                     }
                 });
@@ -278,7 +268,9 @@ server.on("connection", function(ws) {
                                 // This error has already been displayed to the user.
                                 return;
                             }
-                            if (shouldIgnoreError(err)) {
+                            if (connection && connection.userClosed) {
+                                // The user closed the tab during a task. The error is probably related to
+                                // that. Do not report it.
                                 return;
                             }
                             console.error(`[${connection ? connection.id : '?'}] Non ftp error in packet handler`);
@@ -294,6 +286,8 @@ server.on("connection", function(ws) {
         if (connection != null && connection.ftp != null && !connection.ftp.closed) {
             connection.log("Left, disconnecting ftp");
             try {
+                // Mark the connection as closed to avoid reporting errors.
+                connection.userClosed = true;
                 connection.ftp.close();
             } catch (err) {
                 connection.log("Disconected during a task: " + err.message);
@@ -316,6 +310,7 @@ class Connection {
     public readonly ws: ws;
     public readonly protocolType: ProtocolType;
     public ftp: ftp.Client;
+    public userClosed: boolean = false;
 
     constructor(ws: ws, protocolType: ProtocolType) {
         this.ws = ws;
