@@ -54,10 +54,12 @@ export default class FolderContent extends React.Component<FolderContentProps, F
         this.getEntries().catch(err => {
             if (String(err).includes("ENOENT")) {
                 Dialog.message("This folder has been deleted", "It appears the folder you were trying to go to has been deleted. The full error is: " + formatError(err));
-                this.props.onChangeDirectory(parentdir(this.props.workdir));
-                setTimeout(() => {
-                    getApp().refresh(true);
-                }, 1000);
+                if (this.props.workdir != "/") {
+                    this.props.onChangeDirectory(parentdir(this.props.workdir));
+                    setTimeout(() => {
+                        getApp().refresh(true);
+                    }, 1000);
+                }
             } else {
                 unexpectedErrorHandler("Failed to fetch files")(err);
             }
