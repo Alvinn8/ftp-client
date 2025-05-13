@@ -248,7 +248,7 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
         return;
     }
 
-    const allowSaving = await validateNbtParsing(fileInfo.blob, nbt);
+    const allowSaving = fileInfo.allowSaving && await validateNbtParsing(fileInfo.blob, nbt);
 
     const wind = openWindow(folderEntry.name, "editor/nbt.html", folderEntry);
 
