@@ -260,8 +260,13 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 xhr.addEventListener("progress", progressTracker("download", folderEntry.path));
                 xhr.addEventListener("readystatechange", event => {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
-                        resolve(xhr.response as Blob);
-                        largeFileOperationStore.setValue(null);
+                        if (xhr.status === 200 && xhr.response instanceof Blob) {
+                            resolve(xhr.response as Blob);
+                            largeFileOperationStore.setValue(null);
+                        } else {
+                            largeFileOperationStore.setValue(null);
+                            reject(new Error(`Failed to download large file. HTTP ${xhr.status} ${xhr.statusText}`));
+                        }
                     }
                 });
                 xhr.addEventListener("error", event => {
