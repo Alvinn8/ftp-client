@@ -1,13 +1,21 @@
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: var(--bs-dark);
-        color: var(--bs-light);
-    }
+:root {
+    --border-color: rgba(128, 128, 128, 0.2);
+    --hover-light: rgba(220, 220, 220, 0.5);
+    --hover-dark: rgba(70, 70, 70, 0.5);
+    --skeleton-base-color: #e8e8e8;
+    --skeleton-highlight-color: #f5f5f5;
+    --transition: all 0.1s ease-in-out;
+    --border-radius: 6px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 
-    .modal-content {
-        background-color: var(--bs-dark);
-        color: var(--bs-light);
-    }
+/* Base styles */
+body {
+    background-color: var(--bs-white);
+    color: var(--bs-dark);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+    margin: 0;
+    transition: var(--transition);
 }
 
 body, html, #root, #root > div, #grid {
@@ -15,29 +23,39 @@ body, html, #root, #root > div, #grid {
     width: 100%;
 }
 
-body {
-    margin: 0px;
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+
+    body,
+    .modal-content {
+        background-color: var(--bs-dark);
+        color: var(--bs-light);
+    }
 }
 
 #grid {
     display: grid;
     /* Desktop */
     grid-template-columns: auto 5fr 2fr;
-    grid-template-rows: 100px 50px 1fr;
-    grid-template-areas: ".             header         header"
-                         "file-explorer workdir        selected-info"
-                         "file-explorer folder-content selected-info";
+    grid-template-rows: 100px 40px 1fr;
+    grid-template-areas:
+        ".             header         header       "
+        "file-explorer workdir        selected-info"
+        "file-explorer folder-content selected-info";
+    gap: 0.5rem;
 }
 
 @media screen and (max-width: 600px) {
     /* Mobile */
     #grid {
         grid-template-columns: 1fr 50px;
-        grid-template-rows: 1fr 100px 4fr 1fr;
-        grid-template-areas: "header             header"
-                             "mobile-current-tab mobile-current-tab"
-                             "folder-content     mobile-tab-buttons"
-                             "mobile-actions     mobile-actions";
+        grid-template-rows: 100px 100px 4fr 1fr 102px;
+        grid-template-areas:
+            "header             header"
+            "mobile-current-tab mobile-current-tab"
+            "folder-content     mobile-tab-buttons"
+            "mobile-actions     mobile-actions";
+        gap: 0.25rem;
     }
 
     /* Center workdir in the mobile tab view. */
@@ -46,18 +64,25 @@ body {
     }
 }
 
+/* Grid areas */
 #grid > * {
-    border: 1px dotted rgba(128, 128, 128, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.5rem;
+    transition: var(--transition);
 }
 
 #file-explorer {
     grid-area: file-explorer;
     font-size: 14px;
     overflow-x: auto;
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
-header {
-    grid-area: header;
+@media (prefers-color-scheme: dark) {
+    #file-explorer {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
 }
 
 #mobile-current-tab {
@@ -78,6 +103,13 @@ header {
 #folder-content {
     grid-area: folder-content;
     overflow: auto;
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+@media (prefers-color-scheme: dark) {
+    #folder-content {
+        background-color: rgba(255, 255, 255, 0.01);
+    }
 }
 
 #folder-content > div {
@@ -86,6 +118,8 @@ header {
 
 #workdir {
     grid-area: workdir;
+    padding: 0px;
+    border: none;
 }
 
 #selected-info {
@@ -95,10 +129,10 @@ header {
 }
 
 #version {
-    margin: 3px;
-    margin-top: auto;
+    margin: auto 3px 3px;
     text-align: right;
-    opacity: 0.5;
+    opacity: 0.6;
+    font-size: 0.8rem;
 }
 
 #port {
@@ -106,12 +140,13 @@ header {
 }
 
 .folder-entry {
-    margin: 2px;
-    line-height: 30px;
+    margin: 4px 2px;
+    line-height: 36px;
     cursor: pointer;
     padding: 0px 1rem;
     -webkit-user-select: none;
     user-select: none;
+    transition: var(--transition);
 }
 
 .folder-entry span {
@@ -119,40 +154,56 @@ header {
 }
 
 .folder-entry:hover {
-    background-color: #eee;
+    background-color: var(--hover-light);
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
     .folder-entry:hover {
-        background-color: #333;
+        background-color: var(--hover-dark);
     }
 }
 
 .skeleton {
     display: inline-block;
-    animation: skeleton-animation 2s ease-in-out infinite;
-    border-radius: 5px;
-    background-color: var(--color-1);
-    --color-1: #eee;
-    --color-2: #ccc;
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    background-color: var(--skeleton-base-color);
 }
 
-@keyframes skeleton-animation {
+.skeleton::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+            transparent,
+            var(--skeleton-highlight-color),
+            transparent);
+    transform: translateX(-100%);
+    animation: skeleton-shine 1.5s infinite;
+}
+
+@keyframes skeleton-shine {
     0% {
-        background-color: var(--color-1);
+        transform: translateX(-100%);
     }
-    50% {
-        background-color: var(--color-2);
-    }
+
+    50%,
     100% {
-        background-color: var(--color-1);
+        transform: translateX(100%);
     }
 }
 
 @media (prefers-color-scheme: dark) {
     .skeleton {
-        --color-1: #4c4c4c;
-        --color-2: #929292;
+        --skeleton-base-color: #333;
+        --skeleton-highlight-color: #444;
     }
 }
 
@@ -166,11 +217,11 @@ header {
 
 .drop-zone {
     position: fixed;
-    background-color: rgba(0, 140, 255, 0.4);
-    border-width: 2px;
-    border-style: dashed;
-    border-color: rgb(0, 140, 255);
-    border-radius: 5px;
+    background-color: rgba(0, 140, 255, 0.15);
+    border: 2px dashed var(--bs-primary);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
 }
 
 .cursor-pointer {
@@ -180,6 +231,11 @@ header {
 .toast-square {
     width: 20px;
     height: 20px;
+    border-radius: 4px;
+}
+
+.folder-component-arrow {
+    transition: var(--transition);
 }
 
 #editor-iframe {
@@ -189,10 +245,11 @@ header {
     width: 100%;
     height: 100%;
     z-index: 100;
+    border: none;
 }
 
 .folder-component-arrow:hover {
-    color: var(--bs-info);
+    color: var(--bs-primary);
 }
 
 .screen-container {
