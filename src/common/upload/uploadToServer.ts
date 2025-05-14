@@ -120,7 +120,7 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
             allGood = false;
             attempt++;
             const filePath = joinPath(path.get(), file.name);
-            console.log(`File ${filePath} was not uploaded properly. Expected size ${file.size} but found ${fileInfo.size}`);
+            console.log(`File ${filePath} was not uploaded properly. Expected size ${file.size} but found ${fileInfo ? fileInfo.size : "nothing"}`);
             task.progress(uploadCount, totalCount, `Uploading ${file.name} (attempt ${attempt})`);
             await uploadFile(file, filePath);
             // Don't increment uploadCount again.
@@ -266,7 +266,7 @@ async function uploadLargeFile(file: File, path: string) {
 
         // If the file has been partially uploaded we need to warn the user.
         const fileInfo = await getFileInfo(path);
-        if (fileInfo.size !== file.size) {
+        if (fileInfo && fileInfo.size !== file.size) {
             await (new Promise<void>(resolve => {
                 Dialog.message(
                     "Partial upload failed",
