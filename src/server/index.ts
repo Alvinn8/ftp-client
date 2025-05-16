@@ -5,6 +5,7 @@ import * as ws from "ws";
 import { ChunkedUploadStatus, ErrorReply, ListReply, Packet, packetMap, Packets } from "../protocol/packets";
 import { WritableMemoryStream, ReadableMemoryStream } from "./memoryStreams";
 import { PassThrough } from "stream";
+import { createHash } from "crypto";
 import VERSION from "../protocol/version";
 
 
@@ -154,7 +155,7 @@ const httpServer = createServer(function (req, res) {
                         res.writeHead(200, headers);
                         res.write(JSON.stringify({
                             action: "error",
-                            message: showErrorToUser(err) || "Internal server error"
+                            message: showErrorToUser(err) || `Internal server error (${createHash('md5').update(String(err)).digest("hex")}})`
                         } as ErrorReply));
                         res.end();
                     }
@@ -255,7 +256,7 @@ server.on("connection", function(ws) {
                                 // Handle errors
                                 const response: ErrorReply = {
                                     action: "error",
-                                    message: showErrorToUser(err) || "Internal server error"
+                                    message: showErrorToUser(err) || `Internal server error (${createHash('md5').update(String(err)).digest("hex")})`
                                 };
                                 response["requestId"] = requestId;
                                 if (connection) {
@@ -274,7 +275,7 @@ server.on("connection", function(ws) {
                                 // that. Do not report it.
                                 return;
                             }
-                            console.error(`[${connection ? connection.id : '?'}] Non ftp error in packet handler`);
+                            console.error(`[${connection ? connection.id : '?'}] Non ftp error in packet handler with error hash ${createHash('md5').update(String(err)).digest("hex")}}`);
                             console.error(err);
                         });
                     }
