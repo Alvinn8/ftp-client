@@ -173,7 +173,23 @@ export function handleInputUpload(event: InputEvent) {
     const root = new Directory();
     for (const file of event.target.files) {
         // @ts-ignore
-        const path: string = file.relativePath || file.webkitRelativePath;
+        let path: string = file.relativePath || file.webkitRelativePath;
+        if (typeof path !== "string") {
+            // The browser does not support webkitRelativePath. We have no way of
+            // properly handling multiple uploads since we cannot know what directory
+            // files are from. We therefore only allow uploading one file.
+            if (event.target.files.length === 1) {
+                path = "";
+            } else {
+                Dialog.message(
+                    "Unsupported browser",
+                    "Your web browser does not properly support uploading multiple files. " +
+                    "Either upload files one by one or choose to upload and extract a zip file. " +
+                    "Alternatively, try a different web browser or upload from a computer."
+                );
+                return;
+            }
+        }
         const parts = path.split("/");
         let directory = root;
         
