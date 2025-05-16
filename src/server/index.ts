@@ -185,6 +185,7 @@ server.on("listening", function() {
 
 server.on("connection", function(ws) {
     let connection: Connection = null;
+    let userClosed = false;
     
     ws.on("message", function(rawMessage) {
         let message: string;
@@ -268,7 +269,7 @@ server.on("connection", function(ws) {
                                 // This error has already been displayed to the user.
                                 return;
                             }
-                            if (connection && connection.userClosed) {
+                            if (userClosed) {
                                 // The user closed the tab during a task. The error is probably related to
                                 // that. Do not report it.
                                 return;
@@ -287,6 +288,7 @@ server.on("connection", function(ws) {
             connection.log("Left, disconnecting ftp");
             try {
                 // Mark the connection as closed to avoid reporting errors.
+                userClosed = true;
                 connection.userClosed = true;
                 connection.ftp.close();
             } catch (err) {
