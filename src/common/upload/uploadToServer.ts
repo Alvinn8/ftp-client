@@ -171,6 +171,13 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
                     success = true;
                     break;
                 } catch (err) {
+                    if (String(err).includes("EEXIST")) {
+                        // Already exists, good, we can continue. But let's perform
+                        // a refresh since we were desynced.
+                        getApp().refresh(true);
+                        await sleep(2000);
+                        break;
+                    }
                     attempt++;
                     console.log(`mkdir attempt ${attempt} got error:`, err);
                     lastError = err;
