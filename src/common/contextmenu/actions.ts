@@ -85,6 +85,7 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
         + description +". This can not be undone. Are you sure?")) {
         return;
     }
+    if (!TaskManager.requestNewTask()) return;
     
     // Delete
     const task = new Task("Deleting " + totalCount + " file" + (totalCount == 1 ? "" : "s"), "", true);
@@ -212,6 +213,7 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     countTask.complete();
 
     // Download
+    if (!TaskManager.requestNewTask()) return;
     const task = new Task("Downloading " + totalCount + " files", "", true);
     TaskManager.setTask(task);
     const zip = new JSZip();
