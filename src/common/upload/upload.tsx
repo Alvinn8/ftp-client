@@ -283,6 +283,9 @@ async function getUploadsFromZip(zip: JSZip): Promise<Directory> {
             // For files, create the file
             const blob: Blob = await zipObject.async("blob");
             const file = new File([blob], fileName);
+            if (!directory || !directory.files) {
+                console.log("Directory is ", directory);
+            }
             directory.files.push(file);
         }
     }
