@@ -6,6 +6,7 @@ import { ChunkedUploadResponse, Packet, Packets } from "../protocol/packets";
  import {LargeFileOperationInterface, largeFileOperationStore } from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
 import TaskManager from "../common/task/TaskManager";
+import { ConnectionClosedError } from "../common/error";
 
 interface PendingReply {
     requestId: string;
@@ -133,7 +134,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                     message: message,
                     stayForMillis: 5000
                 });
-                this.rejectPendingReplies(new Error(message));
+                this.rejectPendingReplies(new ConnectionClosedError(message, e.code, e.reason));
             });
         });
     }

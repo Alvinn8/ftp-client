@@ -1,5 +1,5 @@
 import Dialog from "../Dialog";
-import { formatError } from "../error";
+import { ConnectionClosedError, formatError } from "../error";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
@@ -261,6 +261,24 @@ async function uploadLargeFile(file: File, path: string) {
             getApp().state.session.disconnect();
             await sleep(1000 * attempt);
 
+            // If this is the last attempt, and the error was connection closed, then ask
+            // the user if they want to try again.
+            if (attempt == 5 && err instanceof ConnectionClosedError) {
+                const retry = await Dialog.confirm(
+                    "Failed to upload",
+                    "Failed to upload even after 5 attempts. The connection was lost. " +
+                    "Maybe your internet connection is unstable? Do you want to continue to try and upload or do you want to cancel.",
+                    "Cancel",
+                    "Continue trying"
+                );
+                if (retry) {
+                    console.log("The user chose to continue trying. Resetting attempt.");
+                    attempt = 0;
+                } else {
+                    console.log("The user chose to cancel.");
+                }
+            }
+
             // Restart partial upload.
             const fileInfo = await getFileInfo(path);
             startOffset = fileInfo && fileInfo.size < file.size ? fileInfo.size : null;
@@ -285,7 +303,7 @@ async function uploadLargeFile(file: File, path: string) {
                 );
             }));
         }
-        throw new Error(`Failed to upload ${file.name} after ${attempt} attempts.`, lastError);
+        throw new Error(`Failed to upload ${file.name} after ${attempt} attempts.`, { cause: lastError });
     }
 }
 

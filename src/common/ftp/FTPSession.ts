@@ -107,6 +107,7 @@ export default class FTPSession {
     disconnect() {
         if (this.connection instanceof WebsocketFTPConnection) {
             const websocketFTPConnection = this.connection as WebsocketFTPConnection;
+            console.log("Disconnecting from WebSocket");
             websocketFTPConnection.websocket.close();
         }
     }

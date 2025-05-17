@@ -16,3 +16,15 @@ export function formatError(error: unknown) {
     }
     return str;
 }
+
+export class ConnectionClosedError extends Error {
+    code: number;
+    reason: string;
+
+    constructor(message: string, code: number, reason: string) {
+        super(message);
+        this.name = "ConnectionClosedError";
+        this.code = code;
+        this.reason = reason;
+    }
+}
