@@ -65,7 +65,12 @@ function openWindow(name: string, url: string, folderEntry: FolderEntry): Window
     let wind: Window = null;
     if (window.innerWidth > 600) {
         // Try open popup window on desktop
-        wind = window.open(url, name, "width=600,height=600");
+        try {
+            wind = window.open(url, name, "width=600,height=600");
+        } catch (err) {
+            // Ignore error. Popup blockers may remove the window.open function or in other
+            // ways block it. We have to use an iframe instead so let wind be null.
+        }
         if (wind) {
             // Add to list of open popup windows
             editorWindowsStore.addEditorWindow({

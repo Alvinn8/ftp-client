@@ -96,7 +96,7 @@ export default class FTPSession {
             return this.connection;
         } else {
             console.log("Failed to get connection after 5 attempts, lastError =", lastError);
-            throw new Error("Failed to connect to ftp-server WebSocket after 5 attempts. lastError = " + lastError);
+            throw new Error("Failed to connect to ftp-server WebSocket after 5 attempts.", { cause: lastError});
         }
     }
 
@@ -211,7 +211,7 @@ export default class FTPSession {
             // If we reach this point we failed to reconnect and we will not attempt to
             // reconnect again. We therefore need to fail all requests in the queue.
             for (const request of this.queue) {
-                request.reject(err);
+                request.reject(new Error("Failed to connect.", { cause: err }));
             }
         });
     }
