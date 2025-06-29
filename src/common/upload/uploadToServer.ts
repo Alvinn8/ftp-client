@@ -174,6 +174,7 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
                     if (String(err).includes("EEXIST")) {
                         // Already exists, good, we can continue. But let's perform
                         // a refresh since we were desynced.
+                        success = true;
                         getApp().refresh(true);
                         await sleep(2000);
                         break;
