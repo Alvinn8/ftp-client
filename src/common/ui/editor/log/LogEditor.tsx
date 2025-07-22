@@ -57,12 +57,20 @@ function parseLogs(text: string): Line[] {
             text: formatLine(current),
         };
         const currentLower = current.toLowerCase();
-        if (/at ([ a-zA-Z0-9\.<>_\-$/@^#\\]+)\(.+\)/.exec(currentLower)) {
+
+        const errorKeywords = ["error", "severe", "exception", "caused by"];
+        const errorIndices = errorKeywords
+            .map(word => currentLower.indexOf(word))
+            .filter(idx => idx !== -1);
+        const firstErrorIdx = errorIndices.length > 0 ? Math.min(...errorIndices) : -1;
+        const warnIdx = currentLower.indexOf("warn");
+
+        if (/(^|\s)at ([ a-zA-Z0-9\.<>_\-$/@^#\\]+)\(.+\)/.exec(currentLower)) {
             line.level = "error-stacktrace";
-        } else if (["error", "severe", "exception", "caused by"].some(word => currentLower.includes(word))) {
-            line.level = "error";
-        } else if (currentLower.includes("warn")) {
+        } else if (warnIdx !== -1 && (firstErrorIdx === -1 || warnIdx < firstErrorIdx)) {
             line.level = "warning";
+        } else if (firstErrorIdx !== -1) {
+            line.level = "error";
         }
         
         result.push(line);
