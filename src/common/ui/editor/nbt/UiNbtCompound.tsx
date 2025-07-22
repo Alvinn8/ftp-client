@@ -3,22 +3,26 @@ import { NbtCompound } from "../../../nbt/nbtTags";
 import { UiNbtKey } from "./nbtParts";
 import NbtTagContainer from "./NbtTagContainer";
 import UiNbtTag from "./UiNbtTag";
-import { contextMenuForCompound, ParentData } from "./nbtContextMenu";
+import { CompoundParentData, contextMenuForCompound, ParentData } from "./nbtContextMenu";
+import BedrockExperiments from "./BedrockExperiments";
 interface UiNbtCompoundtProps {
     nbtCompound: NbtCompound;
     root: boolean;
     parent: ParentData;
+    bedrockLevelDat?: boolean;
 }
 
 interface UiNbtCompoundtState {
     open: boolean;
+    bedrockExperimentsOpen: boolean;
 }
 
 export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, UiNbtCompoundtState> {
     constructor(props) {
         super(props);
         this.state = {
-            open: props.root
+            open: props.root,
+            bedrockExperimentsOpen: false
         };
     }
 
@@ -28,6 +32,8 @@ export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, 
             emptyText = <span style={{ fontStyle: "italic" }}>empty</span>;
         }
         const reRenderUi = this.forceUpdate.bind(this);
+        // Check if this is a Bedrock level.dat and we are the "experiments" compound.
+        const isBedrockExperiments = this.props.bedrockLevelDat && (this.props.parent as CompoundParentData | null)?.key === "experiments";
         return (
             <div className="text-nowrap" style={{ marginLeft: "-24px" }}>
                 <div className="d-inline-block p-1 arrow" onClick={this.toggleOpen.bind(this)}>
@@ -38,8 +44,18 @@ export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, 
                         {this.props.children}
                     </NbtTagContainer>
                 )}
-                {!this.state.open && emptyText != null && (
+                {!this.state.open && emptyText != null && !isBedrockExperiments && (
                     <span>: {emptyText}</span>
+                )}
+                {isBedrockExperiments && (
+                    <button className="btn btn-primary btn-sm" onClick={() => this.setState({ bedrockExperimentsOpen: true })}>Edit Experiments</button>
+                )}
+                {this.state.bedrockExperimentsOpen && (
+                    <BedrockExperiments
+                        experimentsNbt={this.props.nbtCompound}
+                        onChange={reRenderUi}
+                        onClose={() => this.setState({ bedrockExperimentsOpen: false })}
+                    />
                 )}
                 {this.state.open && (
                     <div className="ms-4">
@@ -49,6 +65,7 @@ export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, 
                                     tag={this.props.nbtCompound.get(key)}
                                     root={this.props.root && key == "Data"}
                                     parent={{parent: this.props.nbtCompound, key, reRenderUi}}
+                                    bedrockLevelDat={this.props.bedrockLevelDat}
                                 >
                                     <UiNbtKey name={key} />
                                 </UiNbtTag>

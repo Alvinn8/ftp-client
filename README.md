@@ -13,7 +13,8 @@ FTP Client that can be used as a WebFTP (and as an electron app).
 - Caching for fast folder navigation
 - Calculate the size of folders
 - Viewing gzipped files
-- Viewing Minecraft NBT files
+- Editing Minecraft NBT files
+  - Enabling and disabling Bedrock edition experiments
 
 # Technical information
 

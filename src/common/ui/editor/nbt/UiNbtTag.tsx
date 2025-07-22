@@ -10,6 +10,7 @@ interface Props {
     tag: NbtTag;
     root: boolean;
     parent: ParentData;
+    bedrockLevelDat?: boolean;
 }
 
 export default class UiNbtTag extends React.Component<Props, {}> {
@@ -18,7 +19,7 @@ export default class UiNbtTag extends React.Component<Props, {}> {
         const tag = this.props.tag;
         if (tag instanceof NbtCompound) {
             return (
-                <UiNbtCompound nbtCompound={tag} root={this.props.root} parent={this.props.parent}>
+                <UiNbtCompound nbtCompound={tag} root={this.props.root} parent={this.props.parent} bedrockLevelDat={this.props.bedrockLevelDat}>
                     {this.props.children}
                 </UiNbtCompound>
             );

@@ -39,6 +39,8 @@ const NbtEditor = () => {
 
     if (!nbt) return <p>Loading...</p>;
 
+    const bedrockLevelDat = nbt.editionData.edition === "bedrock" && (nbt.editionData as BedrockEdition).isLevelDat;
+
     return (
         <div className="grid">
             <div className="ms-5 nbt-editor">
@@ -48,7 +50,7 @@ const NbtEditor = () => {
                         <div className="text-bg-warning rounded p-2 my-3" style={{ maxWidth: "400px", fontSize: "0.75em" }}>This NBT file cannot be modified and saved. Please contact support if you wish to modify this file.</div>
                     )}
                 </div>
-                <UiNbtTag tag={nbt.tag} root={true} parent={null} />
+                <UiNbtTag tag={nbt.tag} root={true} parent={null} bedrockLevelDat={bedrockLevelDat} />
             </div>
             <div className="editor-controls">
                 <EditorControls allowSaving={allowSaving} onSave={handleSave} />
