@@ -36,6 +36,11 @@ const MonacoEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvi
                     registerMcfunctionLanguage(editor)
                         .catch(unexpectedErrorHandler("Failed to Register mcfunction syntax highlighting"));
                 }).catch(unexpectedErrorHandler("Failed to Load mcfunction syntax highlighting"));
+            } else if (absolutePath.endsWith(".toml")) {
+                import("./syntax/toml-syntax").then(({ registerTomlLanguage }) => {
+                    registerTomlLanguage(editor)
+                        .catch(unexpectedErrorHandler("Failed to Register toml syntax highlighting"));
+                }).catch(unexpectedErrorHandler("Failed to Load toml syntax highlighting"));
             }
 
             return () => {
