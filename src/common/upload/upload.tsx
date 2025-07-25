@@ -125,7 +125,7 @@ async function handleItem(item: FileSystemEntry, directory: Directory) {
             }
         }
         const subdir = new Directory();
-        directory.directories[item.name] = subdir;
+        directory.directories.set(item.name, subdir);
         for (const entry of entries) {
             await handleItem(entry, subdir);
         }
@@ -196,8 +196,8 @@ export function handleInputUpload(event: InputEvent) {
         let i = 0;
         let part = parts[i];
         while (part) {
-            if (!directory.directories[part]) directory.directories[part] = new Directory();
-            directory = directory.directories[part];
+            if (!directory.directories.has(part)) directory.directories.set(part, new Directory());
+            directory = directory.directories.get(part)!;
 
             i++;
             if (i > parts.length - 2) break; // Last part is file name
@@ -267,8 +267,8 @@ async function getUploadsFromZip(zip: JSZip): Promise<Directory> {
             const stopPoint = zipObject.dir ? parts.length - 1 : parts.length - 2;
 
             while (part != null) {
-                if (directory.directories[part] == null) directory.directories[part] = new Directory();
-                directory = directory.directories[part];
+                if (!directory.directories.has(part)) directory.directories.set(part, new Directory());
+                directory = directory.directories.get(part)!;
 
                 i++;
                 if (i > stopPoint) break;

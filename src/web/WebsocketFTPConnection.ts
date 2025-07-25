@@ -24,9 +24,7 @@ const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
  */
 export const WEBSOCKET_URL = location.hostname == "ftp-client.alvinn8.repl.co" ? "wss://ftp-client-ws.alvinn8.repl.co" : location.protocol.replace("http", "ws") + "//" + location.hostname + ":8081";
 
-let attempts = 0;
 async function attemptRequest() {
-    attempts++;
     const response = await fetch(WEBSOCKET_URL.replace(/^ws/, "http"));
     if (response.status != 200) {
         throw new Error("Non 200 response: " + response.status);
@@ -35,8 +33,10 @@ async function attemptRequest() {
 
 export async function pingBackend() {
     let err: unknown;
+    let attempts = 0;
     while (attempts < 5) {
         try {
+            attempts++;
             await attemptRequest();
             // No error yet? Nice, return
             return;
@@ -83,6 +83,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
      */
     async connectToWebsocket() {
         if (navigator.onLine === false || await pingBackend().then(() => true).catch(() => false) === false) {
+            console.log('navigator.onLine', navigator.onLine, new Error().stack);
             const confirmed = await Dialog.confirm(
                 "No internet connection",
                 `It appears you are not connected to the internet, or the ftp-client is experiencing
@@ -185,6 +186,10 @@ export default class WebsocketFTPConnection implements FTPConnection {
     async isConnected(): Promise<boolean> {
         const response = await this.send(Packets.Ping, {});
         return response.isFTPConnected;
+    }
+
+    close(): void {
+        this.websocket.close();
     }
 
     async list(path: string): Promise<FolderEntry[]> {

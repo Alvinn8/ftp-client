@@ -1,12 +1,18 @@
 import { EventEmitter } from "eventemitter3";
 import { addMessage } from "../ui/messages";
 import Task from "./Task";
+import { TreeTask } from "./treeTask";
+import FTPSession from "../ftp/FTPSession";
+import { Status } from "./tree";
 
-class TaskManager extends EventEmitter {
+export class TaskManager extends EventEmitter {
+    private session: FTPSession;
     private task: Task;
+    private treeTasks: TreeTask<unknown>[] = [];
     
     /**
      * Check if a task is currently running.
+     * @deprecated
      */
     hasTask(): boolean {
         return this.task != null;
@@ -16,6 +22,7 @@ class TaskManager extends EventEmitter {
      * Check if a new task can be started, and if not, display a message to the user.
      * 
      * @returns Returns {@code false} if the task can't be started.
+     * @deprecated
      */
      requestNewTask(): boolean {
         if (this.hasTask()) {
@@ -34,6 +41,7 @@ class TaskManager extends EventEmitter {
      *
      * @param task The task to set.
      * @throws {Error} if a task is already running.
+     * @deprecated
      */
      setTask(task: Task) {
         if (this.hasTask()) {
@@ -51,6 +59,7 @@ class TaskManager extends EventEmitter {
      * 
      * @param task The task to finish.
      * @throws {Error} if the specified task is not the running task.
+     * @deprecated
      */
      finishTask(task: Task) {
         if (this.task != task) {
@@ -65,19 +74,50 @@ class TaskManager extends EventEmitter {
      * Get the current task, or null if none is running.
      *
      * @returns The current task or null.
+     * @deprecated
      */
      getTask(): Task | null {
         return this.task;
     }
+
+    setSession(session: FTPSession) {
+        this.session = session;
+        this.session.on("poolQueueEmpty", () => this.tickTreeTasks());
+    }
+
+    /**
+     * Add a tree task to the manager.
+     *
+     * @param treeTask The tree task to add.
+     */
+    addTreeTask(treeTask: TreeTask<unknown>) {
+        this.treeTasks.push(treeTask);
+        treeTask.setStatus(Status.IN_PROGRESS);
+        treeTask.addNextSubTask(this.session);
+        window.debugTreeTask = treeTask;
+    }
+
+    getTreeTasks(): TreeTask<unknown>[] {
+        return this.treeTasks;
+    }
+
+    private tickTreeTasks() {
+        for (const treeTask of this.treeTasks) {
+            if (treeTask.status === Status.IN_PROGRESS) {
+                treeTask.addNextSubTask(this.session);
+            }
+        }
+    }
 }
 
-const fileManager = new TaskManager();
+/** @deprecated */
+const taskManager = new TaskManager();
 
 window.addEventListener("beforeunload", (event) => {
-    if (fileManager.hasTask()) {
+    if (taskManager.hasTask() || taskManager.getTreeTasks().length > 0) {
         event.preventDefault();
         return (event.returnValue = "");
     }
 });
 
-export default fileManager;
+export default taskManager;

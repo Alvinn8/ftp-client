@@ -5,7 +5,10 @@ import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
 import Priority from "../ftp/Priority";
 import Task from "../task/Task";
+import taskManager from "../task/TaskManager";
 import TaskManager from "../task/TaskManager";
+import { FileTree, FileTreeFile } from "../task/tree";
+import { TreeTask } from "../task/treeTask";
 import { getApp } from "../ui/App";
 import { largeFileOperationStore } from "../ui/LargeFileOperation";
 import { dirname, filename, joinPath, sleep } from "../utils";
@@ -22,12 +25,19 @@ const DEFAULT_CHUNK_SIZE = CHUNK_SIZES[0];
 const DECREASE_CHUNK_SIZE_THRESHOLD = 5000; // 5 s
 const INCREASE_CHUNK_SIZE_THRESHOLD = 500; // 500 ms
 
+const useNewUploadMethod = true;
+
 /**
  * Upload the uploads to the current directory to the FTP server.
  *
  * @param uploads The contents to upload.
  */
 export async function upload(uploads: Directory) {
+    if (useNewUploadMethod) {
+        uploadUsingTreeTask(uploads);
+        return;
+    }
+    
     if (!TaskManager.requestNewTask()) return;
 
     // Count the files for the task progress
@@ -76,6 +86,169 @@ function countFilesRecursively(directory: Directory): number {
         count += countFilesRecursively(subdir);
     }
     return count;
+}
+
+type UploadData = {
+    file: File;
+    partial?: boolean;
+}
+
+function uploadsToTree(uploads: Directory, path: string): FileTree<UploadData> {
+    const root: FileTree<UploadData> = new FileTree(path);
+    for (const file of uploads.files) {
+        root.entries.push(new FileTreeFile(file.name, { file: file }, root));
+    }
+    for (const [name, subdir] of uploads.directories.entries()) {
+        const subTree = uploadsToTree(subdir, joinPath(path, name));
+        root.entries.push(subTree);
+    }
+    return root;
+}
+
+function uploadUsingTreeTask(uploads: Directory) {
+    const tree = uploadsToTree(uploads, getApp().state.workdir);
+    const treeTask = new TreeTask(tree, {
+        beforeDirectory: async (node, connection) => {
+            if (node.path === "/") {
+                // No need to create the root directory.
+                return;
+            }
+            // Check if the directory exists
+            let exists = false;
+            const name = filename(node.path);
+            const list = await connection.list(dirname(node.path));
+            for (const entry of list) {
+                if (entry.name === name && entry.isDirectory()) {
+                    exists = true;
+                    break;
+                } else if (entry.name === name && entry.isFile()) {
+                    // TODO do this in a better way...
+                    // Ask the user via UI
+                    const shouldDelete = await Dialog.confirm(
+                        "Cannot create folder", 
+                        `Wanted to create a folder at ${node.path} but there is a file at that location. Do you want to delete this file or cancel the upload?`,
+                        "Cancel upload",
+                        "Delete " + name
+                    );
+
+                    if (!shouldDelete) {
+                        throw new Error("A file occupied the name of a folder, and the user decided to cancel.");
+                    }
+
+                    await connection.delete(node.path);
+                }
+            }
+            if (!exists) {
+                await connection.mkdir(node.path);
+            }
+        },
+        afterDirectory: async (node, connection) => {
+            // Double check that all files were uploaded correctly
+            const list = await connection.list(node.path);
+            let allGood = true;
+            for (const entry of node.entries) {
+                if (entry instanceof FileTreeFile) {
+                    const fileInfo = list.find(f => f.name === entry.name);
+                    if (fileInfo && fileInfo.size === entry.data.file.size) {
+                        continue;
+                    }
+                    allGood = false;
+                    console.log(`File ${joinPath(node.path, entry.name)} was not uploaded properly. Expected size ${entry.data.file.size} but found ${fileInfo ? fileInfo.size : "nothing"}`);
+                    entry.newAttempt();
+                }
+            }
+        },
+        file: async (node, connection) => {
+            const path = joinPath(node.parent.path, node.name);
+
+            // Small files
+            if (node.data.file.size <= LARGE_FILE_THRESHOLD) {
+                await connection.uploadSmall(node.data.file, path);
+                return;
+            }
+
+            // Chunked upload for large files
+            let startOffset: number | null = null;
+            if (node.data.partial) {
+                // The file was partially uploaded before, and then paused or failed.
+                // We need to check the size of the file on the server and resume
+                // the upload from that point.
+                const fileInfo = await connection.list(node.parent.path);
+                const fileEntry = fileInfo.find(f => f.name === node.name);
+                if (fileEntry && fileEntry.size < node.data.file.size) {
+                    startOffset = fileEntry.size;
+                    console.log(`Resuming upload of ${node.name} at offset ${startOffset}`);
+                }
+            }
+
+            const uploadId = await connection.startChunkedUpload(path, node.data.file.size, startOffset);
+
+            let chunkSize = DEFAULT_CHUNK_SIZE;
+            let lastStatus = "";
+            let offset = startOffset !== null ? startOffset : 0;
+            while (offset < node.data.file.size) {
+                const start = offset;
+                const end = Math.min(start + chunkSize, node.data.file.size);
+                const chunk = node.data.file.slice(start, end);
+                console.log(`Uploading chunk with bytes ${start} to ${end}.`);
+                const startTime = performance.now();
+                const response = await connection.uploadChunk(
+                    uploadId,
+                    chunk,
+                    start,
+                    end
+                );
+                const status = response.status;
+                offset += chunk.size;
+                lastStatus = status;
+                if (status !== "success" && status !== "end") {
+                    console.log("Status: " + status);
+                    if (status === "error") {
+                        throw new Error(response.error);
+                    }
+                    throw new Error(`Chunk failed to upload. status: ${status}`);
+                }
+
+                // Once at least one chunk has been uploaded,
+                // mark as partial so that we can resume later
+                // if it fails or is paused.
+                node.data.partial = true;
+
+                // Progress bar
+                node.progress(end, node.data.file.size);
+
+                // Adjust chunk size if applicable
+                const endTime = performance.now();
+                const ms = endTime - startTime;
+                const chunkSizeIndex = CHUNK_SIZES.indexOf(chunkSize);
+                if (chunkSizeIndex > 0 && ms > DECREASE_CHUNK_SIZE_THRESHOLD) {
+                    // The chunk size can become smaller, and the decrease threshold was reached.
+                    chunkSize = CHUNK_SIZES[chunkSizeIndex - 1];
+                    console.log(`Chunk took ${Math.round(ms)} ms, decreasing chunk size.`);
+                } else if (chunkSizeIndex < CHUNK_SIZES.length - 1 && ms < INCREASE_CHUNK_SIZE_THRESHOLD) {
+                    // The chunk size can become bigger, and the increase threshold was reached.
+                    chunkSize = CHUNK_SIZES[chunkSizeIndex + 1];
+                    console.log(`Chunk took ${Math.round(ms)} ms, increasing chunk size.`);
+                } else {
+                    console.log(`Chunk took ${Math.round(ms)} ms, chunk size is good.`);
+                }
+
+
+                const list = await connection.list(node.parent.path);
+                const fileInfo = list.find(f => f.name === node.name);
+
+                // These errors will trigger a retry if possible.
+                if (!fileInfo) {
+                    throw new Error("Chunked upload failed for an unknown reason. File did not exist after upload.");
+                } else if (fileInfo.size !== node.data.file.size) {
+                    throw new Error("Chunked upload failed. The file only uploaded partially.");
+                }
+                // else, all good!
+            }
+        },
+    });
+
+    taskManager.addTreeTask(treeTask);
 }
 
 /**

@@ -27,6 +27,14 @@ describe("utils", () => {
         expect(filename("/a/b/c.txt")).toBe("c.txt");
     });
 
+    it("filename /a/b/c", () => {
+        expect(filename("/a/b/c")).toBe("c");
+    });
+
+    it("filename /a/b/c/ is empty string", () => {
+        expect(filename("/a/b/c/")).toBe("");
+    });
+
     it("parentdir of directory without leading slash", () => {
         expect(parentdir("/a/b")).toBe("/a");
     });

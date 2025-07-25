@@ -1,5 +1,3 @@
-export type SubDirectoryMap = {[key: string]: Directory};
-
 /**
  * Represents a directory that is being uploaded by the user.
  *
@@ -11,5 +9,5 @@ export type SubDirectoryMap = {[key: string]: Directory};
  */
 export default class Directory {
     public readonly files: File[] = [];
-    public readonly directories: SubDirectoryMap = {};
+    public readonly directories: Map<string, Directory> = new Map();
 }

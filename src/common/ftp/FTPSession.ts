@@ -5,6 +5,10 @@ import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import { addMessage } from "../ui/messages";
 import FTPRequest from "./FTPRequest";
 import { sleep } from "../utils";
+import { ConnectionPool } from "./ConnectionPool";
+import { EventEmitter } from "eventemitter3";
+import { unexpectedErrorHandler } from "../error";
+import taskManager, { TaskManager } from "../task/TaskManager";
 
 /**
  * An FTP session that holds some information about the current session.
@@ -14,16 +18,30 @@ import { sleep } from "../utils";
  * <p>
  * The session also holds the directory cache.
  */
-export default class FTPSession {
+export default class FTPSession extends EventEmitter {
     public readonly profile: FTPProfile;
     private connection: FTPConnection;
     public cache: {[key: string]: FolderEntry[]} = {};
     private queue: FTPRequest<any>[] = [];
     private queueLock: string | null = null;
     private bypassLockQueue: FTPRequest<any>[] = [];
+    private connectionPool: ConnectionPool;
+    private poolQueue: FTPRequest<any>[] = [];
+    private taskManager: TaskManager;
 
     constructor(profile: FTPProfile) {
+        super();
         this.profile = profile;
+        this.connectionPool = new ConnectionPool(profile);
+        this.connectionPool.on("connectionAvailable", () => {
+            console.log("Connection available");
+            this.tryExecutePoolRequest();
+        });
+        // TODO store task manager in the session instead of globally.
+        // this.taskManager = new TaskManager();
+        this.taskManager = taskManager;
+        this.taskManager.setSession(this);
+        window.debugSession = this;
     }
 
     clearCache() {
@@ -45,6 +63,8 @@ export default class FTPSession {
     /**
      * Get the ftp connection with the intention of doing stuff, so the FTPConnection
      * needs to be connected.
+     * 
+     * @deprecated Use {@link ConnectionPool} to get a connection instead.
      */
     private async getConnection(): Promise<FTPConnection> {
         if (!(this.connection instanceof WebsocketFTPConnection)) {
@@ -100,18 +120,17 @@ export default class FTPSession {
         }
     }
 
+    /** @deprecated */
     setConnection(connection: FTPConnection) {
         this.connection = connection;
     }
 
     disconnect() {
-        if (this.connection instanceof WebsocketFTPConnection) {
-            const websocketFTPConnection = this.connection as WebsocketFTPConnection;
-            console.log("Disconnecting from WebSocket");
-            websocketFTPConnection.websocket.close();
-        }
+        console.log("Disconnecting");
+        this.connection.close();
     }
 
+    /** @deprecated */
     lockQueueNow(lockIdentifier: string) {
         if (this.queueLock !== null) {
             throw new Error(`The queue is locked by ${this.queueLock} but tried to lock by ${lockIdentifier}.`);
@@ -120,6 +139,7 @@ export default class FTPSession {
         this.queueLock = lockIdentifier;
     }
 
+    /** @deprecated */
     async requestQueueLock(priority: number, lockIdentifier: string): Promise<void> {
         return await this.addToQueue(priority, async () => {
             this.lockQueueNow(lockIdentifier);
@@ -127,6 +147,7 @@ export default class FTPSession {
         });
     }
 
+    /** @deprecated */
     unlockQueue(lockIdentifier: string) {
         if (this.queueLock === null) {
             return;
@@ -145,6 +166,7 @@ export default class FTPSession {
         }
     }
 
+    /** @deprecated */
     private getEffectiveQueue(): FTPRequest<any>[] {
         if (this.queueLock === null) {
             return this.queue;
@@ -153,6 +175,7 @@ export default class FTPSession {
         }
     }
 
+    /** @deprecated */
     private async addToQueue<T>(priority: number, executor: (connection: FTPConnection) => Promise<T> | T, bypassLockIdentifier?: string): Promise<T> {
         return await new Promise((resolve, reject) => {
             const request = new FTPRequest(priority, executor, resolve, reject);
@@ -178,6 +201,7 @@ export default class FTPSession {
         });
     }
 
+    /** @deprecated */
     private removeFromQueue<T>(request: FTPRequest<T>) {
         const index = this.queue.indexOf(request);
         if (index >= 0) {
@@ -193,6 +217,7 @@ export default class FTPSession {
         }
     }
 
+    /** @deprecated */
     private executeRequest() {
         // sort decending, highest priority first
         const queue = this.getEffectiveQueue();
@@ -216,48 +241,103 @@ export default class FTPSession {
         });
     }
 
+    async addToPoolQueue<T>(priority: number, executor: (connection: FTPConnection) => Promise<T> | T): Promise<T> {
+        return await new Promise((resolve, reject) => {
+            const request = new FTPRequest(priority, executor, resolve, reject);
+            this.poolQueue.push(request);
+        });
+    }
+
+    private tryExecutePoolRequest() {
+        // If the queue is empty, emit an event so that tasks can push requests to the queue.
+        if (this.poolQueue.length <= 0) {
+            console.log("Asking for tasks");
+            this.emit("poolQueueEmpty");
+        }
+        // If there still are no requests in the queue, we don't need to do anything.
+        if (this.poolQueue.length <= 0) {
+            console.log("No pool requests to execute.");
+            return;
+        }
+
+        // Remove any connections that are no longer valid.
+        // Also creates a new connection if needed. Handle this async.
+        this.connectionPool.refreshConnections().catch(unexpectedErrorHandler("Failed to refresh connections in pool."));
+        
+        // Get a connection if there is one available.
+        const connection = this.connectionPool.getConnectionAndLock();
+        if (!connection) {
+            // No available connections, we will try again later when a connection
+            // is available.
+            console.log("No available connection.");
+            return;
+        }
+
+        console.log("Executing pool request");
+
+        // sort decending, highest priority first
+        this.poolQueue.sort((a, b) => b.priority - a.priority);
+        const request = this.poolQueue.shift();
+
+        Promise.resolve(request.executor(connection)).then((t) => {
+            request.resolve(t);
+            this.connectionPool.unlockConnection(connection);
+        }, (err) => {
+            request.reject(err);
+            this.connectionPool.unlockConnection(connection);
+        });
+    }
+
+    /** @deprecated */
     async list(priority: number, path: string) {
         return await this.addToQueue(priority, async connection => (
             await connection.list(path)
         ));
     }
 
+    /** @deprecated */
     async download(priority: number, folderEntry: FolderEntry) {
         return await this.addToQueue(priority, async connection => (
             await connection.download(folderEntry)
         ))
     }
 
+    /** @deprecated */
     async uploadSmall(priority: number, blob: Blob, path: string) {
         return await this.addToQueue(priority, async connection => (
             await connection.uploadSmall(blob, path)
         ))
     }
 
+    /** @deprecated */
     async startChunkedUpload(priority: number, bypassLockIdentifier: string, path: string, size: number, startOffset: number | null) {
         return await this.addToQueue(priority, async connection => (
             await connection.startChunkedUpload(path, size, startOffset)
         ), bypassLockIdentifier)
     }
 
+    /** @deprecated */
     async uploadChunk(priority: number, bypassLockIdentifier: string, uploadId: string, chunk: Blob, start: number, end: number) {
         return await this.addToQueue(priority, async connection => (
             await connection.uploadChunk(uploadId, chunk, start, end)
         ), bypassLockIdentifier)
     }
 
+    /** @deprecated */
     async mkdir(priority: number, path: string) {
         return await this.addToQueue(priority, async connection => (
             await connection.mkdir(path)
         ));
     }
 
+    /** @deprecated */
     async rename(priority: number, from: string, to: string) {
         return await this.addToQueue(priority, async connection => (
             await connection.rename(from, to)
         ));
     }
 
+    /** @deprecated */
     async delete(priority: number, path: string) {
         return await this.addToQueue(priority, async connection => (
             await connection.delete(path)

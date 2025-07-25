@@ -7,6 +7,7 @@ import TaskManager from "./TaskManager";
  * A task can have a progress bar which will be displayed to the user.
  * 
  * @see Tasks
+ * @deprecated
  */
 export default class Task extends EventEmitter {
     public readonly title: string;
