@@ -1,6 +1,6 @@
 import * as React from "react";
 import { afterEach, beforeEach, vi, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, waitForElementToBeRemoved, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, waitForElementToBeRemoved, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { getApp, App, DeviceSize } from "../ui/App";
 import FTPSession from "../ftp/FTPSession";
@@ -12,6 +12,7 @@ import FolderContentProviders from "../folder/FolderContentProviders";
 import Priority from "../ftp/Priority";
 import VERSION from "../../protocol/version";
 import { sleep } from "../utils";
+import taskManager from "../task/TaskManager";
 
 vi.spyOn(downloadModule, "default").mockImplementation(() => { });
 
@@ -24,6 +25,7 @@ describe("ftp-client tests", () => {
         session = profile.startSession();
         connection = new TestFTPConnection();
         session.setConnection(connection);
+        session.getConnectionPool()["createConnection"] = vi.fn().mockResolvedValue(connection);
 
         window.innerWidth = 1024;
     });
@@ -110,6 +112,9 @@ describe("ftp-client tests", () => {
         const el = await screen.findByText("You are about to delete test.txt. This can not be undone. Are you sure?");
         const ok = await within(el.parentElement.parentElement).findByRole("button", { name: "OK"});
         await userEvent.click(ok);
+        
+        // Wait until taskManager.getTreeTasks() is empty
+        await waitFor(() => taskManager.getTreeTasks().length > 0);
 
         expect(connection.delete).toHaveBeenCalledWith("/test.txt");
     });
