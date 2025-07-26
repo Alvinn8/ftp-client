@@ -3,7 +3,7 @@ import FTPConnection from "../common/ftp/FTPConnection";
 import { addMessage } from "../common/ui/messages";
 import { blobToBase64, ensureAbsolute, filename, sleep } from "../common/utils";
 import { ChunkedUploadResponse, Packet, Packets } from "../protocol/packets";
- import {LargeFileOperationInterface, largeFileOperationStore } from "../common/ui/LargeFileOperation";
+import { LargeFileOperationInterface, largeFileOperationStore } from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
 import TaskManager from "../common/task/TaskManager";
 import { ConnectionClosedError } from "../common/error";
@@ -77,6 +77,7 @@ function progressTracker(type: "download" | "upload", path: string) {
 export default class WebsocketFTPConnection implements FTPConnection {
     public websocket: WebSocket;
     private readonly pendingReplies: PendingReply[] = [];
+    private closing: boolean = false;
 
     /**
      * Connect to the websocket.
@@ -128,14 +129,17 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 // While 1006 is an abnormal close, it happens very frequently and doesn't
                 // matter since it will reconnect. There is no need to worry the user that
                 // something abnormal happened, since it is, in fact, very normal.
-                if (e.code != 1000 && e.code != 1006) message = "Connection closed: " + e.code + " " + e.reason;
-                if (message == "Connection closed" && !TaskManager.hasTask()) return;
+                if (e.code != 1000 && e.code != 1005 && e.code != 1006) message = "Connection closed: " + e.code + " " + e.reason;
+                
+                this.rejectPendingReplies(new ConnectionClosedError(message, e.code, e.reason));
+                
+                const hasTask = TaskManager.hasTask() || TaskManager.getTreeTasks().length > 0;
+                if (message == "Connection closed" && (!hasTask || this.closing)) return;
                 addMessage({
                     color: "danger",
                     message: message,
                     stayForMillis: 5000
                 });
-                this.rejectPendingReplies(new ConnectionClosedError(message, e.code, e.reason));
             });
         });
     }
@@ -189,6 +193,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
     }
 
     close(): void {
+        this.closing = true;
         this.websocket.close();
     }
 

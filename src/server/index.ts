@@ -43,7 +43,7 @@ const largeDownloads: LargeDownload[] = [];
 const largeUploads: LargeUpload[] = [];
 const chunkedUploads: ChunkedUpload[] = [];
 
-if (true) {
+if (false) {
     const originalCloseWithError = ftp.FTPContext.prototype.closeWithError;
     ftp.FTPContext.prototype.closeWithError = function(error: unknown) {
         console.log("DEBUG FTPContext.closeWithError called with:", error);

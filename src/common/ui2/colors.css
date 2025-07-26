@@ -1,0 +1,52 @@
+:root {
+    --bg-dark: hsl(0, 0%, 90%);
+    --bg-base: hsl(0, 0%, 95%);
+    --bg-highlight: hsl(0, 0%, 100%);
+
+    --text: hsl(0, 0%, 5%);
+    --text-muted: hsl(0, 0%, 30%);
+
+    --border: hsl(0, 0%, 30%);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-dark: hsl(0, 0%, 5%);
+        --bg-base: hsl(0, 0%, 12%);
+        --bg-highlight: hsl(0, 0%, 20%);
+
+        --text: hsl(0, 0%, 95%);
+        --text-muted: hsl(0, 0%, 70%);
+
+        --border: hsl(0, 0%, 30%);
+    }
+}
+
+.bg-dark {
+    background-color: var(--bg-dark);
+}
+.bg-base {
+    background-color: var(--bg-base);
+}
+.bg-highlight {
+    background-color: var(--bg-highlight);
+}
+.text-color {
+    color: var(--text);
+}
+.text-muted-color {
+    color: var(--text-muted);
+}
+
+.text-normal {
+    font-size: 16px;
+    line-height: 20px;
+}
+.text-small {
+    font-size: 14px;
+    line-height: 16px;
+}
+.text-smaller {
+    font-size: 12px;
+    line-height: 14px;
+}

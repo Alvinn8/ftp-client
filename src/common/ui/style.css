@@ -234,6 +234,24 @@ body, html, #root, #root > div, #grid {
     border-radius: 4px;
 }
 
+.tree-task {
+    border: 1px solid var(--border);
+    background-color: var(--bg-base);
+    color: var(--text);
+    border-radius: 14px;
+    box-shadow: 0px 0px black;
+    padding: 15px;
+    width: 300px;
+}
+
+.tree-task-description {
+    color: var(--text-muted)
+}
+
+.tree-task-progress-text {
+    color: var(--text-muted);
+}
+
 .folder-component-arrow {
     transition: var(--transition);
 }

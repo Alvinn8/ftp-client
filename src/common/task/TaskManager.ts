@@ -8,7 +8,8 @@ import { Status } from "./tree";
 export class TaskManager extends EventEmitter {
     private session: FTPSession;
     private task: Task;
-    private treeTasks: TreeTask<unknown>[] = [];
+    private treeTasks: TreeTask[] = [];
+    private monitorIntervalId: number | null = null;
     
     /**
      * Check if a task is currently running.
@@ -90,14 +91,32 @@ export class TaskManager extends EventEmitter {
      *
      * @param treeTask The tree task to add.
      */
-    addTreeTask(treeTask: TreeTask<unknown>) {
+    addTreeTask(treeTask: TreeTask) {
         this.treeTasks.push(treeTask);
         treeTask.setStatus(Status.IN_PROGRESS);
         treeTask.addNextSubTask(this.session);
-        window.debugTreeTask = treeTask;
+        this.emit("change", this.task);
+        this.session.tryExecutePoolRequest();
+        const remove = () => {
+            this.treeTasks = this.treeTasks.filter(t => t !== treeTask);
+            this.emit("change", this.task);
+        };
+        treeTask.on("done", remove);
+        treeTask.on("cancelled", remove);
+        treeTask.on("pausedChange", (paused) => {
+            if (!paused) {
+                this.session.tryExecutePoolRequest();
+            }
+        });
+        treeTask.on("statusChange", (status) => {
+            if (status === Status.IN_PROGRESS) {
+                this.session.tryExecutePoolRequest();
+            }
+        });
+        this.startMonitor();
     }
 
-    getTreeTasks(): TreeTask<unknown>[] {
+    getTreeTasks(): TreeTask[] {
         return this.treeTasks;
     }
 
@@ -108,16 +127,48 @@ export class TaskManager extends EventEmitter {
             }
         }
     }
+
+    startMonitor() {
+        if (this.monitorIntervalId !== null) {
+            return; // Already monitoring
+        }
+        this.monitorIntervalId = window.setInterval(() => {
+            this.monitor();
+        }, 1000);
+    }
+
+    stopMonitor() {
+        if (this.monitorIntervalId !== null) {
+            clearInterval(this.monitorIntervalId);
+            this.monitorIntervalId = null;
+        }
+    }
+
+    monitor() {
+        if (this.treeTasks.length === 0) {
+            this.stopMonitor();
+            // No more tasks, reset paralllel connections to 1.
+            this.session.getConnectionPool().setTargetConnectionCount(1);
+            this.session.getConnectionPool().closeAllConnections();
+            return;
+        }
+        if (this.session.getConnectionPool().hasAvailableConnection()) {
+            // So there are tasks waiting and there are available connections?
+            // Then we can try to execute the next task.
+        }
+        this.tickTreeTasks();
+        this.session.tryExecutePoolRequest();
+    }
 }
 
 /** @deprecated */
 const taskManager = new TaskManager();
 
-window.addEventListener("beforeunload", (event) => {
-    if (taskManager.hasTask() || taskManager.getTreeTasks().length > 0) {
-        event.preventDefault();
-        return (event.returnValue = "");
-    }
-});
+// window.addEventListener("beforeunload", (event) => {
+//     if (taskManager.hasTask() || taskManager.getTreeTasks().length > 0) {
+//         event.preventDefault();
+//         return (event.returnValue = "");
+//     }
+// });
 
 export default taskManager;

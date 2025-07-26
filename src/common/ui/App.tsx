@@ -13,6 +13,7 @@ import DirectoryPath from "../ftp/DirectoryPath";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./style.css";
+import "../ui2/colors.css";
 import OpenEditors from "./editor/OpenEditors";
 import LargeFileOperation from "./LargeFileOperation";
 import ConnectingScreen from "./ConnectingScreen";
@@ -22,6 +23,7 @@ import { dirname } from "../utils";
 
 let app: App;
 
+/** @deprecated */
 export function getApp() {
     if (!app) {
         console.warn(new Error().stack);
@@ -199,6 +201,13 @@ export class App extends React.Component<AppProps, AppState> {
         } else {
             delete this.state.session.cache[this.state.workdir];
         }
+        this.setState({
+            selection: [],
+            refreshCount: this.state.refreshCount + 1
+        });
+    }
+
+    refreshWithoutClear() {
         this.setState({
             selection: [],
             refreshCount: this.state.refreshCount + 1

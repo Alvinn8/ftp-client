@@ -8,8 +8,12 @@ import Priority from "../ftp/Priority";
 import Task from "../task/Task";
 import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
-import { sleep } from "../utils";
+import { joinPath, parentdir, sleep } from "../utils";
 import { formatError, unexpectedErrorHandler } from "../error";
+import { FileTree, FileTreeFile } from "../task/tree";
+import { TreeTask } from "../task/treeTask";
+
+const useTreeTasks = true;
 
 export async function downloadFolderEntry(entry: FolderEntry) {
     console.log("Download one folder entry");
@@ -58,6 +62,41 @@ function getDirectoryPath(entries: FolderEntry[]) {
     return new DirectoryPath(dir);
 }
 
+async function entriesToFileTree(entries: FolderEntry[]): Promise<FileTree> {
+    let commonParent = parentdir(entries[0].path);
+    const rootFileTree = new FileTree(commonParent);
+    for (const entry of entries) {
+        const parent = parentdir(entry.path);
+        if (parent !== commonParent) {
+            throw new Error("Entries are not in the same directory. Common parent: " + commonParent + ", entry parent: " + parent);
+        }
+       if (entry.isFile()) {
+            rootFileTree.entries.push(new FileTreeFile(entry.name, null, rootFileTree));
+        } else if (entry.isDirectory()) {
+            const dirTree = await entryToFileTree(entry);
+            rootFileTree.entries.push(dirTree);
+        }
+    }
+    return rootFileTree;
+}
+
+async function entryToFileTree(entry: FolderEntry): Promise<FileTree> {
+    if (!entry.isDirectory()) {
+        throw new Error("entryToFileTree can only be used for directories, not files.");
+    }
+    // For directories, get their contents and recursively build the tree
+    const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, entry.path);
+    const dirTree = new FileTree(entry.path);
+    for (const subEntry of list) {
+        if (subEntry.isFile()) {
+            dirTree.entries.push(new FileTreeFile(subEntry.name, null, dirTree));
+        } else {
+            dirTree.entries.push(await entryToFileTree(subEntry));
+        }
+    }
+    return dirTree;
+}
+
 export async function deleteFolderEntries(entries: FolderEntry[]) {
     if (!TaskManager.requestNewTask()) return;
     
@@ -83,6 +122,29 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
 
     if (!await Dialog.confirm("Delete " + description, "You are about to delete "
         + description +". This can not be undone. Are you sure?")) {
+        return;
+    }
+    if (useTreeTasks) {
+        const rootFileTree = await entriesToFileTree(entries);
+        const treeTask = new TreeTask(rootFileTree, {
+            beforeDirectory(directory, connection) {},
+            async afterDirectory(directory, connection) {
+                if (directory.task && directory.path !== directory.task.fileTree.path) {
+                    // Do not delete the root directory. It was the parent for the task.
+                    await connection.delete(directory.path);
+                }
+                const app = getApp();
+                app.state.session.cache[directory.path] = [];
+                if (app.state.workdir === directory.path) {
+                    app.refresh();
+                }
+            },
+            async file(file, connection) {
+                await connection.delete(joinPath(file.parent.path, file.name));
+            },
+        });
+        treeTask.title = "Deleting " + treeTask.count.totalFiles + " file" + (treeTask.count.totalFiles == 1 ? "" : "s");
+        TaskManager.addTreeTask(treeTask);
         return;
     }
     if (!TaskManager.requestNewTask()) return;

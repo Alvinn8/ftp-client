@@ -1,46 +1,45 @@
 import * as React from "react";
 import Task from "../../task/Task";
-import TaskManager from "../../task/TaskManager";
 import TaskComponent from "./TaskComponent";
+import { TreeTask } from "../../task/treeTask";
+import taskManager from "../../task/TaskManager";
+import TreeTaskComponent from "./TreeTaskComponent";
 
 interface TasksState {
     task: Task;
+    treeTasks: TreeTask[];
 }
-
 /**
  * Displays the running task.
  * <p>
  * Only one task can run at once.
  */
-export default class Tasks extends React.Component<{}, TasksState> {
-    state = {
-        task: null
-    };
+const Tasks: React.FC = () => {
+    const [task, setTask] = React.useState<Task | null>(null);
+    const [treeTasks, setTreeTasks] = React.useState<TreeTask[]>([]);
 
-    constructor(props) {
-        super(props);
-        this.handleTaskChange = this.handleTaskChange.bind(this);
-    }
+    React.useEffect(() => {
+        const handleTaskChange = (newTask: Task) => {
+            setTask(newTask);
+            setTreeTasks([...taskManager.getTreeTasks()]);
+        };
 
-    componentDidMount() {
-        TaskManager.on("change", this.handleTaskChange);
-    }
+        taskManager.on("change", handleTaskChange);
+        return () => {
+            taskManager.off("change", handleTaskChange);
+        };
+    }, []);
 
-    componentWillUnmount() {
-        TaskManager.off("change", this.handleTaskChange);
-    }
+    return (
+        <div className="d-flex flex-column gap-2">
+            {task != null && (
+                <TaskComponent task={task} />
+            )}
+            {treeTasks.map((treeTask, index) => (
+                <TreeTaskComponent key={index} treeTask={treeTask} />
+            ))}
+        </div>
+    );
+};
 
-    handleTaskChange(task: Task) {
-        this.setState({ task });
-    }
-
-    render() {
-        return (
-            <div>
-                {this.state.task != null && (
-                    <TaskComponent task={this.state.task} />
-                )}
-            </div>
-        );
-    }
-}
+export default Tasks;

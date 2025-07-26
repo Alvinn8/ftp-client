@@ -81,15 +81,15 @@ export function randomBetween(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function formatByteSize(size: number) {
+export function formatByteSize(size: number, fractionDigits: number = 2): string {
     if (size > 10**9) {
-        return (size / 10 ** 9).toFixed(2) + " GB";
+        return (size / 10 ** 9).toFixed(fractionDigits) + " GB";
     }
     if (size > 10**6) {
-        return (size / 10 ** 6).toFixed(2) + " MB";
+        return (size / 10 ** 6).toFixed(fractionDigits) + " MB";
     }
     if (size > 1000) {
-        return (size / 1000).toFixed(2) + " kB";
+        return (size / 1000).toFixed(fractionDigits) + " kB";
     }
     return size + " B";
 }

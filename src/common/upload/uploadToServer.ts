@@ -7,7 +7,7 @@ import Priority from "../ftp/Priority";
 import Task from "../task/Task";
 import taskManager from "../task/TaskManager";
 import TaskManager from "../task/TaskManager";
-import { FileTree, FileTreeFile } from "../task/tree";
+import { FileTree, FileTreeFile, Status } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
 import { getApp } from "../ui/App";
 import { largeFileOperationStore } from "../ui/LargeFileOperation";
@@ -41,7 +41,7 @@ export async function upload(uploads: Directory) {
     if (!TaskManager.requestNewTask()) return;
 
     // Count the files for the task progress
-    const hasDirectories = Object.keys(uploads.directories).length > 0;
+    const hasDirectories = uploads.directories.size > 0;
     const totalCount = countFilesRecursively(uploads);
 
     const taskName = !hasDirectories && totalCount === 1
@@ -106,6 +106,7 @@ function uploadsToTree(uploads: Directory, path: string): FileTree<UploadData> {
 }
 
 function uploadUsingTreeTask(uploads: Directory) {
+
     const tree = uploadsToTree(uploads, getApp().state.workdir);
     const treeTask = new TreeTask(tree, {
         beforeDirectory: async (node, connection) => {
@@ -122,20 +123,12 @@ function uploadUsingTreeTask(uploads: Directory) {
                     exists = true;
                     break;
                 } else if (entry.name === name && entry.isFile()) {
-                    // TODO do this in a better way...
-                    // Ask the user via UI
-                    const shouldDelete = await Dialog.confirm(
-                        "Cannot create folder", 
-                        `Wanted to create a folder at ${node.path} but there is a file at that location. Do you want to delete this file or cancel the upload?`,
-                        "Cancel upload",
-                        "Delete " + name
-                    );
-
-                    if (!shouldDelete) {
-                        throw new Error("A file occupied the name of a folder, and the user decided to cancel.");
-                    }
-
-                    await connection.delete(node.path);
+                    node.setError(new Error(
+                        `Wanted to create a folder at ${node.path} but there is a file ` +
+                        `at that location. You can either go and delete this file, and then ` +
+                        `retry, or you can skip this folder.`
+                    ));
+                    return Status.ERROR;
                 }
             }
             if (!exists) {
@@ -148,14 +141,24 @@ function uploadUsingTreeTask(uploads: Directory) {
             let allGood = true;
             for (const entry of node.entries) {
                 if (entry instanceof FileTreeFile) {
+                    if (entry.status == Status.CANCELLED) {
+                        continue;
+                    }
                     const fileInfo = list.find(f => f.name === entry.name);
                     if (fileInfo && fileInfo.size === entry.data.file.size) {
                         continue;
                     }
                     allGood = false;
                     console.log(`File ${joinPath(node.path, entry.name)} was not uploaded properly. Expected size ${entry.data.file.size} but found ${fileInfo ? fileInfo.size : "nothing"}`);
-                    entry.newAttempt();
+                    entry.incrementAttempt();
+                    entry.setStatus(Status.PENDING);
                 }
+            }
+            // Update cache
+            const app = getApp();
+            app.state.session.cache[node.path] = list;
+            if (app.state.workdir === node.path) {
+                app.refreshWithoutClear();
             }
         },
         file: async (node, connection) => {
@@ -181,12 +184,27 @@ function uploadUsingTreeTask(uploads: Directory) {
                 }
             }
 
+            // Start a progress bar.
+            node.progress(startOffset || 0, node.data.file.size);
+
             const uploadId = await connection.startChunkedUpload(path, node.data.file.size, startOffset);
 
             let chunkSize = DEFAULT_CHUNK_SIZE;
             let lastStatus = "";
             let offset = startOffset !== null ? startOffset : 0;
             while (offset < node.data.file.size) {
+                if (node.paused()) {
+                    // If paused (or cancelled), stop uploading chunks.
+                    // Since partial was set to true, we can resume later.
+                    // Ensure the status is set to pending so that it can be resumed later.
+                    console.log("Upload paused, stopping upload.");
+                    if (node.status === Status.CANCELLED) {
+                        // Prevent a partial upload. Delete the file.
+                        await connection.delete(path)
+                        return;
+                    }
+                    return Status.PENDING;
+                }
                 const start = offset;
                 const end = Math.min(start + chunkSize, node.data.file.size);
                 const chunk = node.data.file.slice(start, end);
@@ -232,22 +250,26 @@ function uploadUsingTreeTask(uploads: Directory) {
                 } else {
                     console.log(`Chunk took ${Math.round(ms)} ms, chunk size is good.`);
                 }
-
-
-                const list = await connection.list(node.parent.path);
-                const fileInfo = list.find(f => f.name === node.name);
-
-                // These errors will trigger a retry if possible.
-                if (!fileInfo) {
-                    throw new Error("Chunked upload failed for an unknown reason. File did not exist after upload.");
-                } else if (fileInfo.size !== node.data.file.size) {
-                    throw new Error("Chunked upload failed. The file only uploaded partially.");
-                }
-                // else, all good!
             }
+            
+            const list = await connection.list(node.parent.path);
+            const fileInfo = list.find(f => f.name === node.name);
+
+            // These errors will trigger a retry if possible.
+            if (!fileInfo) {
+                throw new Error("Chunked upload failed for an unknown reason. File did not exist after upload.");
+            } else if (fileInfo.size !== node.data.file.size) {
+                throw new Error("Chunked upload failed. The file only uploaded partially.");
+            }
+            // else, all good!
         },
     });
 
+    const taskName = treeTask.count.totalDirectories === 0 && treeTask.count.totalFiles === 1
+        ? "Uploading " + (treeTask.fileTree.entries[0] as FileTreeFile).name
+        : "Uploading " + treeTask.count.totalFiles + " files";
+
+    treeTask.title = taskName;
     taskManager.addTreeTask(treeTask);
 }
 

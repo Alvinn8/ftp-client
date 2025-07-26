@@ -1,0 +1,57 @@
+
+.button {
+    border-radius: 6px;
+    color: var(--text);
+    transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+    cursor: pointer;
+    display: inline-flex;
+    gap: 6px;
+}
+.button:hover {
+    background: var(--bg-base);
+}
+.button-outline {
+    border: 1px solid var(--border);
+}
+.button-solid {
+    border: 1px solid var(--border);
+    background: var(--bg-highlight);
+}
+.button-ghost {
+    background: none;
+    border: none;
+}
+.button-ghost:hover {
+    background: var(--bg-highlight);
+}
+.button-primary {
+    background: hsl(215, 95%, 52%);
+    border: none;
+}
+.button-primary:hover {
+    background: hsl(215, 95%, 48%);
+}
+.button-danger {
+    background: hsl(350, 80%, 45%);
+    color: white;
+    border: none;
+}
+.button-danger:hover {
+    background: hsl(350, 80%, 38%);
+}
+.button-danger.button-outline {
+    border: 1px solid hsl(350, 80%, 45%);
+    background: none;
+    color: hsl(350, 80%, 85%);
+}
+.button-danger.button-outline:hover {
+    border-color: hsl(350, 80%, 38%);
+}
+.button-small {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+.button-medium {
+    padding: 6px 12px;
+    font-size: 14px;
+}

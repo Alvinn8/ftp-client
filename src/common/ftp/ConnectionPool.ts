@@ -12,11 +12,16 @@ export class ConnectionPool extends EventEmitter{
     private readonly profile: FTPProfile;
     private connections: ConnectionPoolEntry[] = [];
     private targetConnectionCount: number = 1;
+    private isCreatingConnection: boolean = false;
+    private lastConnectionCreationAttempt: number = 0;
 
     constructor(profile: FTPProfile) {
         super();
         this.profile = profile;
-        window.debugConnectionPool = this;
+    }
+
+    hasAvailableConnection(): boolean {
+        return this.connections.some(entry => !entry.locked && entry.connection.websocket.readyState === WebSocket.OPEN);
     }
 
     /**
@@ -69,7 +74,7 @@ export class ConnectionPool extends EventEmitter{
             for (let i = this.connections.length - 1; i >= this.targetConnectionCount; i--) {
                 const entry = this.connections[i];
                 if (!entry.locked) {
-                    entry.connection.websocket.close();
+                    entry.connection.close();
                     this.connections.splice(i, 1);
                     console.log("Removed connection from pool due to excess count.");
                 }
@@ -80,19 +85,33 @@ export class ConnectionPool extends EventEmitter{
 
         // Create one new connection if we have fewer than the target count.
         if (this.connections.length < this.targetConnectionCount) {
-            try {
-                const connection = await this.createConnection();
-                if (await connection.isConnected()) {
-                    console.log("Created new connection for pool");
-                    this.connections.push({ connection, locked: false });
-                    this.emit("connectionAvailable");
-                } else {
-                    connection.websocket.close();
+            const now = Date.now();
+            const timeSinceLastAttempt = now - this.lastConnectionCreationAttempt;
+            
+            // Only create a connection if:
+            // 1. No connection is currently being created
+            // 2. Enough time has passed since the last attempt (to prevent rapid retries)
+            // 3. If more than 15 seconds have passed, assume timeout and try again.
+            if ((!this.isCreatingConnection && timeSinceLastAttempt >= 1000) || timeSinceLastAttempt >= 15_000) {
+                this.isCreatingConnection = true;
+                this.lastConnectionCreationAttempt = now;
+                
+                try {
+                    const connection = await this.createConnection();
+                    if (await connection.isConnected()) {
+                        console.log("Created new connection for pool");
+                        this.connections.push({ connection, locked: false });
+                        this.emit("connectionAvailable");
+                    } else {
+                        connection.websocket.close();
+                    }
+                } catch (error) {
+                    // Print the error but do not crash the application.
+                    // The connection will be retried later.
+                    console.error("Failed to create new connection for pool:", error);
+                } finally {
+                    this.isCreatingConnection = false;
                 }
-            } catch (error) {
-                // Print the error but do not crash the application.
-                // The connection will be retried later.
-                console.error("Failed to create new connection for pool:", error);
             }
         }
     }
@@ -103,5 +122,26 @@ export class ConnectionPool extends EventEmitter{
         const { host, port, username, password, secure } = this.profile;
         await connection.connect(host, port, username, password, secure);
         return connection;
+    }
+
+    closeAllConnections() {
+        if (this.connections.length > this.targetConnectionCount) {
+            for (let i = this.connections.length - 1; i >= this.targetConnectionCount; i--) {
+                const entry = this.connections[i];
+                entry.connection.close();
+            }
+        }
+    }
+
+    getTargetConnectionCount(): number {
+        return this.targetConnectionCount;
+    }
+
+    setTargetConnectionCount(count: number): void {
+        if (count < 1) {
+            throw new Error("Target connection count must be at least 1.");
+        }
+        this.targetConnectionCount = count;
+        this.emit("targetConnectionCountChange", count);
     }
 }

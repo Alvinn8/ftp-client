@@ -1,0 +1,23 @@
+.tabs {
+    background-color: var(--bg-dark);
+    list-style-type: none;
+    display: flex;
+    justify-content: stretch;
+    width: 100%;
+    padding: 4px;
+    gap: 4px;
+    border-radius: 12px;
+}
+
+.tab {
+    background-color: var(--bg-base);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: none;
+    flex-grow: 1;
+}
+
+.tab.active {
+    background-color: var(--bg-highlight);
+}

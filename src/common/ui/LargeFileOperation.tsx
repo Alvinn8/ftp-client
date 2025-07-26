@@ -3,6 +3,7 @@ import { isDarkTheme } from "./theme";
 import EventEmitter from "eventemitter3";
 import Size from "./Size";
 
+/** @deprecated */
 export interface LargeFileOperationInterface {
     type: "download" | "upload";
     fileName: string;
@@ -11,6 +12,7 @@ export interface LargeFileOperationInterface {
     total: number;
 }
 
+/** @deprecated */
 class LargeFileOperationStore extends EventEmitter {
     value: LargeFileOperationInterface;
 
@@ -19,6 +21,8 @@ class LargeFileOperationStore extends EventEmitter {
         this.emit("change", this.value);
     }
 }
+
+/** @deprecated */
 export const largeFileOperationStore = new LargeFileOperationStore();
 
 window.addEventListener("beforeunload", (event) => {

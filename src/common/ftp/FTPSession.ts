@@ -34,14 +34,12 @@ export default class FTPSession extends EventEmitter {
         this.profile = profile;
         this.connectionPool = new ConnectionPool(profile);
         this.connectionPool.on("connectionAvailable", () => {
-            console.log("Connection available");
             this.tryExecutePoolRequest();
         });
         // TODO store task manager in the session instead of globally.
         // this.taskManager = new TaskManager();
         this.taskManager = taskManager;
         this.taskManager.setSession(this);
-        window.debugSession = this;
     }
 
     clearCache() {
@@ -128,6 +126,10 @@ export default class FTPSession extends EventEmitter {
     disconnect() {
         console.log("Disconnecting");
         this.connection.close();
+    }
+
+    getConnectionPool(): ConnectionPool {
+        return this.connectionPool;
     }
 
     /** @deprecated */
@@ -248,15 +250,13 @@ export default class FTPSession extends EventEmitter {
         });
     }
 
-    private tryExecutePoolRequest() {
+    tryExecutePoolRequest() {
         // If the queue is empty, emit an event so that tasks can push requests to the queue.
         if (this.poolQueue.length <= 0) {
-            console.log("Asking for tasks");
             this.emit("poolQueueEmpty");
         }
         // If there still are no requests in the queue, we don't need to do anything.
         if (this.poolQueue.length <= 0) {
-            console.log("No pool requests to execute.");
             return;
         }
 
@@ -269,11 +269,8 @@ export default class FTPSession extends EventEmitter {
         if (!connection) {
             // No available connections, we will try again later when a connection
             // is available.
-            console.log("No available connection.");
             return;
         }
-
-        console.log("Executing pool request");
 
         // sort decending, highest priority first
         this.poolQueue.sort((a, b) => b.priority - a.priority);
