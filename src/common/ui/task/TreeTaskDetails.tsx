@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ProgressObject, TreeTask } from "../../task/treeTask";
+import { ProgressObject, TaskStatus, TreeTask } from "../../task/treeTask";
 import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { FileTree, FileTreeFile, Status } from "../../task/tree";
@@ -9,6 +9,7 @@ import Button from "../../ui2/components/Button";
 import { FileTreeComponent, FileTreeFileComponent } from "./FileTreeComponent";
 import PlusMinusInput from "../../ui2/components/PlusMinusInput";
 import { getApp } from "../App";
+import StableHeightContainer from "../../ui2/components/StableHeightContainer";
 
 interface TreeTaskDetailsProps {
     treeTask: TreeTask;
@@ -25,7 +26,6 @@ const TreeTaskDetails: React.FC<TreeTaskDetailsProps> = ({ treeTask, onClose }) 
     const modalRef = React.useRef<HTMLDivElement>(null);
     const [tab, setTab] = useState(Tab.OVERVIEW);
     const [status, setStatus] = useState(treeTask.status);
-    const [paused, setPaused] = useState(treeTask.paused);
 
     useEffect(() => {
         const modalElement = modalRef.current;
@@ -45,12 +45,9 @@ const TreeTaskDetails: React.FC<TreeTaskDetailsProps> = ({ treeTask, onClose }) 
     }, []);
 
     useEffect(() => {
-        const pausedHandler = () => setPaused(treeTask.paused);
-        const statusHandler = (status: Status) => setStatus(status);
-        treeTask.on("pausedChange", pausedHandler);
+        const statusHandler = (status: TaskStatus) => setStatus(status);
         treeTask.on("statusChange", statusHandler);
         return () => {
-            treeTask.off("pausedChange", pausedHandler);
             treeTask.off("statusChange", statusHandler);
         };
     }, [treeTask]);
@@ -62,7 +59,7 @@ const TreeTaskDetails: React.FC<TreeTaskDetailsProps> = ({ treeTask, onClose }) 
                     <div className="modal-content">
                         <div className="modal-header">
                             <h5 className="modal-title me-auto">{ treeTask.title }</h5>
-                            {statusPill(status, paused)}
+                            {statusPill(status)}
                             <button type="button" className="btn-close ms-1" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div className="modal-body">
@@ -75,9 +72,42 @@ const TreeTaskDetails: React.FC<TreeTaskDetailsProps> = ({ treeTask, onClose }) 
                                 activeTab={tab}
                                 onTabChange={setTab}
                             />
-                            {tab === Tab.OVERVIEW && <OverviewTab treeTask={treeTask} onClose={onClose} />}
+                            {tab === Tab.OVERVIEW && <OverviewTab treeTask={treeTask} />}
                             {tab === Tab.FILES && <FilesTab treeTask={treeTask} />}
                             {tab === Tab.SETTINGS && <SettingsTab treeTask={treeTask} />}
+                        </div>
+                        <div className="modal-footer">
+                            <div className="d-flex flex-wrap gap-1 w-100">
+                                { status === TaskStatus.PAUSED ? (
+                                    <Button
+                                        onClick={() => treeTask.setPaused(false)}
+                                        icon="play"
+                                        label="Resume"
+                                        />
+                                    ) : (
+                                        <Button
+                                        onClick={() => treeTask.setPaused(true)}
+                                        disabled={status !== TaskStatus.IN_PROGRESS}
+                                        loading={status === TaskStatus.PAUSING}
+                                        icon="pause"
+                                        label="Pause"
+                                    />
+                                )}
+                                <Button
+                                    onClick={() => treeTask.cancel()}
+                                    loading={status === TaskStatus.CANCELLING}
+                                    disabled={status !== TaskStatus.IN_PROGRESS && status !== TaskStatus.ERROR && status !== TaskStatus.PAUSED}
+                                    icon="stop"
+                                    label="Cancel"
+                                    severity="danger"
+                                />
+                                <Button
+                                    onClick={onClose}
+                                    className="ms-auto"
+                                    label="Close"
+                                    severity="primary"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -88,45 +118,44 @@ const TreeTaskDetails: React.FC<TreeTaskDetailsProps> = ({ treeTask, onClose }) 
     );
 }
 
-function statusPill(status: Status, paused: boolean) {
+function statusPill(status: TaskStatus) {
     switch (status) {
-        case Status.PENDING:
-            return <span className="badge bg-secondary">Pending</span>;
-        case Status.IN_PROGRESS:
-            if (paused) {
-                return <span className="badge bg-warning">Paused</span>;
-            }
+        case TaskStatus.PAUSING:
+            return <span className="badge bg-warning text-dark">Pausing...</span>;
+        case TaskStatus.PAUSED:
+            return <span className="badge bg-warning text-dark">Paused</span>;
+        case TaskStatus.IN_PROGRESS:
             return <span className="badge bg-primary">In Progress</span>;
-        case Status.DONE:
-            return <span className="badge bg-success">Done</span>;
-        case Status.ERROR:
+        case TaskStatus.ERROR:
             return <span className="badge bg-danger">Error</span>;
-        case Status.CANCELLED:
+        case TaskStatus.ALMOST_DONE:
+            return <span className="badge bg-primary">Almost Done...</span>;
+        case TaskStatus.DONE:
+            return <span className="badge bg-success">Done</span>;
+        case TaskStatus.CANCELLING:
+            return <span className="badge bg-primary">Cancelling...</span>;
+        case TaskStatus.CANCELLED:
             return <span className="badge bg-highlight">Cancelled</span>;
     }
 }
 
-const OverviewTab: React.FC<{ treeTask: TreeTask, onClose: () => void }> = ({ treeTask, onClose }) => {
+const OverviewTab: React.FC<{ treeTask: TreeTask }> = ({ treeTask }) => {
     const [progress, setProgress] = useState(treeTask.progress);
     const [status, setStatus] = useState(treeTask.status);
-    const [paused, setPaused] = useState(treeTask.paused);
     const [activeTasks, setActiveTasks] = useState(treeTask.activeTasks);
     const [errorTasks, setErrorTasks] = useState(treeTask.errorTasks);
 
     useEffect(() => {
         const progressHandler = (progress: ProgressObject) => setProgress({...progress});
-        const pausedHandler = () => setPaused(treeTask.paused);
         const activeTasksHandler = (tasks: (FileTree | FileTreeFile)[]) => setActiveTasks([...tasks]);
         const errorTasksHandler = (tasks: (FileTree | FileTreeFile)[]) => setErrorTasks([...tasks]);
-        const statusHandler = (status: Status) => setStatus(status);
+        const statusHandler = (status: TaskStatus) => setStatus(status);
         treeTask.on("progress", progressHandler);
-        treeTask.on("pausedChange", pausedHandler);
         treeTask.on("activeTasksChange", activeTasksHandler);
         treeTask.on("errorTasksChange", errorTasksHandler);
         treeTask.on("statusChange", statusHandler);
         return () => {
             treeTask.off("progress", progressHandler);
-            treeTask.off("pausedChange", pausedHandler);
             treeTask.off("activeTasksChange", activeTasksHandler);
             treeTask.off("errorTasksChange", errorTasksHandler);
             treeTask.off("statusChange", statusHandler);
@@ -137,7 +166,7 @@ const OverviewTab: React.FC<{ treeTask: TreeTask, onClose: () => void }> = ({ tr
         <div>
             <div className="progress mt-3 mb-2">
                 <div
-                    className={`progress-bar progress-bar-striped ${!paused && status === Status.IN_PROGRESS ? "progress-bar-animated" : ""}`}
+                    className={`progress-bar progress-bar-striped ${status === TaskStatus.IN_PROGRESS ? "progress-bar-animated" : ""}`}
                     role="progressbar"
                     aria-valuenow={progress.value} aria-valuemin={0} aria-valuemax={progress.max}
                     style={{ width: (progress.value / progress.max) * 100 + "%" }}
@@ -160,12 +189,12 @@ const OverviewTab: React.FC<{ treeTask: TreeTask, onClose: () => void }> = ({ tr
                     <div className="text-normal text-color">
                         Errors
                     </div>
-                    {status === Status.ERROR && (
+                    {status === TaskStatus.ERROR && (
                         <div className="text-small text-muted-color mt-1">
                             The following errors need to be resolved before the task can continue.
                         </div>
                     )}
-                    <div className="border p-2 my-2 rounded">
+                    <StableHeightContainer className="border p-2 my-2 rounded">
                         {errorTasks.map(task => (
                             task instanceof FileTreeFile ? (
                                 <FileTreeFileComponent key={joinPath(task.parent.path, task.name)} fileTreeFile={task} />
@@ -173,11 +202,11 @@ const OverviewTab: React.FC<{ treeTask: TreeTask, onClose: () => void }> = ({ tr
                                 <FileTreeComponent key={task.path} fileTree={task} deep={false} />
                             )
                         ))}
-                    </div>
+                    </StableHeightContainer>
                 </>
             )}
             { activeTasks.length > 0 && (
-                <div className="border p-2 my-2 rounded">
+                <StableHeightContainer className="border p-2 my-2 rounded">
                     {activeTasks.map(task => (
                         task instanceof FileTreeFile ? (
                             <FileTreeFileComponent key={joinPath(task.parent.path, task.name)} fileTreeFile={task} />
@@ -185,41 +214,8 @@ const OverviewTab: React.FC<{ treeTask: TreeTask, onClose: () => void }> = ({ tr
                             <FileTreeComponent key={task.path} fileTree={task} deep={false} />
                         )
                     ))}
-                </div>
+                </StableHeightContainer>
             )}
-            <div className="d-flex flex-wrap gap-1 mt-1">
-                { status === Status.IN_PROGRESS && (
-                    <>
-                        { paused ? (
-                            <Button
-                                onClick={() => treeTask.setPaused(false)}
-                                icon="play"
-                                label="Resume"
-                            />
-                        ) : (
-                            <Button
-                                onClick={() => treeTask.setPaused(true)}
-                                icon="pause"
-                                label="Pause"
-                            />
-                        )}
-                    </>
-                )}
-                { (status === Status.IN_PROGRESS || status === Status.ERROR) && (
-                    <Button
-                        onClick={() => treeTask.cancel()}
-                        icon="stop"
-                        label="Cancel"
-                        severity="danger"
-                    />
-                )}
-                <Button
-                    onClick={onClose}
-                    className="ms-auto"
-                    label="Close"
-                    severity="primary"
-                />
-            </div>
         </div>
     );
 };
@@ -247,14 +243,14 @@ const SettingsTab: React.FC<{ treeTask: TreeTask }> = ({ treeTask }) => {
     return (
         <div>
             <div className="mb-3">
-                <div className="mb-1">Parallel Connections</div>
+                <div className="mt-2 mb-1">Parallel Connections</div>
                 <PlusMinusInput
                     value={connectionCount}
                     min={1}
                     max={10}
                     onChange={count => connectionPool.setTargetConnectionCount(count)}
                 />
-                <span className="text-muted-color text-small d-block">Number of simultaneous file transfers (1-10)</span>
+                <span className="text-muted-color text-small d-block mt-1">Number of simultaneous file transfers (1-10)</span>
             </div>
         </div>
     );

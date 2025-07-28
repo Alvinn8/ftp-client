@@ -21,6 +21,7 @@ export default interface FTPConnection {
     uploadSmall(blob: Blob, path: string): Promise<void>;
     startChunkedUpload(path: string, size: number, startOffset: number | null): Promise<string>;
     uploadChunk(uploadId: string, chunk: Blob, start: number, end: number): Promise<ChunkedUploadResponse>;
+    stopChunkedUpload(uploadId: string): Promise<void>;
     mkdir(path: string): Promise<void>;
     rename(from: string, to: string): Promise<void>;
     delete(path: string): Promise<void>;

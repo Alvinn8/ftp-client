@@ -21,7 +21,14 @@ const Button: React.FC<ButtonProps> = ({ className, onClick, severity, variant, 
             disabled={disabled || loading}
             aria-label={label}
         >
-            {icon && <i className={`bi bi-${icon}`}></i>}
+            {icon && !loading && <i className={`bi bi-${icon}`}></i>}
+            {loading && (
+                <div>
+                    <div className="spinner-border spinner-border-sm" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            )}
             {label}
         </button>
     );

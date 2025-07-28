@@ -71,10 +71,10 @@ async function entriesToFileTree(entries: FolderEntry[]): Promise<FileTree> {
             throw new Error("Entries are not in the same directory. Common parent: " + commonParent + ", entry parent: " + parent);
         }
        if (entry.isFile()) {
-            rootFileTree.entries.push(new FileTreeFile(entry.name, null, rootFileTree));
+            rootFileTree.addEntry(new FileTreeFile(entry.name, null, entry.size, rootFileTree));
         } else if (entry.isDirectory()) {
             const dirTree = await entryToFileTree(entry);
-            rootFileTree.entries.push(dirTree);
+            rootFileTree.addEntry(dirTree);
         }
     }
     return rootFileTree;
@@ -89,9 +89,9 @@ async function entryToFileTree(entry: FolderEntry): Promise<FileTree> {
     const dirTree = new FileTree(entry.path);
     for (const subEntry of list) {
         if (subEntry.isFile()) {
-            dirTree.entries.push(new FileTreeFile(subEntry.name, null, dirTree));
+            dirTree.addEntry(new FileTreeFile(subEntry.name, null, subEntry.size, dirTree));
         } else {
-            dirTree.entries.push(await entryToFileTree(subEntry));
+            dirTree.addEntry(await entryToFileTree(subEntry));
         }
     }
     return dirTree;
@@ -126,25 +126,67 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
     }
     if (useTreeTasks) {
         const rootFileTree = await entriesToFileTree(entries);
-        const treeTask = new TreeTask(rootFileTree, {
+        TaskManager.addTreeTask(new TreeTask(rootFileTree, {
+            title: (treeTask) => "Deleting " + treeTask.count.totalFiles + " file" + (treeTask.count.totalFiles == 1 ? "" : "s"),
+            // It is important that we do not process the root directory,
+            // as it is the container for the files we want to delete.
+            // We do not want to delete the container itself.
+            processRootDirectory: false
+        }, {
             beforeDirectory(directory, connection) {},
             async afterDirectory(directory, connection) {
-                if (directory.task && directory.path !== directory.task.fileTree.path) {
-                    // Do not delete the root directory. It was the parent for the task.
+                try {
                     await connection.delete(directory.path);
+                } catch (err) {
+                    if (String(err).includes("ENOTEMPTY")) {
+                        // Files were likely added while deleting, we must refresh.
+                        const list = await connection.list(directory.path);
+                        for (const entry of list) {
+                            const node = entry.isDirectory()
+                                ? directory.getEntries().filter(e => e instanceof FileTree).find(e => e.path === entry.path)
+                                : directory.getEntries().filter(e => e instanceof FileTreeFile).find(e => e.name === entry.name);
+                            if (node) {
+                                node.retry();
+                            } else if (entry.isFile()) {
+                                directory.addEntry(new FileTreeFile(entry.name, null, entry.size, directory));
+                            } else if (entry.isDirectory()) {
+                                // We just add the sub directory, but not its contents.
+                                // If it has contents, it will also throw ENOTEMPTY and
+                                // this code will run again for that directory.
+                                directory.addEntry(new FileTree(entry.path));
+                            }
+                        }
+                    } else if (!String(err).includes("ENOENT")) {
+                        // Ignore ENOENT, it means the directory was already deleted.
+                        // Otherwise throw unexpected errors.
+                        throw err;
+                    }
                 }
                 const app = getApp();
-                app.state.session.cache[directory.path] = [];
+                delete app.state.session.cache[directory.path];
                 if (app.state.workdir === directory.path) {
                     app.refresh();
                 }
             },
             async file(file, connection) {
-                await connection.delete(joinPath(file.parent.path, file.name));
+                try {
+                    await connection.delete(joinPath(file.parent.path, file.name));
+                } catch (err) {
+                    // Ignore if it looks like this file has already been deleted.
+                    if (!String(err).includes("ENOENT")) {
+                        throw err;
+                    }
+                    
+                }
             },
-        });
-        treeTask.title = "Deleting " + treeTask.count.totalFiles + " file" + (treeTask.count.totalFiles == 1 ? "" : "s");
-        TaskManager.addTreeTask(treeTask);
+            done(fileTree, connection) {
+                const app = getApp();
+                delete app.state.session.cache[fileTree.path];
+                if (app.state.workdir === fileTree.path) {
+                    app.refreshWithoutClear();
+                }
+            },
+        }));
         return;
     }
     if (!TaskManager.requestNewTask()) return;

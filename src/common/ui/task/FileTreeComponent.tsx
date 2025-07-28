@@ -11,8 +11,10 @@ function statusIcon(status: string) {
             return <i className="bi bi-clock" />;
         case Status.IN_PROGRESS:
             return (
-                <div className="spinner-border text-primary spinner-border-sm" role="status">
-                    <span className="visually-hidden">Loading...</span>
+                <div style={{ width: '16px' }}>
+                    <div className="spinner-border text-primary spinner-border-sm" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
                 </div>
             );
         case Status.DONE:
@@ -30,11 +32,12 @@ type FileTreeProps = {
 }
 
 export const FileTreeComponent: React.FC<FileTreeProps> = ({ fileTree, deep }) => {
-    const [beforeStatus, setBeforeStatus] = useState(fileTree.beforeStatus);
-    const [afterStatus, setAfterStatus] = useState(fileTree.afterStatus);
-    const [attempt, setAttempt] = useState(fileTree.attempt);
-    const [error, setError] = useState<unknown | null>(fileTree.error);
-    const defaultOpen = (fileTree.entries.length < 10 || fileTree.beforeStatus === Status.DONE) && fileTree.afterStatus !== Status.DONE;
+    const [beforeStatus, setBeforeStatus] = useState(fileTree.getBeforeStatus());
+    const [afterStatus, setAfterStatus] = useState(fileTree.getAfterStatus());
+    const [attempt, setAttempt] = useState(fileTree.getAttempt());
+    const [error, setError] = useState<unknown | null>(fileTree.getError());
+    const [entries, setEntries] = useState(fileTree.getEntries());
+    const defaultOpen = (entries.length < 10 || fileTree.getBeforeStatus() === Status.DONE) && fileTree.getAfterStatus() !== Status.DONE;
     const [userOpened, setUserOpened] = useState<boolean | null>(null);
 
     const open = userOpened === null ? defaultOpen : userOpened;
@@ -43,16 +46,19 @@ export const FileTreeComponent: React.FC<FileTreeProps> = ({ fileTree, deep }) =
         const beforeStatusHandler = (status: Status) => setBeforeStatus(status);
         const afterStatusHandler = (status: Status) => setAfterStatus(status);
         const attemptHandler = (attempt: number) => setAttempt(attempt);
-        const errorHandler = (error: unknown) => { setError(error); console.log("Setting error", String(error)); };
+        const errorHandler = (error: unknown) => setError(error);
+        const entriesHandler = (entries: (FileTree | FileTreeFile)[]) => setEntries(entries);
         fileTree.on("beforeStatusChange", beforeStatusHandler);
         fileTree.on("afterStatusChange", afterStatusHandler);
         fileTree.on("attemptChange", attemptHandler);
         fileTree.on("errorChange", errorHandler);
+        fileTree.on("entriesChange", entriesHandler);
         return () => {
             fileTree.off("beforeStatusChange", beforeStatusHandler);
             fileTree.off("afterStatusChange", afterStatusHandler);
             fileTree.off("attemptChange", attemptHandler);
             fileTree.off("errorChange", errorHandler);
+            fileTree.off("entriesChange", entriesHandler);
         };
     }, [fileTree]);
 
@@ -63,26 +69,12 @@ export const FileTreeComponent: React.FC<FileTreeProps> = ({ fileTree, deep }) =
         (afterStatus === Status.PENDING ? Status.IN_PROGRESS : afterStatus)
         : beforeStatus;
 
-    function retry() {
-        if (!fileTree.task || fileTree.attempt >= fileTree.task.maxAttempts) {
-            fileTree.setAttempt(1);
-        } else {
-            fileTree.incrementAttempt();
-        }
-        fileTree.setError(null);
-        if (fileTree.beforeStatus === Status.DONE) {
-            fileTree.setAfterStatus(Status.PENDING);
-        } else {
-            fileTree.setBeforeStatus(Status.PENDING);
-        }
-    }
-
     function skipRecursively(tree: FileTree) {
         tree.setBeforeStatus(Status.CANCELLED);
         tree.setAfterStatus(Status.CANCELLED);
-        for (const entry of tree.entries) {
+        for (const entry of tree.getEntries()) {
             if (entry instanceof FileTreeFile) {
-                if (entry.status === Status.PENDING) {
+                if (entry.getStatus() === Status.PENDING) {
                     entry.setStatus(Status.CANCELLED);
                 }
             } else if (entry instanceof FileTree) {
@@ -122,17 +114,17 @@ export const FileTreeComponent: React.FC<FileTreeProps> = ({ fileTree, deep }) =
                 <ErrorActions
                     error={error}
                     showActions={status === Status.ERROR}
-                    onRetry={() => retry()}
+                    onRetry={() => fileTree.retry(true)}
                     onSkip={() => skip()}
                     indent={deep}
                 />
             )}
             {deep && open && (
                 <div className="d-flex flex-column mt-1 ps-3">
-                    {fileTree.entries.filter((entry) => entry instanceof FileTree).map((subTree) => (
+                    {entries.filter((entry) => entry instanceof FileTree).map((subTree) => (
                         <FileTreeComponent key={subTree.path} fileTree={subTree} deep={true} />
                     ))}
-                    {fileTree.entries.filter((entry) => entry instanceof FileTreeFile).map((fileTreeFile) => (
+                    {entries.filter((entry) => entry instanceof FileTreeFile).map((fileTreeFile) => (
                         <FileTreeFileComponent
                             key={fileTreeFile.name}
                             fileTreeFile={fileTreeFile}
@@ -151,9 +143,9 @@ type FileTreeFileProps = {
 }
 
 export const FileTreeFileComponent: React.FC<FileTreeFileProps> = ({ fileTreeFile, indent }) => {
-    const [status, setStatus] = useState(fileTreeFile.status);
-    const [attempt, setAttempt] = useState(fileTreeFile.attempt);
-    const [error, setError] = useState<unknown | null>(fileTreeFile.error);
+    const [status, setStatus] = useState(fileTreeFile.getStatus());
+    const [attempt, setAttempt] = useState(fileTreeFile.getAttempt());
+    const [error, setError] = useState<unknown | null>(fileTreeFile.getError());
     const [progress, setProgress] = useState<{ value: number, max: number } | null>(fileTreeFile.currentProgress);
 
     useEffect(() => {
@@ -174,15 +166,6 @@ export const FileTreeFileComponent: React.FC<FileTreeFileProps> = ({ fileTreeFil
     }, [fileTreeFile]);
 
     const fileSize = fileTreeFile.fileSize();
-
-    function retry() {
-        if (!fileTreeFile.task || fileTreeFile.attempt >= fileTreeFile.task.maxAttempts) {
-            fileTreeFile.setAttempt(1);
-        } else {
-            fileTreeFile.incrementAttempt();
-        }
-        fileTreeFile.setStatus(Status.PENDING);
-    }
 
     return (
         <div className="px-2 py-1" style={{ marginLeft: indent ? "36px" : "0px" }}>
@@ -216,7 +199,7 @@ export const FileTreeFileComponent: React.FC<FileTreeFileProps> = ({ fileTreeFil
                 <ErrorActions
                     error={error}
                     showActions={status === Status.ERROR}
-                    onRetry={() => retry()}
+                    onRetry={() => fileTreeFile.retry(true)}
                     onSkip={() => fileTreeFile.setStatus(Status.CANCELLED)}
                 />
             )}

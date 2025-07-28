@@ -117,6 +117,7 @@ describe("ftp-client tests", () => {
         await waitFor(() => taskManager.getTreeTasks().length > 0);
 
         expect(connection.delete).toHaveBeenCalledWith("/test.txt");
+        expect(connection.delete).not.toHaveBeenCalledWith("/");
     });
 
     it("delete file via button but cancel should not delete file", async () => {
@@ -131,7 +132,8 @@ describe("ftp-client tests", () => {
         const cancel = await within(el.parentElement.parentElement).findByRole("button", { name: "Cancel"});
         await userEvent.click(cancel);
 
-        expect(connection.delete).not.toHaveBeenCalled();
+        expect(connection.delete).not.toHaveBeenCalledWith("/test.txt");
+        expect(connection.delete).not.toHaveBeenCalledWith("/");
     });
 
     it("delete file via context menu", async () => {

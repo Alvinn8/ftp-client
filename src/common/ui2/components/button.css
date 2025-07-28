@@ -7,9 +7,15 @@
     display: inline-flex;
     gap: 6px;
 }
-.button:hover {
+.button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.button:not(:disabled):hover {
     background: var(--bg-base);
 }
+
+/* Variant */
 .button-outline {
     border: 1px solid var(--border);
 }
@@ -24,11 +30,13 @@
 .button-ghost:hover {
     background: var(--bg-highlight);
 }
+
+/* Severity */
 .button-primary {
     background: hsl(215, 95%, 52%);
     border: none;
 }
-.button-primary:hover {
+.button-primary:not(:disabled):hover {
     background: hsl(215, 95%, 48%);
 }
 .button-danger {
@@ -36,7 +44,7 @@
     color: white;
     border: none;
 }
-.button-danger:hover {
+.button-danger:not(:disabled):hover {
     background: hsl(350, 80%, 38%);
 }
 .button-danger.button-outline {
@@ -44,9 +52,11 @@
     background: none;
     color: hsl(350, 80%, 85%);
 }
-.button-danger.button-outline:hover {
+.button-danger.button-outline:not(:disabled):hover {
     border-color: hsl(350, 80%, 38%);
 }
+
+/* Size */
 .button-small {
     padding: 4px 8px;
     font-size: 12px;

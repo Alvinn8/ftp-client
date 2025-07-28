@@ -104,6 +104,10 @@ export interface ChunkedUploadResponse {
     error?: string;
 }
 
+export interface ChunkedUploadStopData {
+    uploadId: string;
+}
+
 export const packetMap = new Map<number, Packet<any, any>>();
 
 let idCount = 1;
@@ -137,4 +141,5 @@ export namespace Packets {
     export const LargeUpload = new Packet<PathData, LargeUploadResponse>();
     export const ChunkedUploadStart = new Packet<ChunkedUploadStartData, ChunkedUploadStartResponse>();
     export const ChunkedUpload = new Packet<ChunkedUploadData, ChunkedUploadResponse>();
+    export const ChunkedUploadStop = new Packet<ChunkedUploadStopData, void>();
 }

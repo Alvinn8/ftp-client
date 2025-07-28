@@ -127,6 +127,7 @@ export class ConnectionPool extends EventEmitter{
     closeAllConnections() {
         if (this.connections.length > this.targetConnectionCount) {
             for (let i = this.connections.length - 1; i >= this.targetConnectionCount; i--) {
+                console.log("Closing pool connection.");
                 const entry = this.connections[i];
                 entry.connection.close();
             }

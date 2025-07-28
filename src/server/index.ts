@@ -511,10 +511,25 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
     if (chunkedUpload.offset === chunkedUpload.size) {
         chunkedUpload.stream.end();
         await chunkedUpload.uploadPromise;
+        chunkedUploads.splice(chunkedUploads.indexOf(chunkedUpload), 1);
         return { status: "end" as Status };
     }
 
     return { status: "success" as Status };
+});
+
+handler(Packets.ChunkedUploadStop, async (packet, data, connection) => {
+    const chunkedUpload = chunkedUploads.find(u => u.id === data.uploadId);
+    if (!chunkedUpload) {
+        return;
+    }
+    if (chunkedUpload.connection !== connection) {
+        return;
+    }
+
+    chunkedUpload.stream.end();
+    await chunkedUpload.uploadPromise;
+    chunkedUploads.splice(chunkedUploads.indexOf(chunkedUpload), 1);
 });
 
 handler(Packets.Mkdir, async (packet, data, connection) => {

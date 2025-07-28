@@ -96,11 +96,11 @@ type UploadData = {
 function uploadsToTree(uploads: Directory, path: string): FileTree<UploadData> {
     const root: FileTree<UploadData> = new FileTree(path);
     for (const file of uploads.files) {
-        root.entries.push(new FileTreeFile(file.name, { file: file }, root));
+        root.addEntry(new FileTreeFile(file.name, { file: file }, file.size, root));
     }
     for (const [name, subdir] of uploads.directories.entries()) {
         const subTree = uploadsToTree(subdir, joinPath(path, name));
-        root.entries.push(subTree);
+        root.addEntry(subTree);
     }
     return root;
 }
@@ -108,7 +108,12 @@ function uploadsToTree(uploads: Directory, path: string): FileTree<UploadData> {
 function uploadUsingTreeTask(uploads: Directory) {
 
     const tree = uploadsToTree(uploads, getApp().state.workdir);
-    const treeTask = new TreeTask(tree, {
+    taskManager.addTreeTask(new TreeTask(tree, {
+        processRootDirectory: true,
+        title: (treeTask) => treeTask.count.totalDirectories === 0 && treeTask.count.totalFiles === 1
+            ? "Uploading " + (treeTask.fileTree.getEntries()[0] as FileTreeFile).name
+            : "Uploading " + treeTask.count.totalFiles + " files"
+    }, {
         beforeDirectory: async (node, connection) => {
             if (node.path === "/") {
                 // No need to create the root directory.
@@ -123,12 +128,11 @@ function uploadUsingTreeTask(uploads: Directory) {
                     exists = true;
                     break;
                 } else if (entry.name === name && entry.isFile()) {
-                    node.setError(new Error(
+                    return node.errorWithUserAction(
                         `Wanted to create a folder at ${node.path} but there is a file ` +
                         `at that location. You can either go and delete this file, and then ` +
                         `retry, or you can skip this folder.`
-                    ));
-                    return Status.ERROR;
+                    );
                 }
             }
             if (!exists) {
@@ -139,9 +143,9 @@ function uploadUsingTreeTask(uploads: Directory) {
             // Double check that all files were uploaded correctly
             const list = await connection.list(node.path);
             let allGood = true;
-            for (const entry of node.entries) {
+            for (const entry of node.getEntries()) {
                 if (entry instanceof FileTreeFile) {
-                    if (entry.status == Status.CANCELLED) {
+                    if (entry.getStatus() == Status.CANCELLED) {
                         continue;
                     }
                     const fileInfo = list.find(f => f.name === entry.name);
@@ -150,8 +154,7 @@ function uploadUsingTreeTask(uploads: Directory) {
                     }
                     allGood = false;
                     console.log(`File ${joinPath(node.path, entry.name)} was not uploaded properly. Expected size ${entry.data.file.size} but found ${fileInfo ? fileInfo.size : "nothing"}`);
-                    entry.incrementAttempt();
-                    entry.setStatus(Status.PENDING);
+                    entry.retry();
                 }
             }
             // Update cache
@@ -190,7 +193,6 @@ function uploadUsingTreeTask(uploads: Directory) {
             const uploadId = await connection.startChunkedUpload(path, node.data.file.size, startOffset);
 
             let chunkSize = DEFAULT_CHUNK_SIZE;
-            let lastStatus = "";
             let offset = startOffset !== null ? startOffset : 0;
             while (offset < node.data.file.size) {
                 if (node.paused()) {
@@ -198,17 +200,13 @@ function uploadUsingTreeTask(uploads: Directory) {
                     // Since partial was set to true, we can resume later.
                     // Ensure the status is set to pending so that it can be resumed later.
                     console.log("Upload paused, stopping upload.");
-                    if (node.status === Status.CANCELLED) {
-                        // Prevent a partial upload. Delete the file.
-                        await connection.delete(path)
-                        return;
-                    }
-                    return Status.PENDING;
+                    await connection.stopChunkedUpload(uploadId);
+                    return node.pauseToResume();
                 }
                 const start = offset;
                 const end = Math.min(start + chunkSize, node.data.file.size);
                 const chunk = node.data.file.slice(start, end);
-                console.log(`Uploading chunk with bytes ${start} to ${end}.`);
+                // console.log(`Uploading chunk with bytes ${start} to ${end}.`);
                 const startTime = performance.now();
                 const response = await connection.uploadChunk(
                     uploadId,
@@ -218,7 +216,6 @@ function uploadUsingTreeTask(uploads: Directory) {
                 );
                 const status = response.status;
                 offset += chunk.size;
-                lastStatus = status;
                 if (status !== "success" && status !== "end") {
                     console.log("Status: " + status);
                     if (status === "error") {
@@ -248,7 +245,7 @@ function uploadUsingTreeTask(uploads: Directory) {
                     chunkSize = CHUNK_SIZES[chunkSizeIndex + 1];
                     console.log(`Chunk took ${Math.round(ms)} ms, increasing chunk size.`);
                 } else {
-                    console.log(`Chunk took ${Math.round(ms)} ms, chunk size is good.`);
+                    // console.log(`Chunk took ${Math.round(ms)} ms, chunk size is good.`);
                 }
             }
             
@@ -263,14 +260,28 @@ function uploadUsingTreeTask(uploads: Directory) {
             }
             // else, all good!
         },
-    });
-
-    const taskName = treeTask.count.totalDirectories === 0 && treeTask.count.totalFiles === 1
-        ? "Uploading " + (treeTask.fileTree.entries[0] as FileTreeFile).name
-        : "Uploading " + treeTask.count.totalFiles + " files";
-
-    treeTask.title = taskName;
-    taskManager.addTreeTask(treeTask);
+        cancelled: async (fileTree, connection) => {
+            // If the task is cancelled, we need to delete all files that were partially
+            // uploaded to avoid leaving behind corrupted files.
+            const cache = getApp().state.session.cache;
+            async function removePartialFilesRecursive(fileTree: FileTree<UploadData>) {
+                for (const entry of fileTree.getEntries()) {
+                    if (entry instanceof FileTreeFile) {
+                        if (entry.data.partial) {
+                            const path = joinPath(fileTree.path, entry.name);
+                            console.log(`Removing partial file ${path}`);
+                            await connection.delete(path);
+                            delete cache[dirname(path)];
+                        }
+                    } else {
+                        await removePartialFilesRecursive(entry);
+                    }
+                }
+            }
+            await removePartialFilesRecursive(fileTree);
+            getApp().refreshWithoutClear();
+        },
+    }));
 }
 
 /**

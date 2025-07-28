@@ -1,9 +1,10 @@
 import { EventEmitter } from "eventemitter3";
 import { addMessage } from "../ui/messages";
 import Task from "./Task";
-import { TreeTask } from "./treeTask";
+import { TaskStatus, TreeTask } from "./treeTask";
 import FTPSession from "../ftp/FTPSession";
 import { Status } from "./tree";
+import { unexpectedErrorHandler } from "../error";
 
 export class TaskManager extends EventEmitter {
     private session: FTPSession;
@@ -93,7 +94,6 @@ export class TaskManager extends EventEmitter {
      */
     addTreeTask(treeTask: TreeTask) {
         this.treeTasks.push(treeTask);
-        treeTask.setStatus(Status.IN_PROGRESS);
         treeTask.addNextSubTask(this.session);
         this.emit("change", this.task);
         this.session.tryExecutePoolRequest();
@@ -103,11 +103,6 @@ export class TaskManager extends EventEmitter {
         };
         treeTask.on("done", remove);
         treeTask.on("cancelled", remove);
-        treeTask.on("pausedChange", (paused) => {
-            if (!paused) {
-                this.session.tryExecutePoolRequest();
-            }
-        });
         treeTask.on("statusChange", (status) => {
             if (status === Status.IN_PROGRESS) {
                 this.session.tryExecutePoolRequest();
@@ -122,7 +117,7 @@ export class TaskManager extends EventEmitter {
 
     private tickTreeTasks() {
         for (const treeTask of this.treeTasks) {
-            if (treeTask.status === Status.IN_PROGRESS) {
+            if (treeTask.status === TaskStatus.IN_PROGRESS) {
                 treeTask.addNextSubTask(this.session);
             }
         }
@@ -152,10 +147,7 @@ export class TaskManager extends EventEmitter {
             this.session.getConnectionPool().closeAllConnections();
             return;
         }
-        if (this.session.getConnectionPool().hasAvailableConnection()) {
-            // So there are tasks waiting and there are available connections?
-            // Then we can try to execute the next task.
-        }
+        this.session.getConnectionPool().refreshConnections().catch(unexpectedErrorHandler("Error refreshing connections in TaskManager"));
         this.tickTreeTasks();
         this.session.tryExecutePoolRequest();
     }
@@ -164,11 +156,11 @@ export class TaskManager extends EventEmitter {
 /** @deprecated */
 const taskManager = new TaskManager();
 
-// window.addEventListener("beforeunload", (event) => {
-//     if (taskManager.hasTask() || taskManager.getTreeTasks().length > 0) {
-//         event.preventDefault();
-//         return (event.returnValue = "");
-//     }
-// });
+window.addEventListener("beforeunload", (event) => {
+    if (taskManager.hasTask() || taskManager.getTreeTasks().length > 0) {
+        event.preventDefault();
+        return (event.returnValue = "");
+    }
+});
 
 export default taskManager;

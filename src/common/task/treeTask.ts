@@ -4,8 +4,14 @@ import { FileTree, FileTreeFile, Status } from "./tree"
 import FTPSession from "../ftp/FTPSession"
 import Priority from "../ftp/Priority"
 import { unexpectedErrorHandler } from "../error"
+import { getApp } from "../ui/App"
+import { sleep } from "../utils"
 
 type MaybePromise<T> = Promise<T> | T;
+
+export type HandlerAction =
+    | { type: "error" } // There is an error that requires user action now.
+    | { type: "pause_to_resume" }; // Pause the task to resume later.
 
 export interface TreeTaskHandler<T> {
     /**
@@ -14,28 +20,35 @@ export interface TreeTaskHandler<T> {
      * @param file The file that is being processed.
      * @param connection The FTP connection to use for the operation.
      */
-    file(file: FileTreeFile<T>, connection: FTPConnection): MaybePromise<Status | void>
+    file(file: FileTreeFile<T>, connection: FTPConnection): MaybePromise<HandlerAction | void>
     /**
      * Called before a directory is processed.
      *
      * @param directory The directory that is about to be processed.
      * @param connection The FTP connection to use for the operation.
      */
-    beforeDirectory(directory: FileTree<T>, connection: FTPConnection): MaybePromise<Status | void>
+    beforeDirectory(directory: FileTree<T>, connection: FTPConnection): MaybePromise<HandlerAction | void>
     /**
      * Called after a directory is processed.
      *
      * @param directory The directory that was processed.
      * @param connection The FTP connection to use for the operation.
      */
-    afterDirectory(directory: FileTree<T>, connection: FTPConnection): MaybePromise<Status | void>
+    afterDirectory(directory: FileTree<T>, connection: FTPConnection): MaybePromise<HandlerAction | void>
     /**
-     * Called when the task is completed or cancelled.
+     * Called when the task is done.
      * 
      * @param fileTree The entire file tree that was processed.
      * @param connection The FTP connection to use for the operation.
      */
-    final?(fileTree: FileTree<T>, connection: FTPConnection): MaybePromise<void>
+    done?(fileTree: FileTree<T>, connection: FTPConnection): MaybePromise<void>
+    /**
+     * Called when the task is cancelled.
+     * 
+     * @param fileTree The entire file tree that was processed.
+     * @param connection The FTP connection to use for the operation.
+     */
+    cancelled?(fileTree: FileTree<T>, connection: FTPConnection): MaybePromise<void>
 }
 
 type SubTask<T> = {
@@ -65,23 +78,43 @@ export type ProgressObject = {
     totalFileSize: number;
 }
 
+type TreeTaskOptions = {
+    processRootDirectory?: boolean;
+    title: (treeTask: TreeTask) => string;
+}
+
+export enum TaskStatus {
+    IN_PROGRESS = "IN_PROGRESS",
+    PAUSING = "PAUSING",
+    PAUSED = "PAUSED",
+    ERROR = "ERROR",
+    ALMOST_DONE = "ALMOST_DONE", // I could not think of a better name for this
+    DONE = "DONE",
+    CANCELLING = "CANCELLING",
+    CANCELLED = "CANCELLED"
+}
+
 export class TreeTask<T = unknown> extends EventEmitter {
     fileTree: FileTree<T>;
     handler: TreeTaskHandler<T>;
     title: string;
+    options: TreeTaskOptions;
     maxAttempts: number = 5;
-    status: Status = Status.PENDING;
-    paused: boolean = false;
+    status: TaskStatus = TaskStatus.IN_PROGRESS;
     activeTasks: (FileTree<T> | FileTreeFile<T>)[] = [];
     errorTasks: (FileTree<T> | FileTreeFile<T>)[] = [];
     count: CountObject;
     progress: ProgressObject;
 
-    constructor(fileTree: FileTree<T>, handler: TreeTaskHandler<T>) {
+    constructor(fileTree: FileTree<T>, options: TreeTaskOptions, handler: TreeTaskHandler<T>) {
         super();
         this.fileTree = fileTree;
         this.handler = handler;
         this.title = "";
+        this.options = {
+            processRootDirectory: true,
+            ...options
+        };
         this.count = {
             completedFiles: 0,
             completedDirectories: 0,
@@ -91,6 +124,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
             totalFileSize: 0
         };
         this.countRecursive(fileTree, this.count);
+        this.title = this.options.title(this);
         this.progress = {
             value: 0,
             max: 100,
@@ -103,26 +137,114 @@ export class TreeTask<T = unknown> extends EventEmitter {
         this.updateProgress();
     }
 
-    setStatus(status: Status) {
+    setStatus(status: TaskStatus) {
         this.status = status;
         this.emit("statusChange", status);
     }
 
+    get paused(): boolean {
+        return this.status === TaskStatus.PAUSED || this.status === TaskStatus.PAUSING;
+    }
+
     setPaused(paused: boolean) {
-        this.paused = paused;
-        this.emit("pausedChange", paused);
+        if (paused) {
+            // Don't allow pausing if we're already in a terminal or transitional state
+            if (this.status === TaskStatus.CANCELLING || this.status === TaskStatus.CANCELLED || 
+                this.status === TaskStatus.DONE || this.status === TaskStatus.PAUSING || 
+                this.status === TaskStatus.PAUSED) {
+                return;
+            }
+            
+            this.setStatus(TaskStatus.PAUSING);
+            this.checkPausingCompletion();
+        } else {
+            // Resume from paused state
+            if (this.status === TaskStatus.PAUSED) {
+                this.setStatus(TaskStatus.IN_PROGRESS);
+            }
+        }
     }
 
     cancel() {
-        this.paused = true;
-        this.emit("pausedChange", true);
-        this.setStatus(Status.CANCELLED);
-        this.emit("cancelled");
+        // Don't allow cancelling if already cancelled or done
+        if (this.status === TaskStatus.CANCELLED || this.status === TaskStatus.DONE) {
+            return;
+        }
+        
+        this.setStatus(TaskStatus.CANCELLING);
+        
+        // Check if we can proceed with cancellation immediately
+        this.checkCancellationCompletion();
+    }
+
+    private checkCancellationCompletion() {
+        if (this.status !== TaskStatus.CANCELLING) {
+            return;
+        }
+        
+        // Wait for all active tasks to finish before proceeding with cancellation
+        if (this.activeTasks.length === 0) {
+            this.callFinalHandler('cancelled').then(() => {
+                this.setStatus(TaskStatus.CANCELLED);
+                this.emit("cancelled");
+            }).catch(unexpectedErrorHandler("Failed to cancel task"));
+        }
+        // If there are still active tasks, this method will be called again
+        // when tasks complete via removeActiveTask
+    }
+
+    private checkPausingCompletion() {
+        if (this.status !== TaskStatus.PAUSING) {
+            return;
+        }
+        
+        // Wait for all active tasks to finish before proceeding with pausing
+        if (this.activeTasks.length === 0) {
+            this.setStatus(TaskStatus.PAUSED);
+        }
+        // If there are still active tasks, this method will be called again
+        // when tasks complete via removeActiveTask
+    }
+
+    private async callFinalHandler(handlerType: 'done' | 'cancelled') {
+        const handler = this.handler[handlerType];
+        if (!handler) {
+            return;
+        }
+
+        const session = getApp().state.session;
+
+        let attempt = 1;
+        while (attempt <= this.maxAttempts) {
+            let success = false;
+            await session.addToPoolQueue(Priority.LARGE_TASK, async (connection) => {
+                try {
+                    await handler(this.fileTree, connection);
+                    success = true;
+                } catch (error) {
+                    console.error(`Error in final handler '${handlerType}' (attempt ${attempt}):`, error);
+                    attempt++;
+                    // Close the connection since it might be to blame
+                    connection.close();
+                    await sleep(1000);
+                }
+            });
+            if (success) {
+                return; // Successfully called the handler
+            }
+        }
+        // If we reach here, all attempts failed.
+        // For now, just log the error and move on.
+        console.error(`Failed to call final handler '${handlerType}' after ${this.maxAttempts} attempts.`);
     }
 
     private removeActiveTask(task: FileTree<T> | FileTreeFile<T>) {
         this.activeTasks = this.activeTasks.filter(activeTask => activeTask !== task);
         this.emit("activeTasksChange", this.activeTasks);
+        
+        // Check if cancellation or pausing can now be completed
+        this.checkCancellationCompletion();
+        this.checkPausingCompletion();
     }
 
     updateProgress() {
@@ -134,7 +256,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
         this.progress.totalFileSize = this.count.totalFileSize;
         if (this.count.totalFiles === 1 && this.count.totalDirectories === 0) {
             // Use the file progress as the entire task progress.
-            const entry = this.fileTree.entries[0];
+            const entry = this.fileTree.getEntries()[0];
             if (entry instanceof FileTreeFile && entry.currentProgress) {
                 this.progress.value = entry.currentProgress.value;
                 this.progress.max = entry.currentProgress.max;
@@ -155,11 +277,11 @@ export class TreeTask<T = unknown> extends EventEmitter {
     }
 
     findErrorTasks(fileTree: FileTree<T>, acc: (FileTree<T> | FileTreeFile<T>)[]) {
-        if (fileTree.beforeStatus === Status.ERROR || fileTree.afterStatus === Status.ERROR) {
+        if (fileTree.getBeforeStatus() === Status.ERROR || fileTree.getAfterStatus() === Status.ERROR) {
             acc.push(fileTree);
         }
-        for (const entry of fileTree.entries) {
-            if (entry instanceof FileTreeFile && entry.status === Status.ERROR) {
+        for (const entry of fileTree.getEntries()) {
+            if (entry instanceof FileTreeFile && entry.getStatus() === Status.ERROR) {
                 acc.push(entry);
             } else if (entry instanceof FileTree) {
                 this.findErrorTasks(entry, acc);
@@ -180,21 +302,28 @@ export class TreeTask<T = unknown> extends EventEmitter {
         });
         if (anyError) {
             // Error that requires user action.
-            this.setStatus(Status.ERROR);
+            this.setStatus(TaskStatus.ERROR);
         }
-        if (!anyError && !allDone && this.status === Status.ERROR) {
+        if (!anyError && !allDone && this.status === TaskStatus.ERROR) {
             // If we were in error state, but now all errors are resolved, we can continue.
-            this.setStatus(Status.IN_PROGRESS);
+            this.setStatus(TaskStatus.IN_PROGRESS);
         }
         if (allDone) {
-            this.setStatus(Status.DONE);
-            this.emit("done");
+            this.setStatus(TaskStatus.ALMOST_DONE);
+            this.callFinalHandler('done').then(() => {
+                this.setStatus(TaskStatus.DONE);
+                this.emit("done");
+            }).catch(unexpectedErrorHandler("Failed to complete task"));
         }
     }
 
     addNextSubTask(session: FTPSession) {
-        if (this.status === Status.CANCELLED || this.paused) {
-            // If the task is cancelled or paused, do not add any more sub-tasks.
+        if (this.status !== TaskStatus.IN_PROGRESS) {
+            // Only add new sub-tasks when in progress
+            return;
+        }
+        if (this.activeTasks.length >= session.getConnectionPool().getTargetConnectionCount()) {
+            // Do not push more tasks than the connection pool can handle.
             return;
         }
         const subTask = this.walkFileTree(this.fileTree);
@@ -210,10 +339,16 @@ export class TreeTask<T = unknown> extends EventEmitter {
             this.emit("activeTasksChange", this.activeTasks);
             session.addToPoolQueue(Priority.LARGE_TASK, async (connection) => {
                 try {
-                    const status = await this.handler.file(subTask.node, connection);
-                    subTask.node.setStatus(status || Status.DONE);
+                    const action = await this.handler.file(subTask.node, connection);
+                    if (action && action.type === "pause_to_resume") {
+                        subTask.node.setStatus(Status.PENDING);
+                    } else if (action && action.type === "error") {
+                        subTask.node.setStatus(Status.ERROR);
+                    } else {
+                        subTask.node.setStatus(Status.DONE);
+                    }
                     this.removeActiveTask(subTask.node);
-                    if (subTask.node.status === Status.DONE) {
+                    if (subTask.node.getStatus() === Status.DONE) {
                         this.count.completedFiles++;
                         this.count.completedFileSize += subTask.node.fileSize() || 0;
                     }
@@ -224,18 +359,24 @@ export class TreeTask<T = unknown> extends EventEmitter {
                     connection.close();
                     console.error("Error processing file " + subTask.node.name + ": ", error);
                     subTask.node.setError(error);
-                    subTask.node.incrementAttempt();
-                    subTask.node.setStatus(subTask.node.attempt > this.maxAttempts ? Status.ERROR : Status.PENDING);
+                    subTask.node.retry();
                     this.removeActiveTask(subTask.node);
                 }
             }).catch(unexpectedErrorHandler("TreeTask.addNextSubTask.file")); // Should never happen.
         } else if (subTask.type === "beforeDirectory") {
             subTask.node.setBeforeStatus(Status.IN_PROGRESS);
-            this.emit("subTaskStart", subTask.node);
+            this.activeTasks.push(subTask.node);
+            this.emit("activeTasksChange", this.activeTasks);
             session.addToPoolQueue(Priority.LARGE_TASK, async (connection) => {
                 try {
-                    const status = await this.handler.beforeDirectory(subTask.node, connection);
-                    subTask.node.setBeforeStatus(status || Status.DONE);
+                    const action = await this.handler.beforeDirectory(subTask.node, connection);
+                    if (action && action.type === "pause_to_resume") {
+                        subTask.node.setBeforeStatus(Status.PENDING);
+                    } else if (action && action.type === "error") {
+                        subTask.node.setBeforeStatus(Status.ERROR);
+                    } else {
+                        subTask.node.setBeforeStatus(Status.DONE);
+                    }
                     this.removeActiveTask(subTask.node);
                 } catch (error) {
                     // Close the connection because maybe it was to blame.
@@ -243,44 +384,51 @@ export class TreeTask<T = unknown> extends EventEmitter {
                     connection.close();
                     console.error("Error processing before directory " + subTask.node.path + ": ", error);
                     subTask.node.setError(error);
-                    subTask.node.incrementAttempt();
-                    subTask.node.setBeforeStatus(subTask.node.attempt > this.maxAttempts ? Status.ERROR : Status.PENDING);
+                    subTask.node.retry();
                     this.removeActiveTask(subTask.node);
                 }
             }).catch(unexpectedErrorHandler("TreeTask.addNextSubTask.beforeDirectory"));
         } else if (subTask.type === "afterDirectory") {
             subTask.node.setAfterStatus(Status.IN_PROGRESS);
-            this.emit("subTaskStart", subTask.node);
+            this.activeTasks.push(subTask.node);
+            this.emit("activeTasksChange", this.activeTasks);
             session.addToPoolQueue(Priority.LARGE_TASK, async (connection) => {
                 try {
-                    const status = await this.handler.afterDirectory(subTask.node, connection);
-                    // The handler may have marked files or sub directories as not done (try again).
-                    // Check if all are done, and if so, mark the directory as done.
-                    // Otherwise back to pending.
-                    let allDone = true;
-                    for (const entry of subTask.node.entries) {
-                        if (entry instanceof FileTreeFile && entry.status !== Status.DONE && entry.status !== Status.CANCELLED) {
-                            allDone = false;
-                        } else if (entry instanceof FileTree && 
-                            (entry.beforeStatus !== Status.DONE && entry.beforeStatus !== Status.CANCELLED ||
-                             entry.afterStatus !== Status.DONE && entry.afterStatus !== Status.CANCELLED)) {
-                            allDone = false;
+                    const action = await this.handler.afterDirectory(subTask.node, connection);
+                    if (action && action.type === "pause_to_resume") {
+                        subTask.node.setAfterStatus(Status.PENDING);
+                    } else if (action && action.type === "error") {
+                        subTask.node.setAfterStatus(Status.ERROR);
+                    } else {
+                        // The handler may have marked files or sub directories as not done (try again).
+                        // Check if all are done, and if so, mark the directory as done.
+                        // Otherwise back to pending.
+                        let allDone = true;
+                        for (const entry of subTask.node.getEntries()) {
+                            if (entry instanceof FileTreeFile && entry.getStatus() !== Status.DONE && entry.getStatus() !== Status.CANCELLED) {
+                                allDone = false;
+                            } else if (entry instanceof FileTree &&
+                                (entry.getBeforeStatus() !== Status.DONE && entry.getBeforeStatus() !== Status.CANCELLED ||
+                                    entry.getAfterStatus() !== Status.DONE && entry.getAfterStatus() !== Status.CANCELLED)) {
+                                allDone = false;
+                            }
+                        }
+                        if (allDone) {
+                            subTask.node.setAfterStatus(Status.DONE);
+                            this.count.completedDirectories++;
+                            this.updateProgress();
+                        } else {
+                            subTask.node.retry();
                         }
                     }
-                    subTask.node.setAfterStatus(status || (allDone ? Status.DONE : Status.PENDING));
                     this.removeActiveTask(subTask.node);
-                    if (allDone) {
-                        this.count.completedDirectories++;
-                        this.updateProgress();
-                    }
                 } catch (error) {
                     // Close the connection because maybe it was to blame.
                     // A new connection will be used for the next task.
                     connection.close();
                     console.error("Error processing after directory " + subTask.node.path + ": ", error);
                     subTask.node.setError(error);
-                    subTask.node.incrementAttempt();
-                    subTask.node.setAfterStatus(subTask.node.attempt > this.maxAttempts ? Status.ERROR : Status.PENDING);
+                    subTask.node.retry();
                     this.removeActiveTask(subTask.node);
                 }
             }).catch(unexpectedErrorHandler("TreeTask.addNextSubTask.afterDirectory"));
@@ -288,31 +436,39 @@ export class TreeTask<T = unknown> extends EventEmitter {
     }
 
     private walkFileTree(fileTree: FileTree<T>): SubTask<T> | null {
-        if (fileTree.attempt > this.maxAttempts) {
-            return null;
-        }
         // // If previous attempt was within 5 seconds, skip this task for now.
         // if (fileTree.attempt > 1 && fileTree.lastAttempt && Date.now() - fileTree.lastAttempt.getTime() < 5000) {
         //     return null;
         // }
-        if (fileTree.beforeStatus === Status.PENDING) {
+        
+        const isRootDirectory = fileTree === this.fileTree;
+        const shouldProcessDirectory = !isRootDirectory || this.options.processRootDirectory;
+        
+        if (shouldProcessDirectory && fileTree.getBeforeStatus() === Status.PENDING) {
             return {
                 type: "beforeDirectory",
                 node: fileTree
             };
         }
         // This file tree cannot be processed yet.
-        if (fileTree.beforeStatus !== Status.DONE) {
+        if (shouldProcessDirectory && fileTree.getBeforeStatus() !== Status.DONE) {
             return null;
+        }
+        // If we're skipping the root directory, mark it as done so we can proceed to its children
+        if (isRootDirectory && !this.options.processRootDirectory) {
+            if (fileTree.getBeforeStatus() === Status.PENDING) {
+                fileTree.setBeforeStatus(Status.DONE);
+            }
         }
         // Find nested file trees and files.
         let allDone = true;
         // Start at the suggested index as an optimization to avoid reprocessing already checked entries.
         // However, we must always loop trough all entries to ensure we do not miss any.
         const startIndex = fileTree.suggestedNextIndex ?? 0;
-        for (let i = 0; i < fileTree.entries.length; i++) {
-            const index = (startIndex + i) % fileTree.entries.length;
-            const entry = fileTree.entries[index];
+        const entries = fileTree.getEntries();
+        for (let i = 0; i < entries.length; i++) {
+            const index = (startIndex + i) % entries.length;
+            const entry = entries[index];
             // // If previous attempt was within 5 seconds, skip this task for now.
             // if (fileTree.attempt > 1 && fileTree.lastAttempt && Date.now() - fileTree.lastAttempt.getTime() < 5000) {
             //     return null;
@@ -324,40 +480,44 @@ export class TreeTask<T = unknown> extends EventEmitter {
                     return subTask;
                 }
                 if (
-                    (entry.beforeStatus !== Status.DONE && entry.beforeStatus !== Status.CANCELLED) ||
-                    (entry.afterStatus !== Status.DONE && entry.afterStatus !== Status.CANCELLED)
+                    (entry.getBeforeStatus() !== Status.DONE && entry.getBeforeStatus() !== Status.CANCELLED) ||
+                    (entry.getAfterStatus() !== Status.DONE && entry.getAfterStatus() !== Status.CANCELLED)
                 ) {
                     allDone = false;
                 }
             } else if (entry instanceof FileTreeFile) {
-                if (entry.status === Status.PENDING && entry.attempt <= this.maxAttempts) {
+                if (entry.getStatus() === Status.PENDING) {
                     fileTree.suggestedNextIndex = index + 1;
                     return {
                         type: "file",
                         node: entry
                     }
                 }
-                if (entry.status !== Status.DONE && entry.status !== Status.CANCELLED) {
+                if (entry.getStatus() !== Status.DONE && entry.getStatus() !== Status.CANCELLED) {
                     allDone = false;
                 }
             }
         }
         // If all entries are done, we perform the after directory operation if it is pending.
-        if (allDone && fileTree.afterStatus === Status.PENDING) {
+        if (allDone && shouldProcessDirectory && fileTree.getAfterStatus() === Status.PENDING) {
             return {
                 type: "afterDirectory",
                 node: fileTree
             };
         }
+        // If we're skipping the root directory, mark afterStatus as done when all children are done
+        if (allDone && isRootDirectory && !this.options.processRootDirectory && fileTree.getAfterStatus() === Status.PENDING) {
+            fileTree.setAfterStatus(Status.DONE);
+        }
     }
 
     private countRecursive(fileTree: FileTree<T>, count: CountObject) {
-        for (const entry of fileTree.entries) {
+        for (const entry of fileTree.getEntries()) {
             if (entry instanceof FileTreeFile) {
                 count.totalFiles++;
                 const fileSize = entry.fileSize() || 0;
                 count.totalFileSize += fileSize;
-                if (entry.status === Status.DONE) {
+                if (entry.getStatus() === Status.DONE) {
                     count.completedFiles++;
                     count.completedFileSize += fileSize;
                 }
@@ -372,11 +532,11 @@ export class TreeTask<T = unknown> extends EventEmitter {
     }
 
     private allStatusesRecursive(fileTree: FileTree<T>, callback: (status: Status) => void) {
-        callback(fileTree.beforeStatus);
-        callback(fileTree.afterStatus);
-        for (const entry of fileTree.entries) {
+        callback(fileTree.getBeforeStatus());
+        callback(fileTree.getAfterStatus());
+        for (const entry of fileTree.getEntries()) {
             if (entry instanceof FileTreeFile) {
-                callback(entry.status);
+                callback(entry.getStatus());
             } else if (entry instanceof FileTree) {
                 this.allStatusesRecursive(entry, callback);
             }

@@ -331,6 +331,10 @@ export default class WebsocketFTPConnection implements FTPConnection {
         });
     }
 
+    async stopChunkedUpload(uploadId: string): Promise<void> {
+        await this.send(Packets.ChunkedUploadStop, { uploadId });
+    }
+
     async mkdir(path: string): Promise<void> {
         ensureAbsolute(path);
         await this.send(Packets.Mkdir, { path });
