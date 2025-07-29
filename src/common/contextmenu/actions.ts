@@ -30,9 +30,15 @@ export function rename(entry: FolderEntry) {
         const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
         console.log("Renaming", entry.path, "to", newPath);
         getApp().state.session.rename(Priority.QUICK, entry.path, newPath)
-            .catch(unexpectedErrorHandler("Failed to rename"))
+            .catch(err => {
+                if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
+                    Dialog.message("Rename failed", "A file or folder with the new name already exists.");
+                } else {
+                    unexpectedErrorHandler("Failed to rename")(err);
+                }
+            })
             .finally(() => {
-                getApp().refresh();
+            getApp().refresh();
             });
     });
 }
