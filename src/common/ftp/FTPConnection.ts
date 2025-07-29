@@ -17,7 +17,7 @@ export default interface FTPConnection {
     cd(path: string): Promise<void>;
     /** @deprecated */
     cdup(): Promise<void>;
-    download(folderEntry: FolderEntry): Promise<Blob>;
+    download(folderEntry: FolderEntry, progress?: (value: number, max: number) => void): Promise<Blob>;
     uploadSmall(blob: Blob, path: string): Promise<void>;
     startChunkedUpload(path: string, size: number, startOffset: number | null): Promise<string>;
     uploadChunk(uploadId: string, chunk: Blob, start: number, end: number): Promise<ChunkedUploadResponse>;

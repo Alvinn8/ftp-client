@@ -49,7 +49,7 @@ export async function pingBackend() {
     throw err;
 }
 
-function progressTracker(type: "download" | "upload", path: string) {
+function progressTracker(type: "download" | "upload", path: string, progress?: (value: number, max: number) => void) {
     return (event: ProgressEvent) => {
         const op: LargeFileOperationInterface = {
             type,
@@ -62,8 +62,13 @@ function progressTracker(type: "download" | "upload", path: string) {
             op.hasProgress = true;
             op.loaded = event.loaded;
             op.total = event.total;
+            if (progress) {
+                progress(event.loaded, event.total);
+            }
         }
-        largeFileOperationStore.setValue(op);
+        if (!progress) {
+            largeFileOperationStore.setValue(op);
+        }
     };
 }
 
@@ -256,7 +261,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
         }, 5000);
     }
 
-    async download(folderEntry: FolderEntry): Promise<Blob> {
+    async download(folderEntry: FolderEntry, progress?: (value: number, max: number) => void): Promise<Blob> {
         ensureAbsolute(folderEntry.path);
 
         const response = await this.send(Packets.Download, {
@@ -268,7 +273,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
             return await new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.responseType = "blob";
-                xhr.addEventListener("progress", progressTracker("download", folderEntry.path));
+                xhr.addEventListener("progress", progressTracker("download", folderEntry.path, progress));
                 xhr.addEventListener("readystatechange", event => {
                     if (xhr.readyState === XMLHttpRequest.DONE) {
                         if (xhr.status === 200 && xhr.response instanceof Blob) {

@@ -17,6 +17,7 @@ export default class TestFTPConnection implements FTPConnection {
     uploadSmall = vi.fn();
     startChunkedUpload = vi.fn().mockResolvedValue("test-upload");
     uploadChunk = vi.fn();
+    stopChunkedUpload = vi.fn();
     close = vi.fn();
     websocket = {
         readyState: WebSocket.OPEN

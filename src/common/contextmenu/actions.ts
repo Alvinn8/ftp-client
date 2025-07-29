@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import Dialog from "../Dialog";
 import download from "../download";
 import FolderContentProviders from "../folder/FolderContentProviders";
-import FolderEntry from "../folder/FolderEntry";
+import FolderEntry, { FolderEntryType } from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
 import Priority from "../ftp/Priority";
 import Task from "../task/Task";
@@ -315,6 +315,32 @@ export async function downloadAsZip(entries: FolderEntry[]) {
         return;
     }
     countTask.complete();
+
+    if (useTreeTasks) {
+        const fileTree = await entriesToFileTree(entries);
+        const zip = new JSZip();
+        const rootPath = getDirectoryPath(entries).get();
+        const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
+        TaskManager.addTreeTask(new TreeTask(fileTree, {
+            title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
+        }, {
+            beforeDirectory: (directory, connection) => {
+                zip.folder(directory.path);
+            },
+            afterDirectory: (directory, connection) => {},
+            file: async (file, connection) => {
+                const path = joinPath(file.parent.path, file.name);
+                const blob = await connection.download(new FolderEntry(path, file.name, file.size, FolderEntryType.File, ""), file.progress.bind(file));
+                zip.file(path, blob);
+            },
+            done: async (fileTree, connection) => {
+                const rootFolder = zip.folder(rootPath) || zip;
+                const blob = await rootFolder.generateAsync({ type: "blob" });
+                download(blob, fileName);
+            }
+        }));
+        return;
+    }
 
     // Download
     if (!TaskManager.requestNewTask()) return;
