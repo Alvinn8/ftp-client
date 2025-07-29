@@ -3,6 +3,7 @@ import Dialog from "./Dialog";
 export function unexpectedErrorHandler(title: string) {
     return (err: unknown) => {
         Dialog.message(title, "An unexpected error occured: " + formatError(err));
+        reportError(err, title);
     }
 }
 
@@ -15,6 +16,10 @@ export function formatError(error: unknown) {
         str = "Error: " + str;
     }
     return str;
+}
+
+export function reportError(error: unknown, message?: string) {
+    console.error("Reported error: " + message, error);
 }
 
 export class ConnectionClosedError extends Error {

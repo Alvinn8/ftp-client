@@ -1,5 +1,6 @@
 import { EventEmitter } from "eventemitter3";
 import { HandlerAction, TaskStatus, TreeTask } from "./treeTask";
+import { formatError, reportError } from "../error";
 
 export enum Status {
     PENDING = "PENDING",
@@ -9,6 +10,8 @@ export enum Status {
     ERROR = "ERROR",
     CANCELLED = "CANCELLED"
 }
+
+const ERRORS_TO_NOT_REPORT = ["NotReadableError", "NotFoundError", "ConnectionClosedError"];
 
 export class FileTree<T = unknown> extends EventEmitter {
     readonly path: string;
@@ -87,7 +90,12 @@ export class FileTree<T = unknown> extends EventEmitter {
             this.setAttempt(this.attempt + 1);
         }
         const newStatus = this.attempt > this.task?.maxAttempts ? Status.ERROR : Status.PENDING;
-        if (newStatus !== Status.ERROR) {
+        if (newStatus === Status.ERROR) {
+            const formattedError = formatError(this.error);
+            if (!ERRORS_TO_NOT_REPORT.some(text => formattedError.includes(text))) {
+                reportError(this.error, "Error after " + this.attempt + " attempts for file tree");
+            }
+        } else {
             this.setError(null);
         }
         if (this.beforeStatus === Status.DONE) {
@@ -170,7 +178,15 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
         } else {
             this.setAttempt(this.attempt + 1);
         }
-        this.setStatus(this.attempt > this.task?.maxAttempts ? Status.ERROR : Status.PENDING);
+        if (this.attempt > this.task?.maxAttempts) {
+            this.setStatus(Status.ERROR);
+            const formattedError = formatError(this.error);
+            if (!ERRORS_TO_NOT_REPORT.some(text => formattedError.includes(text))) {
+                reportError(this.error, "Error after " + this.attempt + " attempts for file tree file");
+            }
+        } else {
+            this.setStatus(Status.PENDING);
+        }
         if (this.status !== Status.ERROR) {
             this.setError(null);
         }

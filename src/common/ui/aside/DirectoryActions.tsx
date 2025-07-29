@@ -18,8 +18,8 @@ interface DirectoryActionsProps {
 const DirectoryActions: React.FC<DirectoryActionsProps> = (props) => {
     function mkdir() {
         Dialog.prompt("Create New Folder", "Enter the name of the new folder", "OK", "", name => {
-            if (name.startsWith("/")) {
-                Dialog.message("Invalid folder name", "The name of a folder cannot start with a slash.");
+            if (name.includes("/")) {
+                Dialog.message("Invalid folder name", "The name of a folder cannot contain slashes.");
                 return;
             }
             console.log("Creating folder with name " + name);
@@ -43,6 +43,10 @@ const DirectoryActions: React.FC<DirectoryActionsProps> = (props) => {
                 const entries = await FolderContentProviders.FTP.getFolderEntries(Priority.QUICK, props.workdir);
                 if (entries.find(entry => entry.name == name)) {
                     Dialog.message("File already exists", "A file with this name already exists in this folder.");
+                    return;
+                }
+                if (name.includes("/")) {
+                    Dialog.message("Invalid file name", "The name of a file cannot contain slashes.");
                     return;
                 }
                 await getApp().state.session.uploadSmall(Priority.QUICK, new Blob([""]), joinPath(props.workdir, name));
