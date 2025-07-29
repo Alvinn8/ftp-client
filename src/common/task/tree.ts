@@ -241,4 +241,18 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
             type: "pause_to_resume"
         }
     }
+
+    /**
+     * A handler action used when the sub task cannot continue until the user
+     * has chosen to retry or skip the sub task.
+     * 
+     * @param message The message to display to the user.
+     * @returns The action to return from the handler function.
+     */
+    errorWithUserAction(message: string): HandlerAction {
+        this.setError(new Error(message));
+        return {
+            type: "error"
+        };
+    }
 }
