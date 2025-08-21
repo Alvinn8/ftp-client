@@ -9,7 +9,7 @@ const OpenEditors = () => {
         setEditorWindows(editorWindows.map(editorWindow => editorWindow.window));
     });
 
-    const openWindows = editorWindows.filter(wind => !wind.closed);
+    const openWindows = [...editorWindows].filter(wind => !wind.closed);
 
     if (openWindows.length === 0) {
         return null;
