@@ -9,6 +9,7 @@ import { ConnectionPool } from "./ConnectionPool";
 import { EventEmitter } from "eventemitter3";
 import { unexpectedErrorHandler } from "../error";
 import taskManager, { TaskManager } from "../task/TaskManager";
+import { State } from "../ui/App";
 
 /**
  * An FTP session that holds some information about the current session.
@@ -20,6 +21,7 @@ import taskManager, { TaskManager } from "../task/TaskManager";
  */
 export default class FTPSession extends EventEmitter {
     public readonly profile: FTPProfile;
+    /** @deprecated */
     private connection: FTPConnection;
     public cache: {[key: string]: FolderEntry[]} = {};
     private queue: FTPRequest<any>[] = [];
@@ -40,6 +42,28 @@ export default class FTPSession extends EventEmitter {
         // this.taskManager = new TaskManager();
         this.taskManager = taskManager;
         this.taskManager.setSession(this);
+    }
+
+    async connect(
+        onProgress: (state: State) => void,
+    ) {
+        const connection = new WebsocketFTPConnection();
+        this.connection = connection;
+
+        onProgress(State.CONNECTING_TO_SERVER);
+        const success = await connection.connectToWebsocket().then(() => true).catch((err) => {
+            onProgress(State.FAILED_TO_CONNECT_TO_SERVER);
+            return false;
+        });
+        if (!success) return;
+        
+        onProgress(State.CONNECTING_TO_FTP);
+        const { host, port, username, password, secure } = this.profile;
+        await connection.connect(host, port, username, password, secure).catch(err => {
+            onProgress(State.FAILED_TO_CONNECT_TO_FTP);
+            throw err;
+        });
+        onProgress(State.CONNECTED);
     }
 
     clearCache() {

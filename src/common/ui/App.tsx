@@ -220,12 +220,31 @@ export class App extends React.Component<AppProps, AppState> {
         const folderExplorer = <FolderExplorer onChangeDirectory={this.cd} />;
         const actions = <Actions selection={this.state.selection} onChangeDirectory={this.cd} />;
 
+        let failAction = null;
+        if (this.state.state === State.FAILED_TO_CONNECT_TO_FTP) {
+            if (this.state.connectionError.includes("SSL error") && this.state.session?.profile.secure) {
+                failAction = {
+                    label: "Continue without encryption",
+                    onClick: () => {
+                        const newProfile = this.state.session.profile.unsecureCopy();
+                        const newSession = newProfile.startSession();
+                        this.setState({ session: newSession, state: State.LOGIN });
+                        newSession.connect((state: State) => {
+                            this.setState({ state });
+                        }).catch(err => {
+                            this.setState({ connectionError: err.message });
+                        });
+                    }
+                };
+            }
+        }
+
         return (
             <div>
                 {this.state.state == State.LOGIN && (
                     <ConnectForm
                         onProgress={stage => this.setState({ state: stage })}
-                        onConnect={session => this.setState({ session, state: State.CONNECTED })}
+                        onNewSession={session => this.setState({ session })}
                         onConnectError={msg => this.setState({ connectionError: msg })}
                         onError={e => this.setState({ state: State.LOGIN })}
                     />
@@ -233,7 +252,7 @@ export class App extends React.Component<AppProps, AppState> {
                 {this.state.state == State.CONNECTING_TO_SERVER && <ConnectingScreen title="Connecting to ftp-client" body="Connecting to ftp-client..." />}
                 {this.state.state == State.FAILED_TO_CONNECT_TO_SERVER && <ErrorScreen title="Failed to connect to ftp-client" body="Please try again." />}
                 {this.state.state == State.CONNECTING_TO_FTP && <ConnectingScreen title="Connecting" body="Connecting to your files..." />}
-                {this.state.state == State.FAILED_TO_CONNECT_TO_FTP && <ErrorScreen title="Failed to connect" body={this.state.connectionError} />}
+                {this.state.state == State.FAILED_TO_CONNECT_TO_FTP && <ErrorScreen title="Failed to connect" body={this.state.connectionError} action={failAction} />}
                 {this.state.state == State.CONNECTED &&
                     <div id="grid">
                         <header>

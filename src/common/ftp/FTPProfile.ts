@@ -26,4 +26,13 @@ export default class FTPProfile {
     startSession(): FTPSession {
         return new FTPSession(this);
     }
+
+    /**
+     * Create a copy of this profile with the same credentials but without encryption.
+     * 
+     * @returns A new FTPProfile.
+     */
+    unsecureCopy(): FTPProfile {
+        return new FTPProfile(this.host, this.port, this.username, this.password, false);
+    }
 }
