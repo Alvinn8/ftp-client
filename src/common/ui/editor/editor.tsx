@@ -9,6 +9,7 @@ import { getApp } from "../App";
 import { addMessage } from "../messages";
 import { EventEmitter } from "eventemitter3";
 import { formatError } from "../../error";
+import { sha256 } from "../../utils";
 
 interface EditorWindow {
     window: Window;
@@ -196,14 +197,40 @@ export async function openTextEditor(folderEntry: FolderEntry) {
     });
     const absolutePath = folderEntry.path;
     const title = "Editing " + folderEntry.name + (fileInfo.isGZipped ? " (gzipped)" : "");
+    let beforeHash = await sha256(fileInfo.blob);
 
     wind["save"] = async (text: string) => {
+        const newFileInfo = await getFile(folderEntry);
+        const afterHash = await sha256(newFileInfo.blob);
         const blob = new Blob([text]);
+        const contentHash = await sha256(blob);
+        if (beforeHash !== afterHash && afterHash !== contentHash) {
+            try {
+                window.focus();
+            } catch {}
+            const shouldContinue = await Dialog.confirm(
+                "File has changed",
+                "The file has changed since you opened it. Do you want to discard your changes or overwrite the server content?",
+                "Discard changes",
+                "Overwrite changes on server"
+            );
+            if (!shouldContinue) {
+                try {
+                    wind.close();
+                } catch {}
+                return;
+            }
+            try {
+                wind.focus();
+            } catch {}
+        }
         await getApp().state.session.uploadSmall(Priority.QUICK, blob, absolutePath);
         // TODO what if the file is large?
         wind.postMessage({
             action: "save-callback"
         });
+        // If the file is saved again, we need to use the hash of the new content.
+        beforeHash = contentHash;
     };
 
     wind["textEditorData"] = {
