@@ -89,7 +89,7 @@ export const FileTreeComponent: React.FC<FileTreeProps> = ({ fileTree, deep }) =
     }
 
     return (
-        <div className="px-2 py-1">
+        <div className="ps-2 py-1">
             <div className="d-flex align-items-center gap-2" onClick={() => setUserOpened(!open)}>
                 {deep && (
                     <Button
@@ -168,7 +168,7 @@ export const FileTreeFileComponent: React.FC<FileTreeFileProps> = ({ fileTreeFil
     const fileSize = fileTreeFile.fileSize();
 
     return (
-        <div className="px-2 py-1" style={{ marginLeft: indent ? "36px" : "0px" }}>
+        <div className="py-1" style={{ marginLeft: indent ? "36px" : "0px" }}>
             <div className="d-flex align-items-center gap-2">
                 {statusIcon(status)}
                 <i className={`bi bi-${getIconFor(fileTreeFile.name)}`} />
