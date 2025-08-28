@@ -65,7 +65,7 @@ function parseLogs(text: string): Line[] {
         const firstErrorIdx = errorIndices.length > 0 ? Math.min(...errorIndices) : -1;
         const warnIdx = currentLower.indexOf("warn");
 
-        if (/(^|\s)at ([ a-zA-Z0-9\.<>_\-$/@^#\\]+)\(.+\)/.exec(currentLower)) {
+        if (/(^|\s)at ([ a-zA-Z0-9\.<>_\-$/@^#\\+]+)\(.+\)/.exec(currentLower)) {
             line.level = "error-stacktrace";
         } else if (warnIdx !== -1 && (firstErrorIdx === -1 || warnIdx < firstErrorIdx)) {
             line.level = "warning";
