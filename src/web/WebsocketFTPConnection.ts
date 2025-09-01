@@ -223,19 +223,6 @@ export default class WebsocketFTPConnection implements FTPConnection {
             });
     }
 
-    async pwd(): Promise<string> {
-        const reply = await this.send(Packets.PWD, {});
-        return reply.workdir;
-    }
-
-    async cd(path: string): Promise<void> {
-        await this.send(Packets.CD, { path });
-    }
-
-    async cdup(): Promise<void> {
-        await this.send(Packets.CDUP, {});
-    }
-
     private keepAlive(xhr: XMLHttpRequest) {
         // It is very important that the connection to the FTP server isn't closed
         // while we are downloading large files over HTTP. Since the websocket

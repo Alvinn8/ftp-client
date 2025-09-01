@@ -36,10 +36,6 @@ export interface ListReply {
     files: FileInfo[]
 }
 
-export interface PWDReply {
-    workdir: string;
-}
-
 export interface PathData {
     path: string;
 }
@@ -129,16 +125,11 @@ export namespace Packets {
     export const Ping = new Packet<{}, PingReply>();
     export const Connect = new Packet<ConnectData, void>();
     export const List = new Packet<ListData, ListReply>();
-    export const PWD = new Packet<{}, PWDReply>();
-    export const CD = new Packet<CdData, void>();
-    export const CDUP = new Packet<{}, void>();
     export const Download = new Packet<DownloadData, DownloadReply>();
     export const Upload = new Packet<UploadData, void>();
     export const Mkdir = new Packet<PathData, void>();
     export const Rename = new Packet<RenameData, void>();
     export const Delete = new Packet<PathData, void>();
-    /** @deprecated Use chunked uploads */
-    export const LargeUpload = new Packet<PathData, LargeUploadResponse>();
     export const ChunkedUploadStart = new Packet<ChunkedUploadStartData, ChunkedUploadStartResponse>();
     export const ChunkedUpload = new Packet<ChunkedUploadData, ChunkedUploadResponse>();
     export const ChunkedUploadStop = new Packet<ChunkedUploadStopData, void>();

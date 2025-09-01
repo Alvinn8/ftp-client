@@ -20,12 +20,6 @@ interface LargeDownload {
     connection: Connection;
 }
 
-interface LargeUpload {
-    id: string;
-    path: string;
-    connection: Connection;
-}
-
 interface ChunkedUpload {
     id: string;
     path: string;
@@ -40,7 +34,6 @@ interface ChunkedUpload {
 }
 
 const largeDownloads: LargeDownload[] = [];
-const largeUploads: LargeUpload[] = [];
 const chunkedUploads: ChunkedUpload[] = [];
 
 if (false) {
@@ -139,34 +132,6 @@ const httpServer = createServer(function (req, res) {
         res.writeHead(200, headers);
         res.write("Server is up. Version is " + VERSION);
         res.end();
-    } else if (req.method === "POST") {
-        if (req.url && req.url.startsWith("/upload/")) {
-            const uploadId = req.url.substring("/upload/".length);
-            const largeUpload = largeUploads.find(o => o.id === uploadId);
-            if (largeUpload) {
-                largeUploads.splice(largeUploads.indexOf(largeUpload), 1);
-                (async () => {
-                    await largeUpload.connection.ftp.uploadFrom(req, largeUpload.path);
-                    res.writeHead(200, headers);
-                    res.write(JSON.stringify({}));
-                    res.end();
-                })().catch(err => {
-                    if (!res.headersSent) {
-                        res.writeHead(200, headers);
-                        res.write(JSON.stringify({
-                            action: "error",
-                            message: showErrorToUser(err) || `Internal server error (${createHash('md5').update(String(err)).digest("hex")}})`
-                        } as ErrorReply));
-                        res.end();
-                    }
-                });
-                return;
-            }
-        }
-        res.writeHead(404, headers);
-        res.write("404 upload id not found");
-        res.end();
-        return;
     } else if (req.method == "OPTIONS") {
         res.writeHead(204, headers);
         res.end();
@@ -373,20 +338,6 @@ handler(Packets.List, async (packet, data, connection) => {
     return response;
 });
 
-handler(Packets.PWD, async (packet, data, connection) => {
-    return {
-        workdir: await connection.ftp.pwd()
-    };
-});
-
-handler(Packets.CD, async (packet, data, connection) => {
-    await connection.ftp.cd(data.path);
-});
-
-handler(Packets.CDUP, async (packet, data, connection) => {
-    await connection.ftp.cdup();
-});
-
 handler(Packets.Download, async (packet, data, connection) => {
     if (data.largeDownload) {
         const downloadId = Math.random().toString().substring(2);
@@ -413,18 +364,6 @@ handler(Packets.Upload, async (packet, data, connection) => {
     const stream = new ReadableMemoryStream(buffer);
 
     await connection.ftp.uploadFrom(stream, data.path);
-});
-
-handler(Packets.LargeUpload, (packet, data, connection) => {
-    const uploadId = Math.random().toString().substring(2);
-
-    largeUploads.push({
-        id: uploadId,
-        path: data.path,
-        connection
-    });
-
-    return { uploadId };
 });
 
 handler(Packets.ChunkedUploadStart, (packet, data, connection) => {

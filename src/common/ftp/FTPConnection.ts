@@ -11,12 +11,6 @@ export default interface FTPConnection {
     close(): void;
 
     list(path: string): Promise<FolderEntry[]>;
-    /** @deprecated */
-    pwd(): Promise<string>;
-    /** @deprecated */
-    cd(path: string): Promise<void>;
-    /** @deprecated */
-    cdup(): Promise<void>;
     download(folderEntry: FolderEntry, progress?: (value: number, max: number) => void): Promise<Blob>;
     uploadSmall(blob: Blob, path: string): Promise<void>;
     startChunkedUpload(path: string, size: number, startOffset: number | null): Promise<string>;
