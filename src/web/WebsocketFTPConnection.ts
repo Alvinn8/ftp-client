@@ -187,14 +187,14 @@ export default class WebsocketFTPConnection implements FTPConnection {
     }
 
     async connect(host: string, port: number, username: string, password: string, secure: boolean): Promise<void> {
-        await this.send(Packets.Connect, {
+        await this.send(Packets.ConnectFtp, {
             host, port, username, password, secure
         });
     }
 
     async isConnected(): Promise<boolean> {
         const response = await this.send(Packets.Ping, {});
-        return response.isFTPConnected;
+        return response.isConnected;
     }
 
     close(): void {

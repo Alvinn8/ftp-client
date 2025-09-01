@@ -1,6 +1,6 @@
 import type { FileType } from "../../node_modules/basic-ftp/dist/FileInfo";
 
-export interface ConnectData {
+export interface ConnectFtpData {
     host: string;
     port: number;
     username: string;
@@ -14,7 +14,7 @@ export interface ErrorReply {
 }
 
 export interface PingReply {
-    isFTPConnected: boolean;
+    isConnected: boolean;
 };
 
 export interface CdData {
@@ -123,7 +123,7 @@ export class Packet<Data, Response> {
 
 export namespace Packets {
     export const Ping = new Packet<{}, PingReply>();
-    export const Connect = new Packet<ConnectData, void>();
+    export const ConnectFtp = new Packet<ConnectFtpData, void>();
     export const List = new Packet<ListData, ListReply>();
     export const Download = new Packet<DownloadData, DownloadReply>();
     export const Upload = new Packet<UploadData, void>();
