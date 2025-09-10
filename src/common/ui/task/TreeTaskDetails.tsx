@@ -205,7 +205,7 @@ const OverviewTab: React.FC<{ treeTask: TreeTask }> = ({ treeTask }) => {
                     </StableHeightContainer>
                 </>
             )}
-            { activeTasks.length > 0 && (
+            {(activeTasks.length > 0 || status === TaskStatus.DONE) && (
                 <StableHeightContainer className="border p-2 my-2 rounded">
                     {activeTasks.map(task => (
                         task instanceof FileTreeFile ? (
@@ -214,6 +214,12 @@ const OverviewTab: React.FC<{ treeTask: TreeTask }> = ({ treeTask }) => {
                             <FileTreeComponent key={task.path} fileTree={task} deep={false} />
                         )
                     ))}
+                    {activeTasks.length === 0 && status === TaskStatus.DONE && (
+                        <div className="d-flex flex-column justify-content-center align-items-center">
+                            <i className="bi bi-check2-circle fs-1" style={{ color: '#00ff67' }} />
+                            <span className="text-muted-color">All files processed successfully</span>
+                        </div>
+                    )}
                 </StableHeightContainer>
             )}
         </div>
