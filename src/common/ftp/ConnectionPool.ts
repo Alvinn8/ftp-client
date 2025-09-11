@@ -1,7 +1,7 @@
 import { EventEmitter } from "eventemitter3";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import FTPConnection from "./FTPConnection";
-import FTPProfile from "./FTPProfile";
+import { Profile } from "./profile";
 
 export type ConnectionPoolEntry = {
     connection: WebsocketFTPConnection;
@@ -9,13 +9,13 @@ export type ConnectionPoolEntry = {
 };
 
 export class ConnectionPool extends EventEmitter{
-    private readonly profile: FTPProfile;
+    private readonly profile: Profile;
     private connections: ConnectionPoolEntry[] = [];
     private targetConnectionCount: number = 1;
     private isCreatingConnection: boolean = false;
     private lastConnectionCreationAttempt: number = 0;
 
-    constructor(profile: FTPProfile) {
+    constructor(profile: Profile) {
         super();
         this.profile = profile;
     }
@@ -119,8 +119,13 @@ export class ConnectionPool extends EventEmitter{
     private async createConnection(): Promise<WebsocketFTPConnection> {
         const connection = new WebsocketFTPConnection();
         await connection.connectToWebsocket();
-        const { host, port, username, password, secure } = this.profile;
-        await connection.connect(host, port, username, password, secure);
+        if (this.profile.protocol === "ftp") {
+            const { host, port, username, password, secure } = this.profile;
+            await connection.connectToFtp(host, port, username, password, secure);
+        } else if (this.profile.protocol === "sftp") {
+            const { host, port, username, password } = this.profile;
+            await connection.connectToSftp(host, port, username, password);
+        }
         return connection;
     }
 

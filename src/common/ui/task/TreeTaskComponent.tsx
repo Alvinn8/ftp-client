@@ -2,16 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { ProgressObject, TaskStatus, TreeTask } from '../../task/treeTask';
 import { formatByteSize } from '../../utils';
 import Button from '../../ui2/components/Button';
-import TreeTaskDetails from './TreeTaskDetails';
 
 export interface TaskProps {
     treeTask: TreeTask;
+    onShowDetails: () => void;
 }
 
-const TreeTaskComponent: React.FC<TaskProps> = ({ treeTask }) => {
+const TreeTaskComponent: React.FC<TaskProps> = ({ treeTask, onShowDetails }) => {
     const [progress, setProgress] = useState<ProgressObject>(treeTask.progress);
     const [status, setStatus] = useState(treeTask.status);
-    const [showDetails, setShowDetails] = useState(false);
 
     useEffect(() => {
         const progressHandler = (progress: ProgressObject) => setProgress({...progress});
@@ -73,7 +72,7 @@ const TreeTaskComponent: React.FC<TaskProps> = ({ treeTask }) => {
                     />
                 )}
                 <Button
-                    onClick={() => setShowDetails(true)}
+                    onClick={onShowDetails}
                     icon="eye"
                     label="Details"
                     size="small"
@@ -81,9 +80,6 @@ const TreeTaskComponent: React.FC<TaskProps> = ({ treeTask }) => {
                     variant={status === TaskStatus.ERROR ? "outline" : "solid"}
                 />
             </div>
-            {showDetails && (
-                <TreeTaskDetails treeTask={treeTask} onClose={() => setShowDetails(false)} />
-            )}
         </div>
     );
 }

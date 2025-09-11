@@ -8,6 +8,7 @@
     "build+start": "npm run build && npm start"
   },
   "dependencies": {
+    "ssh2-sftp-client": "^12.0.1",
     "ws": "^8.0.0"
   },
   "devDependencies": {

@@ -3,7 +3,7 @@ import FTPConnection from "../ftp/FTPConnection";
 import { ChunkedUploadResponse } from "../../protocol/packets";
 
 export default class TestFTPConnection implements FTPConnection {
-    connect = vi.fn();
+    connectToFtp = vi.fn();
     isConnected = vi.fn().mockResolvedValue(true);
     download = vi.fn().mockResolvedValue(new Blob([]));
     list = vi.fn().mockResolvedValue([]);

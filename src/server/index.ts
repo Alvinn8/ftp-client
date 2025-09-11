@@ -2,11 +2,13 @@ import * as ftp from "basic-ftp";
 import { FTPError } from "basic-ftp";
 import { createServer } from "http";
 import * as ws from "ws";
-import { ErrorReply, Packet, packetMap, Packets } from "../protocol/packets";
+import { ChunkedUploadStatus, ErrorReply, Packet, packetMap, Packets } from "../protocol/packets";
 import { PassThrough } from "stream";
 import { createHash } from "crypto";
 import VERSION from "../protocol/version";
 import { ftpPacketHandlers } from "./ftp";
+import { sftpPacketHandlers } from "./sftp";
+import SftpClient from "ssh2-sftp-client";
 
 const PORT = parseInt(process.env.PORT) || 8081;
 const PROTOCOL_VERSION = 1;
@@ -56,6 +58,10 @@ if (false) {
 
 export function showErrorToUser(error: any): string | null {
     if (error instanceof FTPError) {
+        return error.toString();
+    }
+    if (error && error.custom === true && error.code) {
+        // SFTP error
         return error.toString();
     }
     if (!error) {
@@ -182,9 +188,9 @@ server.on("connection", function(ws) {
 
                 // Get the packet
                 const packet = packetMap.get(packetId);
-                if (packet != null && packet !== Packets.Ping && packet !== Packets.ConnectFtp) {
+                if (packet != null && packet !== Packets.Ping && packet !== Packets.ConnectFtp && packet !== Packets.ConnectSftp) {
                     // Ensure the client is connected before attempting to interact.
-                    if (connection.client == null || (connection.client instanceof ftp.Client && connection.client.closed)) {
+                    if (!connection.isClientConnected()) {
                         const requestId = json["requestId"];
                         if (requestId != null) {
                             const response: ErrorReply = {
@@ -202,7 +208,12 @@ server.on("connection", function(ws) {
                 // Get the packet handler
                 let handler: <Data, Response> (packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response> | Response;
                 if (connection.client instanceof ftp.Client || packet === Packets.ConnectFtp) {
-                    handler = ftpPacketHandlers.get(packet);
+                    handler = ftpPacketHandlers.map.get(packet);
+                } else {
+                    handler = sftpPacketHandlers.map.get(packet);
+                }
+                if (!handler) {
+                    handler = genericPacketHandlers.map.get(packet);
                 }
                 // If they exist...
                 if (packet != null && handler != null) {
@@ -256,14 +267,18 @@ server.on("connection", function(ws) {
     });
 
     ws.on("close", function() {
-        if (connection != null && connection.client instanceof ftp.Client && !connection.client.closed) {
-            connection.log("Left, disconnecting ftp");
+        if (connection != null && connection.isClientConnected()) {
+            connection.log("Left, disconnecting client");
             try {
                 // Mark the connection as closed to avoid reporting errors.
                 userClosed = true;
                 connection.userClosed = true;
                 if (connection.client instanceof ftp.Client) {
                     connection.client.close();
+                } else if (connection.client instanceof SftpClient) {
+                    connection.client.end().catch(err => {
+                        connection.log("Error disconnecting SFTP: " + err.message);
+                    });
                 }
             } catch (err) {
                 connection.log("Disconected during a task: " + err.message);
@@ -298,8 +313,99 @@ export class Connection<T = unknown> {
     sendJson(json: object) {
         this.ws.send(JSON.stringify(json));
     }
+
+    isClientConnected() {
+        return this.client != null && ((this.client instanceof ftp.Client && !this.client.closed) || this.client instanceof SftpClient);
+    }
 }
 
-export function newPacketHandlersMap() {
-    return new Map< Packet<any, any>, <Data, Response>(packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response> | Response >();
+export function newPacketHandlersMap<T>() {
+    const map = new Map< Packet<any, any>, <Data, Response>(packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response> | Response >();
+    function push<Data, Response>(packet: Packet<Data, Response>, handler: (packet: Packet<Data, Response>, data: Data, connection: Connection<T>) => Promise<Response> | Response) {
+        // @ts-ignore
+        map.set(packet, handler);
+    }
+    return {
+        map,
+        push
+    }
 }
+
+const genericPacketHandlers = newPacketHandlersMap();
+
+const handler = genericPacketHandlers.push;
+
+handler(Packets.ChunkedUpload, async (packet, data, connection) => {
+    type Status = ChunkedUploadStatus;
+
+    const chunkedUpload = chunkedUploads.find(u => u.id === data.uploadId);
+    if (!chunkedUpload) {
+        return { status: "404" as Status };
+    }
+    if (chunkedUpload.connection !== connection) {
+        return { status: "hijack" as Status };
+    }
+
+    if (chunkedUpload.error) {
+        return {
+            status: "error" as Status,
+            error: showErrorToUser(chunkedUpload.error)
+        };
+    }
+
+    const buffer = Buffer.from(data.data, "base64");
+    if (buffer.byteLength !== data.end - data.start) {
+        return { status: "malsized" as Status };
+    }
+
+    if (chunkedUpload.offset !== data.start) {
+        return { status: "desync" as Status };
+    }
+
+    chunkedUpload.pendingChunks++;
+    chunkedUpload.stream.write(buffer, (err) => {
+        if (err) {
+            chunkedUpload.error = err;
+        }
+        chunkedUpload.pendingChunks--;
+    });
+
+    if (chunkedUpload.pendingChunks > 1) {
+        connection.log("pendingChunks = " + chunkedUpload.pendingChunks);
+    }
+
+    let sleepCount = 0;
+    while (chunkedUpload.pendingChunks >= chunkedUpload.maxPendingChunks && sleepCount++ < 1000) {
+        // We have a few chunks in the queue now. We can wait a little.
+        await sleep(50);
+    }
+
+    if (sleepCount > 0) {
+        connection.log("slept " + sleepCount + " times, pendingChunks = " + chunkedUpload.pendingChunks);
+    }
+
+    chunkedUpload.offset += buffer.length;
+
+    if (chunkedUpload.offset === chunkedUpload.size) {
+        chunkedUpload.stream.end();
+        await chunkedUpload.uploadPromise;
+        chunkedUploads.splice(chunkedUploads.indexOf(chunkedUpload), 1);
+        return { status: "end" as Status };
+    }
+
+    return { status: "success" as Status };
+});
+
+handler(Packets.ChunkedUploadStop, async (packet, data, connection) => {
+    const chunkedUpload = chunkedUploads.find(u => u.id === data.uploadId);
+    if (!chunkedUpload) {
+        return;
+    }
+    if (chunkedUpload.connection !== connection) {
+        return;
+    }
+
+    chunkedUpload.stream.end();
+    await chunkedUpload.uploadPromise;
+    chunkedUploads.splice(chunkedUploads.indexOf(chunkedUpload), 1);
+});

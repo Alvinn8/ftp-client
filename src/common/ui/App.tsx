@@ -20,6 +20,7 @@ import ConnectingScreen from "./ConnectingScreen";
 import ErrorScreen from "./ErrorScreen";
 import VERSION from "../../protocol/version";
 import { dirname } from "../utils";
+import { FTPProfile } from "../ftp/profile";
 
 let app: App;
 
@@ -222,12 +223,13 @@ export class App extends React.Component<AppProps, AppState> {
 
         let failAction = null;
         if (this.state.state === State.FAILED_TO_CONNECT_TO_FTP) {
-            if (this.state.connectionError.includes("SSL error") && this.state.session?.profile.secure) {
+            if (this.state.connectionError.includes("SSL error") && this.state.session?.profile instanceof FTPProfile && this.state.session?.profile.secure) {
                 failAction = {
                     label: "Continue without encryption",
                     onClick: () => {
-                        const newProfile = this.state.session.profile.unsecureCopy();
-                        const newSession = newProfile.startSession();
+                        const { host, port, username, password } = this.state.session.profile;
+                        const newProfile = new FTPProfile(host, port, username, password, false);
+                        const newSession = new FTPSession(newProfile);
                         this.setState({ session: newSession, state: State.LOGIN });
                         newSession.connect((state: State) => {
                             this.setState({ state });

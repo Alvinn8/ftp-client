@@ -1,28 +1,49 @@
-import * as ftp from "basic-ftp";
+import { FileType } from "basic-ftp";
 import { ChunkedUpload, chunkedUploads, largeDownloads, newPacketHandlersMap } from ".";
-import { Packets, ListReply } from "../protocol/packets";
-import { WritableMemoryStream, ReadableMemoryStream } from "./memoryStreams";
+import { ListReply, Packets } from "../protocol/packets";
+import SftpClient from "ssh2-sftp-client";
+import { ReadableMemoryStream, WritableMemoryStream } from "./memoryStreams";
 import { PassThrough } from "stream";
 
-export const ftpPacketHandlers = newPacketHandlersMap<ftp.Client>();
+type WriteStream = ReturnType<SftpClient["createWriteStream"]>;
 
-const handler = ftpPacketHandlers.push;
+async function writeToStream(stream: WriteStream, input: NodeJS.ReadableStream) {
+    return await new Promise<void>((resolve, reject) => {
+        stream.on('error', (err: unknown) => {
+            reject(new Error("Error in writeToStream", { cause: err }));
+        });
+        stream.on('close', () => {
+            resolve();
+        });
+        input.pipe(stream);
+    });
+}
 
-handler(Packets.Ping, (packet, data, connection) => {
-    return {
-        isConnected: connection.client == null ? false : !connection.client.closed
-    };
+export const sftpPacketHandlers = newPacketHandlersMap<SftpClient>();
+
+const handler = sftpPacketHandlers.push;
+
+handler(Packets.Ping, async (packet, data, connection) => {
+    if (!connection.client) {
+        return { isConnected: false };
+    }
+    try {
+        await connection.client.stat(".");
+        return { isConnected: true };
+    } catch (error) {
+        console.log(error);
+        return { isConnected: false };
+    }
 });
 
-handler(Packets.ConnectFtp, async (packet, data, connection) => {
-    connection.client = new ftp.Client();
+handler(Packets.ConnectSftp, async (packet, data, connection) => {
+    connection.client = new SftpClient();
 
-    await connection.client.access({
+    await connection.client.connect({
         host: data.host,
         port: data.port,
-        user: data.username,
-        password: data.password,
-        secure: data.secure
+        username: data.username,
+        password: data.password
     });
 });
 
@@ -35,8 +56,11 @@ handler(Packets.List, async (packet, data, connection) => {
         response.files.push({
             name: file.name,
             size: file.size,
-            type: file.type,
-            rawModifiedAt: file.rawModifiedAt
+            type: file.type === "d" ? FileType.Directory
+            : file.type === "-" ? FileType.File
+            : file.type === "l" ? FileType.SymbolicLink
+            : FileType.Unknown,
+            rawModifiedAt: String(file.modifyTime)
         });
     }
     return response;
@@ -55,7 +79,7 @@ handler(Packets.Download, async (packet, data, connection) => {
         };
     } else {
         const stream = new WritableMemoryStream();
-        await connection.client.downloadTo(stream, data.path);
+        await connection.client.get(data.path, stream);
         // By this point the stream has finished as we awaited the download method.
         return {
             data: stream.getBuffer().toString("base64")
@@ -65,9 +89,8 @@ handler(Packets.Download, async (packet, data, connection) => {
 
 handler(Packets.Upload, async (packet, data, connection) => {
     const buffer = Buffer.from(data.data, "base64");
-    const stream = new ReadableMemoryStream(buffer);
 
-    await connection.client.uploadFrom(stream, data.path);
+    await connection.client.put(buffer, data.path);
 });
 
 handler(Packets.ChunkedUploadStart, (packet, data, connection) => {
@@ -87,11 +110,12 @@ handler(Packets.ChunkedUploadStart, (packet, data, connection) => {
         error: null
     } satisfies Partial<ChunkedUpload>;
 
-    const uploadPromise = (data.startOffset !== null
-        ? connection.client.appendFrom(stream, data.path)
-        : connection.client.uploadFrom(stream, data.path)).catch(err => {
-            chunkedUpload.error = err;
-        });
+    const writeStream = connection.client.createWriteStream(data.path, {
+        start: data.startOffset !== null ? data.startOffset : undefined,
+    });
+    const uploadPromise = writeToStream(writeStream, stream).catch(err => {
+        chunkedUpload.error = err;
+    });
     
     chunkedUpload.uploadPromise = uploadPromise;
 
@@ -101,7 +125,7 @@ handler(Packets.ChunkedUploadStart, (packet, data, connection) => {
 });
 
 handler(Packets.Mkdir, async (packet, data, connection) => {
-    await connection.client.send("MKD " + data.path);
+    await connection.client.mkdir(data.path);
 });
 
 handler(Packets.Rename, async (packet, data, connection) => {
@@ -109,5 +133,5 @@ handler(Packets.Rename, async (packet, data, connection) => {
 });
 
 handler(Packets.Delete, async (packet, data, connection) => {
-    await connection.client.remove(data.path);
+    await connection.client.delete(data.path);
 });

@@ -4,6 +4,7 @@ import TaskComponent from "./TaskComponent";
 import { TreeTask } from "../../task/treeTask";
 import taskManager from "../../task/TaskManager";
 import TreeTaskComponent from "./TreeTaskComponent";
+import TreeTaskDetails from "./TreeTaskDetails";
 
 interface TasksState {
     task: Task;
@@ -17,6 +18,7 @@ interface TasksState {
 const Tasks: React.FC = () => {
     const [task, setTask] = React.useState<Task | null>(null);
     const [treeTasks, setTreeTasks] = React.useState<TreeTask[]>([]);
+    const [treeTaskDetails, setTreeTaskDetails] = React.useState<TreeTask | null>(null);
 
     React.useEffect(() => {
         const handleTaskChange = (newTask: Task) => {
@@ -36,8 +38,11 @@ const Tasks: React.FC = () => {
                 <TaskComponent task={task} />
             )}
             {treeTasks.map((treeTask, index) => (
-                <TreeTaskComponent key={index} treeTask={treeTask} />
+                <TreeTaskComponent key={index} treeTask={treeTask} onShowDetails={() => setTreeTaskDetails(treeTask)} />
             ))}
+            {treeTaskDetails && (
+                <TreeTaskDetails treeTask={treeTaskDetails} onClose={() => setTreeTaskDetails(null)} />
+            )}
         </div>
     );
 };

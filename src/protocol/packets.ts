@@ -8,6 +8,13 @@ export interface ConnectFtpData {
     secure: boolean;
 }
 
+export interface ConnectSftpData {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+}
+
 export interface ErrorReply {
     action: "error";
     message: string;
@@ -124,6 +131,7 @@ export class Packet<Data, Response> {
 export namespace Packets {
     export const Ping = new Packet<{}, PingReply>();
     export const ConnectFtp = new Packet<ConnectFtpData, void>();
+    export const ConnectSftp = new Packet<ConnectSftpData, void>();
     export const List = new Packet<ListData, ListReply>();
     export const Download = new Packet<DownloadData, DownloadReply>();
     export const Upload = new Packet<UploadData, void>();

@@ -186,9 +186,15 @@ export default class WebsocketFTPConnection implements FTPConnection {
         }
     }
 
-    async connect(host: string, port: number, username: string, password: string, secure: boolean): Promise<void> {
+    async connectToFtp(host: string, port: number, username: string, password: string, secure: boolean): Promise<void> {
         await this.send(Packets.ConnectFtp, {
             host, port, username, password, secure
+        });
+    }
+
+    async connectToSftp(host: string, port: number, username: string, password: string): Promise<void> {
+        await this.send(Packets.ConnectSftp, {
+            host, port, username, password
         });
     }
 

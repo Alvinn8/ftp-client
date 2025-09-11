@@ -39,6 +39,7 @@
     "@types/pako": "^2.0.0",
     "@types/react": "^17.0.5",
     "@types/react-dom": "^17.0.5",
+    "@types/ssh2-sftp-client": "^9.0.5",
     "@types/ws": "^7.4.7",
     "@vitejs/plugin-react": "^2.0.0",
     "@vitest/ui": "^0.18.1",

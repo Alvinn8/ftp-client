@@ -1,5 +1,5 @@
 import FTPConnection from "./FTPConnection";
-import FTPProfile from "./FTPProfile";
+import { Profile } from "./profile";
 import FolderEntry from "../folder/FolderEntry";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import { addMessage } from "../ui/messages";
@@ -20,7 +20,7 @@ import { State } from "../ui/App";
  * The session also holds the directory cache.
  */
 export default class FTPSession extends EventEmitter {
-    public readonly profile: FTPProfile;
+    public readonly profile: Profile;
     /** @deprecated */
     private connection: FTPConnection;
     public cache: {[key: string]: FolderEntry[]} = {};
@@ -31,7 +31,7 @@ export default class FTPSession extends EventEmitter {
     private poolQueue: FTPRequest<any>[] = [];
     private taskManager: TaskManager;
 
-    constructor(profile: FTPProfile) {
+    constructor(profile: Profile) {
         super();
         this.profile = profile;
         this.connectionPool = new ConnectionPool(profile);
@@ -58,11 +58,19 @@ export default class FTPSession extends EventEmitter {
         if (!success) return;
         
         onProgress(State.CONNECTING_TO_FTP);
-        const { host, port, username, password, secure } = this.profile;
-        await connection.connect(host, port, username, password, secure).catch(err => {
-            onProgress(State.FAILED_TO_CONNECT_TO_FTP);
-            throw err;
-        });
+        if (this.profile.protocol === "ftp") {
+            const { host, port, username, password, secure } = this.profile;
+            await connection.connectToFtp(host, port, username, password, secure).catch(err => {
+                onProgress(State.FAILED_TO_CONNECT_TO_FTP);
+                throw err;
+            });
+        } else if (this.profile.protocol === "sftp") {
+            const { host, port, username, password } = this.profile;
+            await connection.connectToSftp(host, port, username, password).catch(err => {
+                onProgress(State.FAILED_TO_CONNECT_TO_FTP);
+                throw err;
+            });
+        }
         onProgress(State.CONNECTED);
     }
 
@@ -117,8 +125,13 @@ export default class FTPSession extends EventEmitter {
                 if (!isConnected) {
                     console.log("Reconnecting to ftp.");
                     // Reconnect
-                    const { host, port, username, password, secure } = this.profile;
-                    await websocketFTPConnection.connect(host, port, username, password, secure);
+                    if (this.profile.protocol === "ftp") {
+                        const { host, port, username, password, secure } = this.profile;
+                        await websocketFTPConnection.connectToFtp(host, port, username, password, secure);
+                    } else if (this.profile.protocol === "sftp") {
+                        const { host, port, username, password } = this.profile;
+                        await websocketFTPConnection.connectToSftp(host, port, username, password);
+                    }
                     console.log("Reconnected to ftp.");
                 }
                 addMessage({

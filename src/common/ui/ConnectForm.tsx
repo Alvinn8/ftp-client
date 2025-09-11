@@ -1,6 +1,5 @@
 import * as React from "react";
-import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
-import FTPProfile from "../ftp/FTPProfile";
+import { FTPProfile, Profile, SFTPProfile } from "../ftp/profile";
 import FTPSession from "../ftp/FTPSession";
 import { State } from "./App";
 
@@ -34,14 +33,20 @@ interface ConnectFormProps {
  */
 export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
     async connect() {
+        const protocol = getString("protocol") || "ftp";
         const host = getString("host");
         const port = parseInt(getString("port"));
         const username = getString("username");
         const password = getString("password");
         const secure = getBoolean("secure");
 
-        const profile = new FTPProfile(host, port, username, password, secure);
-        const session = profile.startSession();
+        let profile: Profile;
+        if (protocol === "ftp") {
+            profile = new FTPProfile(host, port, username, password, secure);
+        } else if (protocol === "sftp") {
+            profile = new SFTPProfile(host, port, username, password);
+        }
+        const session = new FTPSession(profile);
         this.props.onNewSession(session);
         await session.connect((state: State) => this.props.onProgress(state))
             .catch(err => this.props.onConnectError(err.message));
@@ -64,11 +69,17 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
     }
     
     render() {
+        const protocol = (document.getElementById("protocol") as HTMLInputElement)?.value || "ftp";
+
         return (
             <div className="container" style={{ maxWidth: "800px" }}>
-                <p>Log in to the ftp server.</p>
+                <p>Log in to the ftp or sftp server.</p>
                 <div className="input-group">
                     <span className="input-group-text">Host and Port</span>
+                    <select id="protocol" defaultValue="ftp" className="form-select">
+                        <option value="ftp">ftp://</option>
+                        <option value="sftp">sftp://</option>
+                    </select>
                     <input type="text" id="host" className="form-control" />
                     <input type="number" id="port" className="form-control" defaultValue="21" />
                 </div>
@@ -81,10 +92,12 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
                     <label htmlFor="password" className="form-label">Password</label>
                     <input type="text" id="password" className="form-control" />
                 </div>
-                <div className="mb-3">
-                    <input type="checkbox" id="secure" className="form-check-input me-2" />
-                    <label htmlFor="secure" className="form-label">Secure</label>
-                </div>
+                {protocol === "ftp" && (
+                    <div className="mb-3">
+                        <input type="checkbox" id="secure" className="form-check-input me-2" />
+                        <label htmlFor="secure" className="form-label">Secure</label>
+                    </div>
+                )}
                 <button onClick={this.tryConnect.bind(this)} className="btn btn-success">Connect</button>
             </div>
         );

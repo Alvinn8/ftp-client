@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, waitForElementToBeRemoved,
 import userEvent from "@testing-library/user-event";
 import { getApp, App, DeviceSize } from "../ui/App";
 import FTPSession from "../ftp/FTPSession";
-import FTPProfile from "../ftp/FTPProfile";
+import { FTPProfile } from "../ftp/profile";
 import TestFTPConnection from "./TestFTPConnection";
 import FolderEntry, { FolderEntryType } from "../folder/FolderEntry";
 import * as downloadModule from "../download";
@@ -22,7 +22,7 @@ describe("ftp-client tests", () => {
 
     beforeEach(() => {
         const profile = new FTPProfile("", 21, "", "", false);
-        session = profile.startSession();
+        session = new FTPSession(profile);
         connection = new TestFTPConnection();
         session.setConnection(connection);
         session.getConnectionPool()["createConnection"] = vi.fn().mockResolvedValue(connection);

@@ -4,5 +4,5 @@ require("esbuild").build({
     format: "cjs",
     bundle: true,
     outfile: "bundle.js",
-    external: ["ws", "basic-ftp"]
+    external: ["ws", "basic-ftp", "ssh2-sftp-client"]
 });
