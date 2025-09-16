@@ -17,6 +17,8 @@ export interface ConnectSftpData {
 
 export interface ErrorReply {
     action: "error";
+    type: "Error" | "FTPError" | "SFTPError";
+    code?: string | number;
     message: string;
 }
 

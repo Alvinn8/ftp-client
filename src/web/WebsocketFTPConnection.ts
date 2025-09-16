@@ -2,11 +2,11 @@ import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
 import FTPConnection from "../common/ftp/FTPConnection";
 import { addMessage } from "../common/ui/messages";
 import { blobToBase64, ensureAbsolute, filename, sleep } from "../common/utils";
-import { ChunkedUploadResponse, Packet, Packets } from "../protocol/packets";
+import { ChunkedUploadResponse, ErrorReply, Packet, Packets } from "../protocol/packets";
 import { LargeFileOperationInterface, largeFileOperationStore } from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
 import TaskManager from "../common/task/TaskManager";
-import { ConnectionClosedError } from "../common/error";
+import { assertUnreachable, ConnectionClosedError, FTPError, SFTPError } from "../common/error";
 
 interface PendingReply {
     requestId: string;
@@ -157,8 +157,8 @@ export default class WebsocketFTPConnection implements FTPConnection {
             this.pendingReplies.push({
                 requestId,
                 reject,
-                handler: (data) => {
-                    if (data.action == "error") {
+                handler: (data: Response | ErrorReply) => {
+                    if (typeof data === "object" && data !== null && "action" in data && data.action == "error") {
                         if (data.message == "Not connected") {
                             this.websocket.close();
                         }
@@ -167,9 +167,20 @@ export default class WebsocketFTPConnection implements FTPConnection {
                             message: data.message,
                             stayForMillis: 10000
                         });
-                        reject(new Error(data.message));
+                        let error: Error;
+                        if (data.type === "FTPError") {
+                            error = new FTPError(data.message, typeof data.code === "number" ? data.code : 0);
+                        } else if (data.type === "SFTPError") {
+                            error = new SFTPError(data.message, data.code || "UNKNOWN");
+                        } else if (data.type === "Error") {
+                            error = new Error(data.message);
+                        } else {
+                            assertUnreachable(data.type);
+                        }
+                        console.log(error);
+                        reject(error);
                     }
-                    else resolve(data);
+                    else resolve(data as Response);
                 },
             });
             this.websocket.send(JSON.stringify(data));

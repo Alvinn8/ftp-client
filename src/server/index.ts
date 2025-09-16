@@ -56,14 +56,21 @@ if (false) {
     }
 }
 
-export function showErrorToUser(error: any): string | null {
+function isSFTPError(err: any): boolean {
+    return err && err.custom === true && err.code;
+}
+
+export function shouldShowErrorToUser(error: any): boolean {
     if (error instanceof FTPError) {
-        return error.toString();
+        return true;
     }
-    if (error && error.custom === true && error.code) {
-        // SFTP error
-        return error.toString();
+    if (isSFTPError(error)) {
+        return true;
     }
+    return Boolean(formatErrorMessage(error));
+}
+
+export function formatErrorMessage(error: any): string | null {
     if (!error) {
         return null;
     }
@@ -195,6 +202,7 @@ server.on("connection", function(ws) {
                         if (requestId != null) {
                             const response: ErrorReply = {
                                 action: "error",
+                                type: "Error",
                                 message: "Not connected",
                             };
                             response["requestId"] = requestId;
@@ -237,10 +245,35 @@ server.on("connection", function(ws) {
                             }
                         }, (err) => {
                             // Handle errors
-                            const response: ErrorReply = {
-                                action: "error",
-                                message: showErrorToUser(err) || `Internal server error (${createHash('md5').update(String(err)).digest("hex")})`
-                            };
+                            let response: ErrorReply | null = null;
+                            const message = formatErrorMessage(err);
+                            if (message) {
+                                response = {
+                                    action: "error",
+                                    type: "Error",
+                                    message
+                                };
+                            } else if (err instanceof FTPError) {
+                                response = {
+                                    action: "error",
+                                    type: "FTPError",
+                                    message: err.message,
+                                    code: err.code,
+                                };
+                            } else if (isSFTPError(err)) {
+                                response = {
+                                    action: "error",
+                                    type: "SFTPError",
+                                    message: err.message,
+                                    code: err.code,
+                                };
+                            } else {
+                                response = {
+                                    action: "error",
+                                    type: "Error",
+                                    message: `Internal server error (${createHash('md5').update(String(err)).digest("hex")})`
+                                };
+                            }
                             response["requestId"] = requestId;
                             if (connection) {
                                 connection.sendJson(response);
@@ -249,7 +282,7 @@ server.on("connection", function(ws) {
                     }
 
                     promise.catch((err) => {
-                        if (showErrorToUser(err)) {
+                        if (shouldShowErrorToUser(err)) {
                             // This error has already been displayed to the user.
                             return;
                         }
@@ -347,9 +380,10 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
     }
 
     if (chunkedUpload.error) {
+        const message = shouldShowErrorToUser(chunkedUpload.error) && formatErrorMessage(chunkedUpload.error) || "An error occured.";
         return {
             status: "error" as Status,
-            error: showErrorToUser(chunkedUpload.error)
+            error: message
         };
     }
 

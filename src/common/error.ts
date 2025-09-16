@@ -22,6 +22,10 @@ export function reportError(error: unknown, message?: string) {
     console.error("Reported error: " + message, error);
 }
 
+export function assertUnreachable(x: never): never {
+    throw new Error("unreachable, unexpected: " + String(x));
+}
+
 export class ConnectionClosedError extends Error {
     code: number;
     reason: string;
@@ -31,5 +35,25 @@ export class ConnectionClosedError extends Error {
         this.name = "ConnectionClosedError";
         this.code = code;
         this.reason = reason;
+    }
+}
+
+export class FTPError extends Error {
+    code: number;
+
+    constructor(message: string, code: number) {
+        super(message);
+        this.name = "FTPError";
+        this.code = code;
+    }
+}
+
+export class SFTPError extends Error {
+    code: string | number;
+
+    constructor(message: string, code: string | number) {
+        super(message);
+        this.name = "SFTPError";
+        this.code = code;
     }
 }
