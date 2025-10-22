@@ -131,8 +131,9 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
         return;
     }
     if (useTreeTasks) {
+        const session = getApp().state.session;
         const rootFileTree = await entriesToFileTree(entries);
-        TaskManager.addTreeTask(new TreeTask(rootFileTree, {
+        TaskManager.addTreeTask(new TreeTask(session, rootFileTree, {
             title: (treeTask) => "Deleting " + treeTask.count.totalFiles + " file" + (treeTask.count.totalFiles == 1 ? "" : "s"),
             // It is important that we do not process the root directory,
             // as it is the container for the files we want to delete.
@@ -327,7 +328,8 @@ export async function downloadAsZip(entries: FolderEntry[]) {
         const zip = new JSZip();
         const rootPath = getDirectoryPath(entries).get();
         const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
-        TaskManager.addTreeTask(new TreeTask(fileTree, {
+        const session = getApp().state.session;
+        TaskManager.addTreeTask(new TreeTask(session, fileTree, {
             title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
         }, {
             beforeDirectory: (directory, connection) => {

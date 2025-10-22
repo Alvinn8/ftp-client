@@ -107,8 +107,9 @@ function uploadsToTree(uploads: Directory, path: string): FileTree<UploadData> {
 
 function uploadUsingTreeTask(uploads: Directory) {
 
-    const tree = uploadsToTree(uploads, getApp().state.workdir);
-    taskManager.addTreeTask(new TreeTask(tree, {
+    const app = getApp()
+    const tree = uploadsToTree(uploads, app.state.workdir);
+    taskManager.addTreeTask(new TreeTask(app.state.session, tree, {
         processRootDirectory: true,
         title: (treeTask) => treeTask.count.totalDirectories === 0 && treeTask.count.totalFiles === 1
             ? "Uploading " + (treeTask.fileTree.getEntries()[0] as FileTreeFile).name

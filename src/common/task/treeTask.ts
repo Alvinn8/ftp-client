@@ -95,6 +95,7 @@ export enum TaskStatus {
 }
 
 export class TreeTask<T = unknown> extends EventEmitter {
+    session: FTPSession;
     fileTree: FileTree<T>;
     handler: TreeTaskHandler<T>;
     title: string;
@@ -106,8 +107,9 @@ export class TreeTask<T = unknown> extends EventEmitter {
     count: CountObject;
     progress: ProgressObject;
 
-    constructor(fileTree: FileTree<T>, options: TreeTaskOptions, handler: TreeTaskHandler<T>) {
+    constructor(session: FTPSession, fileTree: FileTree<T>, options: TreeTaskOptions, handler: TreeTaskHandler<T>) {
         super();
+        this.session = session;
         this.fileTree = fileTree;
         this.handler = handler;
         this.title = "";
@@ -212,12 +214,10 @@ export class TreeTask<T = unknown> extends EventEmitter {
             return;
         }
 
-        const session = getApp().state.session;
-
         let attempt = 1;
         while (attempt <= this.maxAttempts) {
             let success = false;
-            await session.addToPoolQueue(Priority.LARGE_TASK, async (connection) => {
+            await this.session.addToPoolQueue(Priority.LARGE_TASK, async (connection) => {
                 try {
                     await handler(this.fileTree, connection);
                     success = true;
