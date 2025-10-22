@@ -1,5 +1,5 @@
 import React from "react";
-import Button from "../ui2/components/Button";
+import Button from "../ui2/components/elements/Button";
 
 interface ErrorScreenProps {
     title: string;

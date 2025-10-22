@@ -3,13 +3,13 @@ import { ProgressObject, TaskStatus, TreeTask } from "../../task/treeTask";
 import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { FileTree, FileTreeFile, Status } from "../../task/tree";
-import Tabs from "../../ui2/components/Tabs";
+import Tabs from "../../ui2/components/elements/Tabs";
 import { formatByteSize, joinPath } from "../../utils";
-import Button from "../../ui2/components/Button";
+import Button from "../../ui2/components/elements/Button";
 import { FileTreeComponent, FileTreeFileComponent } from "./FileTreeComponent";
-import PlusMinusInput from "../../ui2/components/PlusMinusInput";
+import PlusMinusInput from "../../ui2/components/elements/PlusMinusInput";
 import { getApp } from "../App";
-import StableHeightContainer from "../../ui2/components/StableHeightContainer";
+import StableHeightContainer from "../../ui2/components/elements/StableHeightContainer";
 
 interface TreeTaskDetailsProps {
     treeTask: TreeTask;
