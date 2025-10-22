@@ -7,7 +7,7 @@ type PlusMinusInputProps = {
     min: number;
     max: number;
     onChange: (value: number) => void;
-}
+};
 
 const PlusMinusInput = ({ value, onChange, min, max }: PlusMinusInputProps) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,7 +24,13 @@ const PlusMinusInput = ({ value, onChange, min, max }: PlusMinusInputProps) => {
                 icon="dash"
                 variant="ghost"
             />
-            <input type="number" value={value} onChange={handleChange} min={min} max={max} />
+            <input
+                type="number"
+                value={value}
+                onChange={handleChange}
+                min={min}
+                max={max}
+            />
             <Button
                 onClick={() => onChange(Math.min(value + 1, max))}
                 icon="plus"
@@ -32,6 +38,6 @@ const PlusMinusInput = ({ value, onChange, min, max }: PlusMinusInputProps) => {
             />
         </div>
     );
-}
+};
 
 export default PlusMinusInput;

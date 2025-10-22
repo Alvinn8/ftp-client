@@ -1,8 +1,9 @@
-
 .button {
     border-radius: 6px;
     color: var(--text);
-    transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+    transition:
+        background-color 200ms ease-in-out,
+        color 200ms ease-in-out;
     cursor: pointer;
     display: inline-flex;
     gap: 6px;

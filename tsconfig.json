@@ -7,13 +7,6 @@
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true
     },
-    "include": [
-        "src/**/*.ts",
-        "src/**/*.tsx"
-    ],
-    "exclude": [
-        "node_modules",
-        "vendor",
-        "types"
-    ]
+    "include": ["src/**/*.ts", "src/**/*.tsx"],
+    "exclude": ["node_modules", "vendor", "types"]
 }

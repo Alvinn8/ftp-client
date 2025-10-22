@@ -27,7 +27,8 @@
     "onigasm": "^2.2.5",
     "pako": "^1.0.11",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.1",
@@ -37,8 +38,8 @@
     "@types/bootstrap": "^5.1.12",
     "@types/node": "^16.4.12",
     "@types/pako": "^2.0.0",
-    "@types/react": "^17.0.5",
-    "@types/react-dom": "^17.0.5",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "@types/ssh2-sftp-client": "^9.0.5",
     "@types/ws": "^7.4.7",
     "@vitejs/plugin-react": "^2.0.0",
@@ -46,6 +47,7 @@
     "eslint": "^9.25.1",
     "eslint-plugin-react": "^7.37.5",
     "happy-dom": "^6.0.4",
+    "prettier": "3.6.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.1",
     "vite": "^3.0.0",

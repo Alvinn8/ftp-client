@@ -47,6 +47,9 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+      zustand:
+        specifier: ^5.0.8
+        version: 5.0.8(@types/react@18.2.0)(react@18.3.1)
     devDependencies:
       '@eslint/js':
         specifier: ^9.25.1
@@ -56,7 +59,7 @@ importers:
         version: 5.17.0
       '@testing-library/react':
         specifier: ^13.3.0
-        version: 13.4.0(@types/react@17.0.83)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 13.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@testing-library/user-event':
         specifier: ^14.2.5
         version: 14.6.1(@testing-library/dom@8.20.1)
@@ -70,11 +73,11 @@ importers:
         specifier: ^2.0.0
         version: 2.0.3
       '@types/react':
-        specifier: ^17.0.5
-        version: 17.0.83
+        specifier: ^18.2.0
+        version: 18.2.0
       '@types/react-dom':
-        specifier: ^17.0.5
-        version: 17.0.26(@types/react@17.0.83)
+        specifier: ^18.2.0
+        version: 18.2.0
       '@types/ssh2-sftp-client':
         specifier: ^9.0.5
         version: 9.0.5
@@ -96,6 +99,9 @@ importers:
       happy-dom:
         specifier: ^6.0.4
         version: 6.0.4
+      prettier:
+        specifier: 3.6.2
+        version: 3.6.2
       typescript:
         specifier: ^5.8.3
         version: 5.8.3
@@ -241,6 +247,9 @@ packages:
 
   '@codemirror/commands@6.8.0':
     resolution: {integrity: sha512-q8VPEFaEP4ikSlt6ZxjB3zW72+7osfAYW9i8Zu943uqbKuz6utc1+F170hyLUCUltXORjQXRyYQNfkckzA/bPQ==}
+
+  '@codemirror/commands@6.9.0':
+    resolution: {integrity: sha512-454TVgjhO6cMufsyyGN70rGIfJxJEjcqjBG2x2Y03Y/+Fm99d3O/Kv1QDYWuG6hvxsgmjXmBuATikIIYvERX+w==}
 
   '@codemirror/language@6.10.8':
     resolution: {integrity: sha512-wcP8XPPhDH2vTqf181U8MbZnW+tDyPYy0UzVOa+oHORjyT+mhhom9vBd7dApJwoDz9Nb/a8kHjJIsuA/t8vNFw==}
@@ -495,8 +504,14 @@ packages:
   '@lezer/common@1.2.3':
     resolution: {integrity: sha512-w7ojc8ejBqr2REPsWxJjrMFsA/ysDCFICn8zEOR9mrqzOu2amhITYuLD8ag6XZf0CFXDrhKqw7+tW8cX66NaDA==}
 
+  '@lezer/common@1.3.0':
+    resolution: {integrity: sha512-L9X8uHCYU310o99L3/MpJKYxPzXPOS7S0NmBaM7UO/x2Kb2WbmMLSkfvdr1KxRIFYOpbY0Jhn7CfLSUDzL8arQ==}
+
   '@lezer/highlight@1.2.1':
     resolution: {integrity: sha512-Z5duk4RN/3zuVO7Jq0pGLJ3qynpxUVsh7IbUbGj88+uV2ApSAn6kWg2au3iJb+0Zi7kKtqffIESgNcRXWZWmSA==}
+
+  '@lezer/highlight@1.2.2':
+    resolution: {integrity: sha512-z8TQwaBXXQIvG6i2g3e9cgMwUUXu9Ib7jo2qRRggdhwKpM56Dw3PM3wmexn+EGaaOZ7az0K7sjc3/gcGW7sz7A==}
 
   '@lezer/lr@1.4.2':
     resolution: {integrity: sha512-pu0K1jCIdnQ12aWNaAVU5bzi7Bd1w54J3ECgANPmYLtQKP0HBj2cE/5coBD66MT10xbtIuUr7tg0Shbsvk0mDA==}
@@ -597,27 +612,20 @@ packages:
   '@types/pako@2.0.3':
     resolution: {integrity: sha512-bq0hMV9opAcrmE0Byyo0fY3Ew4tgOevJmQ9grUhpXQhYfyLJ1Kqg3P33JT5fdbT2AjeAjR51zqqVjAL/HMkx7Q==}
 
-  '@types/prop-types@15.7.14':
-    resolution: {integrity: sha512-gNMvNH49DJ7OJYv+KAKn0Xp45p8PLl6zo2YnvDIbTd4J6MER2BmWN49TG7n9LvkyihINxeKW8+3bfS2yDC9dzQ==}
+  '@types/prop-types@15.7.15':
+    resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
 
   '@types/qs@6.9.18':
     resolution: {integrity: sha512-kK7dgTYDyGqS+e2Q4aK9X3D7q234CIZ1Bv0q/7Z5IwRDoADNU81xXJK/YVyLbLTZCoIwUoDoffFeF+p/eIklAA==}
 
-  '@types/react-dom@17.0.26':
-    resolution: {integrity: sha512-Z+2VcYXJwOqQ79HreLU/1fyQ88eXSSFh6I3JdrEHQIfYSI0kCQpTGvOrbE6jFGGYXKsHuwY9tBa/w5Uo6KzrEg==}
-    peerDependencies:
-      '@types/react': ^17.0.0
+  '@types/react-dom@18.2.0':
+    resolution: {integrity: sha512-8yQrvS6sMpSwIovhPOwfyNf2Wz6v/B62LFSVYQ85+Rq3tLsBIG7rP5geMxaijTUxSkrO6RzN/IRuIAADYQsleA==}
 
-  '@types/react-dom@18.3.5':
-    resolution: {integrity: sha512-P4t6saawp+b/dFrUr2cvkVsfvPguwsxtH6dNIYRllMsefqFzkZk5UIjzyDOv5g1dXIPdG4Sp1yCR4Z6RCUsG/Q==}
-    peerDependencies:
-      '@types/react': ^18.0.0
+  '@types/react@18.2.0':
+    resolution: {integrity: sha512-0FLj93y5USLHdnhIhABk83rm8XEGA7kH3cr+YUlvxoUGp1xNt/DINUMvqPxLyOQMzLmZe8i4RTHbvb8MC7NmrA==}
 
-  '@types/react@17.0.83':
-    resolution: {integrity: sha512-l0m4ArKJvmFtR4e8UmKrj1pB4tUgOhJITf+mADyF/p69Ts1YAR/E+G9XEM0mHXKVRa1dQNHseyyDNzeuAXfXQw==}
-
-  '@types/scheduler@0.16.8':
-    resolution: {integrity: sha512-WZLiwShhwLRmeV6zH+GkbOFT6Z6VklCItrDioxUnv+u4Ll+8vKeFySoFyK/0ctcRpOmwAicELfmys1sDc/Rw+A==}
+  '@types/scheduler@0.26.0':
+    resolution: {integrity: sha512-WFHp9YUJQ6CKshqoC37iOlHnQSmxNc795UhB26CyBBttrN9svdIrUjl/NjnNmfcwtncN0h/0PPAFWv9ovP8mLA==}
 
   '@types/ssh2-sftp-client@9.0.5':
     resolution: {integrity: sha512-cpUO6okDusnfLw2hnmaBiomlSchIWNVcCdpywLRsg/h9Q1TTiUSrzhkn5sJeeyTM8h6xRbZEZZjgWtUXFDogHg==}
@@ -1798,6 +1806,11 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
+  prettier@3.6.2:
+    resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
+    engines: {node: '>=14'}
+    hasBin: true
+
   pretty-format@27.5.1:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
@@ -2249,6 +2262,24 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
+  zustand@5.0.8:
+    resolution: {integrity: sha512-gyPKpIaxY9XcO2vSMrLbiER7QMAMGOQZVRdJ6Zi782jkbzZygq5GI9nG8g+sMgitRtndwaBSl7uiqC49o1SSiw==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
+
 snapshots:
 
   '@adobe/css-tools@4.4.1': {}
@@ -2404,7 +2435,7 @@ snapshots:
       '@codemirror/language': 6.10.8
       '@codemirror/state': 6.5.1
       '@codemirror/view': 6.36.2
-      '@lezer/common': 1.2.3
+      '@lezer/common': 1.3.0
 
   '@codemirror/commands@6.8.0':
     dependencies:
@@ -2412,6 +2443,13 @@ snapshots:
       '@codemirror/state': 6.5.1
       '@codemirror/view': 6.36.2
       '@lezer/common': 1.2.3
+
+  '@codemirror/commands@6.9.0':
+    dependencies:
+      '@codemirror/language': 6.10.8
+      '@codemirror/state': 6.5.1
+      '@codemirror/view': 6.36.2
+      '@lezer/common': 1.3.0
 
   '@codemirror/language@6.10.8':
     dependencies:
@@ -2443,7 +2481,7 @@ snapshots:
       '@codemirror/language': 6.10.8
       '@codemirror/state': 6.5.1
       '@codemirror/view': 6.36.2
-      '@lezer/highlight': 1.2.1
+      '@lezer/highlight': 1.2.2
 
   '@codemirror/view@6.36.2':
     dependencies:
@@ -2616,9 +2654,15 @@ snapshots:
 
   '@lezer/common@1.2.3': {}
 
+  '@lezer/common@1.3.0': {}
+
   '@lezer/highlight@1.2.1':
     dependencies:
       '@lezer/common': 1.2.3
+
+  '@lezer/highlight@1.2.2':
+    dependencies:
+      '@lezer/common': 1.3.0
 
   '@lezer/lr@1.4.2':
     dependencies:
@@ -2667,15 +2711,13 @@ snapshots:
       lodash: 4.17.21
       redent: 3.0.0
 
-  '@testing-library/react@13.4.0(@types/react@17.0.83)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@testing-library/react@13.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@babel/runtime': 7.26.7
       '@testing-library/dom': 8.20.1
-      '@types/react-dom': 18.3.5(@types/react@17.0.83)
+      '@types/react-dom': 18.2.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-    transitivePeerDependencies:
-      - '@types/react'
 
   '@testing-library/user-event@14.6.1(@testing-library/dom@8.20.1)':
     dependencies:
@@ -2732,25 +2774,21 @@ snapshots:
 
   '@types/pako@2.0.3': {}
 
-  '@types/prop-types@15.7.14': {}
+  '@types/prop-types@15.7.15': {}
 
   '@types/qs@6.9.18': {}
 
-  '@types/react-dom@17.0.26(@types/react@17.0.83)':
+  '@types/react-dom@18.2.0':
     dependencies:
-      '@types/react': 17.0.83
+      '@types/react': 18.2.0
 
-  '@types/react-dom@18.3.5(@types/react@17.0.83)':
+  '@types/react@18.2.0':
     dependencies:
-      '@types/react': 17.0.83
-
-  '@types/react@17.0.83':
-    dependencies:
-      '@types/prop-types': 15.7.14
-      '@types/scheduler': 0.16.8
+      '@types/prop-types': 15.7.15
+      '@types/scheduler': 0.26.0
       csstype: 3.1.3
 
-  '@types/scheduler@0.16.8': {}
+  '@types/scheduler@0.26.0': {}
 
   '@types/ssh2-sftp-client@9.0.5':
     dependencies:
@@ -3098,7 +3136,7 @@ snapshots:
   codemirror@6.0.1:
     dependencies:
       '@codemirror/autocomplete': 6.18.4
-      '@codemirror/commands': 6.8.0
+      '@codemirror/commands': 6.9.0
       '@codemirror/language': 6.10.8
       '@codemirror/lint': 6.8.4
       '@codemirror/search': 6.5.8
@@ -4147,6 +4185,8 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
+  prettier@3.6.2: {}
+
   pretty-format@27.5.1:
     dependencies:
       ansi-regex: 5.0.1
@@ -4667,3 +4707,8 @@ snapshots:
   yallist@3.1.1: {}
 
   yocto-queue@0.1.0: {}
+
+  zustand@5.0.8(@types/react@18.2.0)(react@18.3.1):
+    optionalDependencies:
+      '@types/react': 18.2.0
+      react: 18.3.1

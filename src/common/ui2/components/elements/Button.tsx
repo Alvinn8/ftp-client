@@ -13,10 +13,20 @@ interface ButtonProps {
     disabled?: boolean;
 }
 
-const Button: React.FC<ButtonProps> = ({ className, onClick, severity, variant, size, icon, label, loading, disabled }) => {
+const Button: React.FC<ButtonProps> = ({
+    className,
+    onClick,
+    severity,
+    variant,
+    size,
+    icon,
+    label,
+    loading,
+    disabled,
+}) => {
     return (
         <button
-            className={`${className} button button-${severity || 'secondary'} button-${variant || 'solid'} button-${size || 'medium'} ${loading ? 'loading' : ''}`}
+            className={`${className} button button-${severity || "secondary"} button-${variant || "solid"} button-${size || "medium"} ${loading ? "loading" : ""}`}
             onClick={onClick}
             disabled={disabled || loading}
             aria-label={label}
@@ -24,7 +34,10 @@ const Button: React.FC<ButtonProps> = ({ className, onClick, severity, variant, 
             {icon && !loading && <i className={`bi bi-${icon}`}></i>}
             {loading && (
                 <div>
-                    <div className="spinner-border spinner-border-sm" role="status">
+                    <div
+                        className="spinner-border spinner-border-sm"
+                        role="status"
+                    >
                         <span className="visually-hidden">Loading...</span>
                     </div>
                 </div>
@@ -32,6 +45,6 @@ const Button: React.FC<ButtonProps> = ({ className, onClick, severity, variant, 
             {label}
         </button>
     );
-}
+};
 
 export default Button;

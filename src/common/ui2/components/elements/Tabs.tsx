@@ -5,7 +5,7 @@ type Tab<T> = {
     id: T;
     label: string;
     icon: string;
-}
+};
 
 interface TabsProps<T> {
     tabs: Tab<T>[];
@@ -18,7 +18,7 @@ const Tabs = <T,>({ tabs, activeTab, onTabChange }: TabsProps<T>) => {
         <div className="tabs">
             {tabs.map((tab, index) => (
                 <button
-                    className={`tab ${activeTab === tab.id ? 'active' : ''}`}
+                    className={`tab ${activeTab === tab.id ? "active" : ""}`}
                     onClick={() => onTabChange(tab.id)}
                     key={`${tab.id}${index}`}
                 >
