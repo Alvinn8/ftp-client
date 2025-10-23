@@ -151,6 +151,12 @@ export class TaskManager extends EventEmitter {
         this.tickTreeTasks();
         this.session.tryExecutePoolRequest();
     }
+
+    pauseAllTreeTasks() {
+        for (const treeTask of this.treeTasks) {
+            treeTask.setPaused(true);
+        }
+    }
 }
 
 /** @deprecated */

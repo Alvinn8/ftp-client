@@ -41,6 +41,11 @@ export default class FTPSession extends EventEmitter {
         this.connectionPool.on("connectionAvailable", () => {
             this.tryExecutePoolRequest();
         });
+        this.connectionPool.on("connectionFailed", () => {
+            // We must pause all tasks so that they stop retrying to connect.
+            // TODO notify user? Dialog? Or Action Required in task?
+            this.taskManager.pauseAllTreeTasks();
+        })
         // TODO store task manager in the session instead of globally.
         // this.taskManager = new TaskManager();
         this.taskManager = taskManager;

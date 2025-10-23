@@ -8,12 +8,13 @@ export type ConnectionPoolEntry = {
     locked: boolean;
 };
 
-export class ConnectionPool extends EventEmitter{
+export class ConnectionPool extends EventEmitter {
     private readonly profile: Profile;
     private connections: ConnectionPoolEntry[] = [];
     private targetConnectionCount: number = 1;
     private isCreatingConnection: boolean = false;
     private lastConnectionCreationAttempt: number = 0;
+    private amountOfConnectionAttempts: number = 0;
 
     constructor(profile: Profile) {
         super();
@@ -87,11 +88,17 @@ export class ConnectionPool extends EventEmitter{
         if (this.connections.length < this.targetConnectionCount) {
             const now = Date.now();
             const timeSinceLastAttempt = now - this.lastConnectionCreationAttempt;
-            
+
+            if (this.amountOfConnectionAttempts >= 5) {
+                this.emit("connectionFailed");
+                return;
+            }
+
             // Only create a connection if:
             // 1. No connection is currently being created
             // 2. Enough time has passed since the last attempt (to prevent rapid retries)
             // 3. If more than 15 seconds have passed, assume timeout and try again.
+            // 4. The maximum amount of connection attempts has not been reached (handled above).
             if ((!this.isCreatingConnection && timeSinceLastAttempt >= 1000) || timeSinceLastAttempt >= 15_000) {
                 this.isCreatingConnection = true;
                 this.lastConnectionCreationAttempt = now;
@@ -99,15 +106,19 @@ export class ConnectionPool extends EventEmitter{
                 try {
                     const connection = await this.createConnection();
                     if (await connection.isConnected()) {
+                        // Success: reset attempt counter
+                        this.amountOfConnectionAttempts = 0;
                         console.log("Created new connection for pool");
                         this.connections.push({ connection, locked: false });
                         this.emit("connectionAvailable");
                     } else {
                         connection.websocket.close();
+                        this.amountOfConnectionAttempts++;
                     }
                 } catch (error) {
-                    // Print the error but do not crash the application.
-                    // The connection will be retried later.
+                    // Increment attempt counter and update last attempt time on error.
+                    this.amountOfConnectionAttempts++;
+                    this.lastConnectionCreationAttempt = Date.now();
                     console.error("Failed to create new connection for pool:", error);
                 } finally {
                     this.isCreatingConnection = false;

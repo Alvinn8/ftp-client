@@ -1,2 +1,4 @@
 src/common/ui/**/*
 src/common/ftp/**/*
+src/common/test/**/*
+src/common/task/**/*

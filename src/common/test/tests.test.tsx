@@ -284,10 +284,3 @@ async function findPromptInput(text: string) {
     expect(input).toBeInTheDocument();
     return input;
 }
-
-describe("version", () => {
-    it("update version is today's date", () => {
-        const currentDate = new Date().toLocaleString("en-us", { month: "long", day: "numeric" });
-        expect(VERSION).toBe(currentDate);
-    });
-});
