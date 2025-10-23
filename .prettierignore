@@ -1,1 +1,2 @@
-!src/common/ui2
+src/common/ui/**/*
+src/common/ftp/**/*

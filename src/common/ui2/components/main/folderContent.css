@@ -1,0 +1,30 @@
+.folder-content-table {
+    border-collapse: collapse;
+    background-color: var(--bg-base);
+}
+
+.folder-content-table thead {
+    background-color: var(--bg-dark);
+}
+
+.folder-content-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color 0.1s ease-in-out;
+}
+.folder-content-table tbody tr:hover {
+    background-color: var(--bg-highlight);
+}
+
+.folder-content-table td.entry-name {
+    padding: 9px;
+}
+.folder-content-table th.entry-name {
+    padding: 10px;
+}
+
+@media (max-width: 600px) {
+    .folder-content-table .last-modified {
+        display: none;
+    }
+}

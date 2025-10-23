@@ -1,0 +1,31 @@
+.checkbox-wrapper {
+    display: inline-flex;
+    padding: 6px;
+    border-radius: 6px;
+    position: relative;
+}
+
+.checkbox {
+    appearance: none;
+    background-color: var(--bg-dark);
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    width: 1em;
+    height: 1em;
+    font: inherit;
+    cursor: pointer;
+}
+
+.checkbox:checked {
+    background-color: hsl(215, 95%, 52%);
+    border: 1px solid hsl(215, 95%, 52%);
+}
+
+.checkbox-check {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    color: white;
+}

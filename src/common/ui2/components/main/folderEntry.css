@@ -1,0 +1,30 @@
+.folder-entry-rename-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0px 8px;
+    position: relative;
+    display: inline-block;
+}
+
+.folder-entry-rename-input {
+    outline: none;
+    padding: 0;
+    border: none;
+    font-size: inherit;
+    background-color: transparent;
+    position: absolute;
+    top: 0;
+    left: 8px;
+    font-family: sans-serif;
+    width: 100%;
+}
+
+.folder-entry-rename-size {
+    position: relative;
+    opacity: 0;
+    user-select: none;
+    font-family: sans-serif;
+    min-width: 2px;
+    height: 1em;
+    white-space: pre;
+}

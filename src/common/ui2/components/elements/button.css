@@ -36,6 +36,7 @@
 .button-primary {
     background: hsl(215, 95%, 52%);
     border: none;
+    color: white;
 }
 .button-primary:not(:disabled):hover {
     background: hsl(215, 95%, 48%);

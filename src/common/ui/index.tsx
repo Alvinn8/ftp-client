@@ -10,6 +10,6 @@ const AppWrapper: React.FC = () => {
         return <Ui2App />;
     }
     return <App />;
-}
+};
 
 ReactDOM.createRoot(document.getElementById("root")).render(<AppWrapper />);

@@ -22,13 +22,13 @@
     }
 }
 
-.bg-dark {
+.bg-dark-ui2 {
     background-color: var(--bg-dark);
 }
-.bg-base {
+.bg-base-ui2 {
     background-color: var(--bg-base);
 }
-.bg-highlight {
+.bg-highlight-ui2 {
     background-color: var(--bg-highlight);
 }
 .text-color {

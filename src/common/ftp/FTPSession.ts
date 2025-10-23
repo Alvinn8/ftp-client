@@ -10,6 +10,7 @@ import { EventEmitter } from "eventemitter3";
 import { unexpectedErrorHandler } from "../error";
 import taskManager, { TaskManager } from "../task/TaskManager";
 import { State } from "../ui/App";
+import { FolderCache } from "./FolderCache";
 
 /**
  * An FTP session that holds some information about the current session.
@@ -23,13 +24,15 @@ export default class FTPSession extends EventEmitter {
     public readonly profile: Profile;
     /** @deprecated */
     private connection: FTPConnection;
+    /** @deprecated */
     public cache: {[key: string]: FolderEntry[]} = {};
+    public folderCache = new FolderCache();
     private queue: FTPRequest<any>[] = [];
     private queueLock: string | null = null;
     private bypassLockQueue: FTPRequest<any>[] = [];
     private connectionPool: ConnectionPool;
     private poolQueue: FTPRequest<any>[] = [];
-    private taskManager: TaskManager;
+    public readonly taskManager: TaskManager;
 
     constructor(profile: Profile) {
         super();
