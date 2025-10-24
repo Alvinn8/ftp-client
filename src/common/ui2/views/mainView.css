@@ -1,0 +1,32 @@
+.main-view {
+    background-color: var(--bg-dark);
+    height: 100%;
+}
+
+.path-container {
+    display: inline-flex;
+    background-color: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px 4px;
+}
+
+.folder-explorer {
+    min-width: 200px;
+    border-right: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+    .folder-explorer {
+        display: none;
+    }
+}
+
+.content {
+    background-color: var(--bg-base);
+    border-top: 1px solid var(--border);
+}
+
+.actions {
+    border-bottom: 1px solid var(--border);
+}

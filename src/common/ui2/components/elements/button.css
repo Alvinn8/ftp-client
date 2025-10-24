@@ -13,7 +13,7 @@
     cursor: not-allowed;
 }
 .button:not(:disabled):hover {
-    background: var(--bg-base);
+    background: var(--bg-hover);
 }
 
 /* Variant */
@@ -66,4 +66,8 @@
 .button-medium {
     padding: 6px 12px;
     font-size: 14px;
+}
+.button-large {
+    padding: 8px 16px;
+    font-size: 16px;
 }

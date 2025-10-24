@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ensureAbsolute } from "../../utils";
+import { useSelection } from "./selectionStore";
 
 interface PathState {
     path: string;
@@ -14,6 +15,8 @@ const usePath = create<PathState>((set) => ({
             p += "/";
         }
         set({ path: p });
+        // Clear selection when changing path
+        useSelection.getState().clear();
     },
 }));
 

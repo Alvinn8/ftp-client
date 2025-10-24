@@ -17,6 +17,7 @@
     left: 8px;
     font-family: sans-serif;
     width: 100%;
+    color: var(--text);
 }
 
 .folder-entry-rename-size {

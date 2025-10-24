@@ -8,7 +8,7 @@ interface ButtonProps {
     variant?: "solid" | "outline" | "ghost";
     size?: "small" | "medium" | "large";
     icon?: string;
-    label?: string;
+    label?: string | JSX.Element;
     loading?: boolean;
     disabled?: boolean;
 }
@@ -29,7 +29,6 @@ const Button: React.FC<ButtonProps> = ({
             className={`${className} button button-${severity || "secondary"} button-${variant || "solid"} button-${size || "medium"} ${loading ? "loading" : ""}`}
             onClick={onClick}
             disabled={disabled || loading}
-            aria-label={label}
         >
             {icon && !loading && <i className={`bi bi-${icon}`}></i>}
             {loading && (

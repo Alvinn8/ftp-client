@@ -10,6 +10,9 @@ import { addMessage } from "../messages";
 import { EventEmitter } from "eventemitter3";
 import { formatError } from "../../error";
 import { sha256 } from "../../utils";
+import { useNewUiStore } from "../../ui2/store/newUiStore";
+import { performWithRetry } from "../../task/taskActions";
+import { useSession } from "../../ui2/store/sessionStore";
 
 interface EditorWindow {
     window: Window;
@@ -224,7 +227,13 @@ export async function openTextEditor(folderEntry: FolderEntry) {
                 wind.focus();
             } catch {}
         }
-        await getApp().state.session.uploadSmall(Priority.QUICK, blob, absolutePath);
+        if (useNewUiStore.getState().useNewUi) {
+            await performWithRetry(useSession.getState().getSession(), absolutePath, async (connection) => {
+                await connection.uploadSmall(blob, absolutePath);
+            });
+        } else {
+            await getApp().state.session.uploadSmall(Priority.QUICK, blob, absolutePath);
+        }
         // TODO what if the file is large?
         wind.postMessage({
             action: "save-callback"
@@ -287,8 +296,14 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
     if (allowSaving) {
         const absolutePath = folderEntry.path;
         wind["save"] = async function(blob: Blob) {
-            const session = getApp().state.session;
-            await session.uploadSmall(Priority.QUICK, blob, absolutePath);
+            if (useNewUiStore.getState().useNewUi) {
+                await performWithRetry(useSession.getState().getSession(), absolutePath, async (connection) => {
+                    await connection.uploadSmall(blob, absolutePath);
+                });
+            } else {
+                const session = getApp().state.session;
+                await session.uploadSmall(Priority.QUICK, blob, absolutePath);
+            }
             wind.postMessage({
                 action: "save-callback"
             });
@@ -377,7 +392,13 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
 
     let blob: Blob;
     try {
-        blob = await getApp().state.session.download(Priority.QUICK, folderEntry)
+        if (useNewUiStore.getState().useNewUi) {
+            blob = await performWithRetry(useSession.getState().getSession(), folderEntry.path, async (connection) => {
+                return await connection.download(folderEntry);
+            });
+        } else {
+            blob = await getApp().state.session.download(Priority.QUICK, folderEntry);
+        }
     } catch(err) {
         Dialog.message("Failed to open file", formatError(err));
         return null;

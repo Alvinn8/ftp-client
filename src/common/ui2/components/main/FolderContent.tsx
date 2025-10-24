@@ -23,7 +23,7 @@ const FolderContent: React.FC = () => {
 
     if (entries && entries.length === 0) {
         return (
-            <div className="p-3 text-center text-muted-color d-flex flex-column">
+            <div className="p-3 text-center text-muted-color d-flex flex-column flex-grow-1">
                 <i className="bi bi-folder fs-1" />
                 <span>This folder is empty</span>
             </div>
@@ -31,12 +31,12 @@ const FolderContent: React.FC = () => {
     }
 
     return (
-        <div>
+        <div className="flex-grow-1">
             <table className="folder-content-table w-100">
                 <thead>
                     <tr>
                         <th></th>
-                        <th>Name</th>
+                        <th className="py-2">Name</th>
                         <th>Size</th>
                         <th className="last-modified">Last Modified</th>
                         <th></th>

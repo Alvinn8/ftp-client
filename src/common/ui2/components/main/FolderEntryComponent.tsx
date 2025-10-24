@@ -62,7 +62,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
             onClick={() => !renaming && toggleSelection(entry)}
             onDoubleClick={onDoubleClick(entry)}
         >
-            <td>
+            <td className="ps-2">
                 <Checkbox
                     checked={selectedEntries.includes(entry)}
                     onChange={() => {}}

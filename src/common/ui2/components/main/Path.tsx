@@ -15,7 +15,7 @@ const Path: React.FC = () => {
     }
 
     return (
-        <div className="overflow-x-auto text-nowrap bg-dark-ui2">
+        <div className="overflow-x-auto text-nowrap">
             <Button icon="house" variant="ghost" onClick={() => setPath("/")} />
             {parts.map((part, index) => (
                 <React.Fragment key={index}>

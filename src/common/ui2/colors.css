@@ -1,19 +1,21 @@
 :root {
-    --bg-dark: hsl(0, 0%, 90%);
-    --bg-base: hsl(0, 0%, 95%);
-    --bg-highlight: hsl(0, 0%, 100%);
+    --bg-dark: hsl(195, 21%, 90%);
+    --bg-base: white;
+    --bg-highlight: white;
+    --bg-hover: hsl(195, 40%, 95%);
 
     --text: hsl(0, 0%, 5%);
-    --text-muted: hsl(0, 0%, 30%);
+    --text-muted: hsl(0, 0%, 50%);
 
-    --border: hsl(0, 0%, 30%);
+    --border: hsl(0, 0%, 80%);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg-dark: hsl(0, 0%, 5%);
+        --bg-dark: hsl(198, 55%, 5%);
         --bg-base: hsl(0, 0%, 12%);
         --bg-highlight: hsl(0, 0%, 20%);
+        --bg-hover: hsl(0, 0%, 18%);
 
         --text: hsl(0, 0%, 95%);
         --text-muted: hsl(0, 0%, 70%);

@@ -1,5 +1,7 @@
 import FTPSession from "../../ftp/FTPSession";
 import { create } from "zustand";
+import { useNewUiStore } from "./newUiStore";
+import { getApp } from "../../ui/App";
 
 interface SessionState {
     session: FTPSession | null;
@@ -21,4 +23,13 @@ const useSession = create<SessionState>((set, get) => ({
     hasSession: () => get().session !== null,
 }));
 
-export { useSession };
+function getSession(): FTPSession {
+    if (useNewUiStore.getState().useNewUi) {
+        let s = useSession.getState().getSession();
+        console.log("Got session from new store:", s);
+        return s;
+    }
+    return getApp().state.session;
+}
+
+export { useSession, getSession };
