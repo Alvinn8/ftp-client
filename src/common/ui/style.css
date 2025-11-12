@@ -135,6 +135,10 @@ body, html, #root, #root > div, #grid {
     font-size: 0.8rem;
 }
 
+#version button:not(:hover) {
+    opacity: 0.4;
+}
+
 #port {
     width: 50px;
 }

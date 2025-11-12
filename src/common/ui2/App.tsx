@@ -11,6 +11,16 @@ const App: React.FC = () => {
 
     return (
         <div>
+            <div
+                style={{
+                    backgroundColor: "hsl(350, 80%, 15%)",
+                    padding: "8px",
+                    textAlign: "center",
+                }}
+            >
+                <strong>Note:</strong> The new UI is still in development. Some
+                features may be missing or incomplete.
+            </div>
             {hasSession ? <MainView /> : <LoginView />}
             <Messages />
             <Tasks />

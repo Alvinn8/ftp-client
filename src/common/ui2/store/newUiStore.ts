@@ -6,7 +6,7 @@ interface UseNewUiState {
 }
 
 const useNewUiStore = create<UseNewUiState>((set) => ({
-    useNewUi: true,
+    useNewUi: false,
     toggleUseNewUi: () => set((state) => ({ useNewUi: !state.useNewUi })),
 }));
 

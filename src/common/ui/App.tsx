@@ -21,6 +21,9 @@ import ErrorScreen from "./ErrorScreen";
 import VERSION from "../../protocol/version";
 import { dirname } from "../utils";
 import { FTPProfile } from "../ftp/profile";
+import Button from "../ui2/components/elements/Button";
+import { useNewUiStore } from "../ui2/store/newUiStore";
+import { useSession } from "../ui2/store/sessionStore";
 
 let app: App;
 
@@ -241,6 +244,11 @@ export class App extends React.Component<AppProps, AppState> {
             }
         }
 
+        const goToNewUi = () => {
+            useSession.getState().setSession(this.state.session);
+            useNewUiStore.getState().toggleUseNewUi();
+        };
+
         return (
             <div>
                 {this.state.state == State.LOGIN && (
@@ -283,7 +291,10 @@ export class App extends React.Component<AppProps, AppState> {
                                 <aside id="selected-info">
                                     {aside}
                                     {actions}
-                                    <small id="version" className="text-secondary">Version: { VERSION }</small>
+                                    <small id="version" className="text-secondary">
+                                        <Button variant="ghost" label="Try new UI" onClick={() => goToNewUi()} />
+                                        Version: { VERSION }
+                                    </small>
                                 </aside>
                             </>
                         )}
