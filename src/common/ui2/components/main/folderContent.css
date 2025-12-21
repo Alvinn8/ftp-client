@@ -2,15 +2,6 @@
     border-collapse: collapse;
 }
 
-.folder-content-table tbody tr {
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background-color 0.1s ease-in-out;
-}
-.folder-content-table tbody tr:hover {
-    background-color: var(--bg-highlight);
-}
-
 .folder-content-table thead {
     border-bottom: 1px solid var(--border);
 }

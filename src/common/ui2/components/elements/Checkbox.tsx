@@ -3,13 +3,21 @@ import "./checkbox.css";
 
 interface CheckboxProps {
     checked: boolean;
+    severity?: "primary" | "white";
     onChange: (checked: boolean) => void;
 }
 
-const Checkbox: React.FC<CheckboxProps> = ({ checked, onChange }) => {
+const Checkbox: React.FC<CheckboxProps> = ({
+    checked,
+    severity = "primary",
+    onChange,
+}) => {
     const id = useId();
     return (
-        <label className="checkbox-wrapper" htmlFor={id}>
+        <label
+            className={`checkbox-wrapper ${checked ? "checkbox-wrapper-checked" : ""} checkbox-wrapper-${severity}`}
+            htmlFor={id}
+        >
             <input
                 id={id}
                 type="checkbox"

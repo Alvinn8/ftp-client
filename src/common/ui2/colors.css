@@ -8,6 +8,9 @@
     --text-muted: hsl(0, 0%, 50%);
 
     --border: hsl(0, 0%, 80%);
+
+    --primary-color: hsl(215, 95%, 52%);
+    --primary-color-hover: hsl(215, 95%, 48%);
 }
 
 @media (prefers-color-scheme: dark) {

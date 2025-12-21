@@ -1,3 +1,19 @@
+.folder-entry-component {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color 0.1s ease-in-out;
+}
+.folder-entry-component:not(.selected):hover {
+    background-color: var(--bg-highlight);
+}
+
+.folder-entry-component.selected {
+    background-color: var(--primary-color);
+}
+.folder-entry-component.selected:hover {
+    background-color: var(--primary-color-hover);
+}
+
 .folder-entry-rename-wrapper {
     border: 1px solid var(--border);
     border-radius: 5px;

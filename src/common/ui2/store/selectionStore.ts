@@ -7,6 +7,12 @@ interface SelectionState {
     toggle: (entry: FolderEntry) => void;
     clear: () => void;
     setSelection(entries: FolderEntry[]): void;
+    handleClick(
+        entry: FolderEntry,
+        entries: FolderEntry[],
+        e: React.MouseEvent,
+        multiSelect: boolean,
+    ): void;
 }
 
 const useSelection = create<SelectionState>((set, get) => ({
@@ -24,6 +30,46 @@ const useSelection = create<SelectionState>((set, get) => ({
             set({
                 selectedEntries: validateSelection([...selectedEntries, entry]),
             });
+        }
+    },
+    handleClick(
+        entry: FolderEntry,
+        entries: FolderEntry[],
+        e: React.MouseEvent,
+        multiSelect: boolean,
+    ) {
+        e.preventDefault();
+        const selectedEntries = get().selectedEntries;
+        if (e.shiftKey && selectedEntries.length > 0) {
+            // Find index of last selected item and current item
+            const lastSelected = selectedEntries[selectedEntries.length - 1];
+            const lastIndex = entries.indexOf(lastSelected);
+            const currentIndex = entries.indexOf(entry);
+
+            // Select all items between last selected and current
+            const start = Math.min(lastIndex, currentIndex);
+            const end = Math.max(lastIndex, currentIndex);
+            const toSelect = entries.slice(start, end + 1);
+
+            const newSelection = selectedEntries.slice();
+
+            for (const entry of toSelect) {
+                if (!newSelection.includes(entry)) {
+                    newSelection.push(entry);
+                }
+            }
+            get().setSelection(newSelection);
+        } else if (
+            selectedEntries.length > 0 &&
+            !(e.metaKey || e.ctrlKey || e.altKey || multiSelect)
+        ) {
+            if (selectedEntries.includes(entry)) {
+                get().clear();
+            } else {
+                get().setSelection([entry]);
+            }
+        } else {
+            get().toggle(entry);
         }
     },
     clear() {

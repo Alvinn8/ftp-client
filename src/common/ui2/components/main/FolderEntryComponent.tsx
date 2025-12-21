@@ -12,13 +12,14 @@ import Dialog from "../../../Dialog";
 
 interface FolderEntryComponentProps {
     entry: FolderEntry;
+    onSelect: (e: React.MouseEvent, multiSelect: boolean) => void;
 }
 
 const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
     entry,
+    onSelect,
 }) => {
     const selectedEntries = useSelection((state) => state.selectedEntries);
-    const toggleSelection = useSelection((state) => state.toggle);
     const setPath = usePath((state) => state.setPath);
 
     const [renaming, setRenaming] = useState(false);
@@ -56,20 +57,31 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
         }
     }
 
+    const selected = selectedEntries.includes(entry);
+
     return (
         <tr
             key={entry.name}
-            onClick={() => !renaming && toggleSelection(entry)}
+            className={`folder-entry-component ${selected ? "selected text-white" : ""}`}
+            onClick={(e) =>
+                !renaming &&
+                onSelect(
+                    e,
+                    e.target instanceof HTMLElement &&
+                        e.target.tagName === "INPUT",
+                )
+            }
             onDoubleClick={onDoubleClick(entry)}
         >
             <td className="ps-2">
                 <Checkbox
-                    checked={selectedEntries.includes(entry)}
+                    checked={selected}
+                    severity={selected ? "white" : "primary"}
                     onChange={() => {}}
                 />
             </td>
             <td className="entry-name">
-                {icon(entry, renaming, newName)}
+                {icon(entry, renaming, newName, selected)}
                 {renaming ? (
                     <div className="folder-entry-rename-wrapper ms-2">
                         <span className="folder-entry-rename-size">
@@ -99,6 +111,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                         label="Calculate"
                         variant="ghost"
                         size="small"
+                        severity={selected ? "white" : "secondary"}
                         onClick={() => {}}
                     />
                 )}
@@ -111,6 +124,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                     icon="three-dots-vertical"
                     variant="ghost"
                     size="small"
+                    severity={selected ? "white" : "secondary"}
                     onClick={() => setRenaming(true)}
                 />
             </td>
@@ -135,12 +149,24 @@ function formatLastModified(modifiedAt: string): string {
     return modifiedAt;
 }
 
-function icon(entry: FolderEntry, renaming: boolean, newName: string) {
+function icon(
+    entry: FolderEntry,
+    renaming: boolean,
+    newName: string,
+    selected: boolean,
+) {
     if (entry.isFile()) {
         const iconName = getIconFor(renaming ? newName : entry.name);
         return <i className={"bi bi-" + iconName} />;
     } else if (entry.isDirectory()) {
-        return <i className={"bi bi-folder-fill text-primary"} />;
+        return (
+            <i
+                className={
+                    "bi bi-folder-fill " +
+                    (selected ? "text-white" : "text-primary")
+                }
+            />
+        );
     } else {
         return <i className="bi bi-question-square" />;
     }

@@ -5,10 +5,12 @@ import { useSession } from "../../store/sessionStore";
 import { useFolderContent } from "../../../ftp/FolderCache";
 import { randomBetween, range } from "../../../utils";
 import FolderEntryComponent from "./FolderEntryComponent";
+import { useSelection } from "../../store/selectionStore";
 
 const FolderContent: React.FC = () => {
     const session = useSession((state) => state.getSession());
     const path = usePath((state) => state.path);
+    const handleSelectionClick = useSelection((state) => state.handleClick);
 
     const entries = useFolderContent(session, path);
     if (entries) {
@@ -82,6 +84,14 @@ const FolderContent: React.FC = () => {
                             <FolderEntryComponent
                                 key={entry.name}
                                 entry={entry}
+                                onSelect={(e, multiSelect) =>
+                                    handleSelectionClick(
+                                        entry,
+                                        entries,
+                                        e,
+                                        multiSelect,
+                                    )
+                                }
                             />
                         ))}
                 </tbody>

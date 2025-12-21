@@ -4,7 +4,7 @@ import "./button.css";
 interface ButtonProps {
     onClick: () => void;
     className?: string;
-    severity?: "primary" | "secondary" | "bg-base" | "danger";
+    severity?: "primary" | "secondary" | "danger" | "bg-base" | "white";
     variant?: "solid" | "outline" | "ghost";
     size?: "small" | "medium" | "large";
     icon?: string;
