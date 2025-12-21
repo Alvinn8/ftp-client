@@ -1,5 +1,5 @@
 import "./folderContent.css";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { usePath } from "../../store/pathStore";
 import { useSession } from "../../store/sessionStore";
 import { useFolderContent } from "../../../ftp/FolderCache";
@@ -31,7 +31,7 @@ const FolderContent: React.FC = () => {
     }
 
     return (
-        <div className="flex-grow-1">
+        <div className="flex-grow-1 bg-base-ui2">
             <table className="folder-content-table w-100">
                 <thead>
                     <tr>
@@ -46,7 +46,16 @@ const FolderContent: React.FC = () => {
                     {!entries &&
                         range(randomBetween(2, 8)).map((key) => (
                             <tr key={key}>
-                                <td></td>
+                                <td className="ps-2">
+                                    <div
+                                        className="skeleton"
+                                        style={{
+                                            width: "16px",
+                                            height: "16px",
+                                            margin: "6px",
+                                        }}
+                                    />
+                                </td>
                                 <td className="entry-name">
                                     <div
                                         className="skeleton"

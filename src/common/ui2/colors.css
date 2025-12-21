@@ -1,7 +1,7 @@
 :root {
-    --bg-dark: hsl(195, 21%, 90%);
+    --bg-dark: hsl(226 31% 93%);
     --bg-base: white;
-    --bg-highlight: white;
+    --bg-highlight: hsl(226 73% 96%);
     --bg-hover: hsl(195, 40%, 95%);
 
     --text: hsl(0, 0%, 5%);

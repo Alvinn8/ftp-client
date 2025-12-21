@@ -14,6 +14,7 @@ const App: React.FC = () => {
             <div
                 style={{
                     backgroundColor: "hsl(350, 80%, 15%)",
+                    color: "white",
                     padding: "8px",
                     textAlign: "center",
                 }}

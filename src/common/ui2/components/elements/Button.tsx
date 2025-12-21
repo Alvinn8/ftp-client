@@ -4,29 +4,32 @@ import "./button.css";
 interface ButtonProps {
     onClick: () => void;
     className?: string;
-    severity?: "primary" | "secondary" | "danger";
+    severity?: "primary" | "secondary" | "bg-base" | "danger";
     variant?: "solid" | "outline" | "ghost";
     size?: "small" | "medium" | "large";
     icon?: string;
     label?: string | JSX.Element;
     loading?: boolean;
     disabled?: boolean;
+    buttonRef?: React.Ref<HTMLButtonElement>;
 }
 
 const Button: React.FC<ButtonProps> = ({
     className,
     onClick,
-    severity,
-    variant,
-    size,
+    severity = "secondary",
+    variant = "solid",
+    size = "medium",
     icon,
     label,
     loading,
     disabled,
+    buttonRef,
 }) => {
     return (
         <button
-            className={`${className} button button-${severity || "secondary"} button-${variant || "solid"} button-${size || "medium"} ${loading ? "loading" : ""}`}
+            ref={buttonRef}
+            className={`${className} button button-${severity} button-${variant} button-${size} ${loading ? "loading" : ""}`}
             onClick={onClick}
             disabled={disabled || loading}
         >

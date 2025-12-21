@@ -41,6 +41,10 @@
 .button-primary:not(:disabled):hover {
     background: hsl(215, 95%, 48%);
 }
+.button-bg-base {
+    background: var(--bg-base);
+    color: var(--text);
+}
 .button-danger {
     background: hsl(350, 80%, 45%);
     color: white;

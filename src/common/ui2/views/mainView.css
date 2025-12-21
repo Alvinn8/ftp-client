@@ -1,19 +1,31 @@
 .main-view {
     background-color: var(--bg-dark);
     height: 100%;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+        ".               actions     right-content"
+        ".               navigation  right-content"
+        "folder-explorer content     right-content";
+}
+
+.navigation {
+    grid-area: navigation;
+    max-width: 1000px;
 }
 
 .path-container {
     display: inline-flex;
     background-color: var(--bg-base);
     border: 1px solid var(--border);
-    border-radius: 8px;
     padding: 2px 4px;
 }
 
 .folder-explorer {
+    grid-area: folder-explorer;
     min-width: 200px;
-    border-right: 1px solid var(--border);
+    max-width: 20vw;
 }
 
 @media (max-width: 768px) {
@@ -23,10 +35,13 @@
 }
 
 .content {
-    background-color: var(--bg-base);
-    border-top: 1px solid var(--border);
+    grid-area: content;
+    max-width: 1000px;
 }
 
 .actions {
+    grid-area: actions;
     border-bottom: 1px solid var(--border);
+    background-color: var(--bg-base);
+    max-width: 1000px;
 }
