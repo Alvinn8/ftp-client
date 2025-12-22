@@ -8,8 +8,8 @@ import { formatByteSize, joinPath } from "../../utils";
 import Button from "../../ui2/components/elements/Button";
 import { FileTreeComponent, FileTreeFileComponent } from "./FileTreeComponent";
 import PlusMinusInput from "../../ui2/components/elements/PlusMinusInput";
-import { getApp } from "../App";
 import StableHeightContainer from "../../ui2/components/elements/StableHeightContainer";
+import { getSession } from "../../ui2/store/sessionStore";
 
 interface TreeTaskDetailsProps {
     treeTask: TreeTask;
@@ -56,7 +56,7 @@ const TreeTaskDetails: React.FC<TreeTaskDetailsProps> = ({ treeTask, onClose }) 
         createPortal(
             <div className="modal" tabIndex={-1} ref={modalRef}>
                 <div className="modal-dialog">
-                    <div className="modal-content">
+                    <div className="modal-content bg-base-ui2">
                         <div className="modal-header">
                             <h5 className="modal-title me-auto">{ treeTask.title }</h5>
                             {statusPill(status)}
@@ -235,7 +235,7 @@ const FilesTab: React.FC<{ treeTask: TreeTask }> = ({ treeTask }) => {
 };
 
 const SettingsTab: React.FC<{ treeTask: TreeTask }> = ({ treeTask }) => {
-    const connectionPool = getApp().state.session.getConnectionPool();
+    const connectionPool = getSession().getConnectionPool();
     const [connectionCount, setConnectionCount] = useState(connectionPool.getTargetConnectionCount());
 
     useEffect(() => {

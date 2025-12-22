@@ -1,17 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelection } from "../../store/selectionStore";
 import { usePath } from "../../store/pathStore";
 import { openEditor } from "../../../ui/editor/editor";
 import { unexpectedErrorHandler } from "../../../error";
 import OverflowToMenu, { OverflowAction } from "../elements/OverflowToMenu";
+import UploadDialog from "./UploadDialog";
 
 const Actions: React.FC = () => {
     const selectedEntries = useSelection((state) => state.selectedEntries);
     const setPath = usePath((state) => state.setPath);
+    const [uploadDialog, setUploadDialog] = useState(false);
 
     const newFile = () => {};
     const newDirectory = () => {};
-    const upload = () => {};
     const openDirectory = () => setPath(selectedEntries[0].path);
     const openFile = () => {
         openEditor(selectedEntries[0]).catch(
@@ -25,7 +26,11 @@ const Actions: React.FC = () => {
     const genericActions: OverflowAction[] = [
         { icon: "file-earmark-plus", label: "New File", onClick: newFile },
         { icon: "folder-plus", label: "New Folder", onClick: newDirectory },
-        { icon: "upload", label: "Upload", onClick: upload },
+        {
+            icon: "upload",
+            label: "Upload",
+            onClick: () => setUploadDialog(true),
+        },
     ];
 
     const specificActions: OverflowAction[] = [];
@@ -68,7 +73,15 @@ const Actions: React.FC = () => {
         specificActions.length > 0 ? genericActions.length : null;
 
     return (
-        <OverflowToMenu actions={combinedActions} dividerIndex={dividerIndex} />
+        <div>
+            <OverflowToMenu
+                actions={combinedActions}
+                dividerIndex={dividerIndex}
+            />
+            {uploadDialog && (
+                <UploadDialog onClose={() => setUploadDialog(false)} />
+            )}
+        </div>
     );
 };
 

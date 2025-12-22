@@ -31,6 +31,9 @@ body, html, #root, #root > div, #grid {
         background-color: var(--bs-dark);
         color: var(--bs-light);
     }
+    .btn-close {
+        filter: invert(1);
+    }
 }
 
 #grid {

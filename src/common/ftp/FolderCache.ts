@@ -29,7 +29,16 @@ export class FolderCache {
         if (this.listeners.has(path)) {
             for (const listener of this.listeners.get(path)!) {
                 listener();
-                console.log("notifying");
+            }
+        }
+    }
+
+    remove(path: string) {
+        path = this.normalizePath(path);
+        this.cache.delete(path);
+        if (this.listeners.has(path)) {
+            for (const listener of this.listeners.get(path)!) {
+                listener();
             }
         }
     }

@@ -3,7 +3,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    background-color: var(--bg-dark);
+    background-color: var(--bg-highlight);
     color: var(--text);
 }
 

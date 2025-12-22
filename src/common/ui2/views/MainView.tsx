@@ -8,6 +8,9 @@ import { usePath } from "../store/pathStore";
 import { parentdir } from "../../utils";
 import Actions from "../components/main/Actions";
 import FolderExplorer from "../components/main/FolderExplorer";
+import LargeFileOperation from "../../ui/LargeFileOperation";
+import Tasks from "../../ui/task/Tasks";
+import OpenEditors from "../../ui/editor/OpenEditors";
 
 const MainView: React.FC = () => {
     const session = useSession((state) => state.session);
@@ -46,6 +49,14 @@ const MainView: React.FC = () => {
             </div>
             <div className="content flex-grow-1 overflow-y-auto m-2 rounded">
                 <FolderContent />
+            </div>
+            <div
+                className="position-absolute bottom-0 end-0 p-3 d-flex flex-column"
+                style={{ gap: "8px" }}
+            >
+                <LargeFileOperation />
+                <Tasks />
+                <OpenEditors />
             </div>
         </main>
     );

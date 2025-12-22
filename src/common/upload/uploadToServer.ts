@@ -3,6 +3,8 @@ import { ConnectionClosedError, formatError } from "../error";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
+import { FolderCache } from "../ftp/FolderCache";
+import FTPSession from "../ftp/FTPSession";
 import Priority from "../ftp/Priority";
 import Task from "../task/Task";
 import taskManager from "../task/TaskManager";
@@ -11,6 +13,9 @@ import { FileTree, FileTreeFile, Status } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
 import { getApp } from "../ui/App";
 import { largeFileOperationStore } from "../ui/LargeFileOperation";
+import { useNewUiStore } from "../ui2/store/newUiStore";
+import { usePath } from "../ui2/store/pathStore";
+import { useSession } from "../ui2/store/sessionStore";
 import { dirname, filename, joinPath, sleep } from "../utils";
 import Directory from "./Directory";
 
@@ -107,9 +112,18 @@ function uploadsToTree(uploads: Directory, path: string): FileTree<UploadData> {
 
 function uploadUsingTreeTask(uploads: Directory) {
 
-    const app = getApp()
-    const tree = uploadsToTree(uploads, app.state.workdir);
-    taskManager.addTreeTask(new TreeTask(app.state.session, tree, {
+    let workdir: string;
+    let session: FTPSession;
+    if (useNewUiStore.getState().useNewUi) {
+        workdir = usePath.getState().path;
+        session = useSession.getState().getSession();
+    } else {
+        const app = getApp();
+        workdir = app.state.workdir;
+        session = app.state.session;
+    }
+    const tree = uploadsToTree(uploads, workdir);
+    taskManager.addTreeTask(new TreeTask(session, tree, {
         processRootDirectory: true,
         title: (treeTask) => treeTask.count.totalDirectories === 0 && treeTask.count.totalFiles === 1
             ? "Uploading " + (treeTask.fileTree.getEntries()[0] as FileTreeFile).name
@@ -159,10 +173,14 @@ function uploadUsingTreeTask(uploads: Directory) {
                 }
             }
             // Update cache
-            const app = getApp();
-            app.state.session.cache[node.path] = list;
-            if (app.state.workdir === node.path) {
-                app.refreshWithoutClear();
+            if (useNewUiStore.getState().useNewUi) {
+                useSession.getState().getSession().folderCache.set(node.path, list);
+            } else {
+                const app = getApp();
+                app.state.session.cache[node.path] = list;
+                if (app.state.workdir === node.path) {
+                    app.refreshWithoutClear();
+                }
             }
         },
         file: async (node, connection) => {
@@ -264,7 +282,13 @@ function uploadUsingTreeTask(uploads: Directory) {
         cancelled: async (fileTree, connection) => {
             // If the task is cancelled, we need to delete all files that were partially
             // uploaded to avoid leaving behind corrupted files.
-            const cache = getApp().state.session.cache;
+            let cache: { [key: string]: FolderEntry[] | null } = null;
+            let folderCache: FolderCache | null = null;
+            if (useNewUiStore.getState().useNewUi) {
+                folderCache = useSession.getState().getSession().folderCache;
+            } else {
+                cache = getApp().state.session.cache;
+            }
             async function removePartialFilesRecursive(fileTree: FileTree<UploadData>) {
                 for (const entry of fileTree.getEntries()) {
                     if (entry instanceof FileTreeFile) {
@@ -272,7 +296,12 @@ function uploadUsingTreeTask(uploads: Directory) {
                             const path = joinPath(fileTree.path, entry.name);
                             console.log(`Removing partial file ${path}`);
                             await connection.delete(path);
-                            delete cache[dirname(path)];
+                            if (cache) {
+                                delete cache[dirname(path)];
+                            }
+                            if (folderCache) {
+                                folderCache.remove(dirname(path));
+                            }
                         }
                     } else {
                         await removePartialFilesRecursive(entry);
@@ -280,7 +309,12 @@ function uploadUsingTreeTask(uploads: Directory) {
                 }
             }
             await removePartialFilesRecursive(fileTree);
-            getApp().refreshWithoutClear();
+            if (useNewUiStore.getState().useNewUi) {
+                const session = useSession.getState().getSession();
+                session.folderCache.fetchIfNotCached(session, usePath.getState().path);
+            } else {
+                getApp().refreshWithoutClear();
+            }
         },
     }));
 }
@@ -295,6 +329,7 @@ function uploadUsingTreeTask(uploads: Directory) {
  * @param uploadCount The amount of files that have already been uploaded.
  * @param totalCount The total amount of files to upload.
  * @returns The new uploadCount, the new amount of files that have been uploaded.
+ * @deprecated
  */
 async function uploadDirectory(directory: Directory, task: Task, path: DirectoryPath, uploadCount: number, totalCount: number): Promise<number> {
     // Upload all files
@@ -406,6 +441,7 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
     return uploadCount;
 }
 
+/** @deprecated */
 async function uploadFile(file: File, path: string) {
     if (file.size <= LARGE_FILE_THRESHOLD) {
         await uploadSmallFile(file, path);
@@ -414,6 +450,7 @@ async function uploadFile(file: File, path: string) {
     }
 }
 
+/** @deprecated */
 async function uploadSmallFile(file: File, path: string) {
     let attempt = 0;
     let lastError: any = null;
@@ -439,6 +476,7 @@ async function uploadSmallFile(file: File, path: string) {
     }
 }
 
+/** @deprecated */
 async function uploadLargeFile(file: File, path: string) {
     let attempt = 0;
     let lastError: any = null;
@@ -515,6 +553,7 @@ async function uploadLargeFile(file: File, path: string) {
     }
 }
 
+/** @deprecated */
 async function uploadLargeFile0(file: File, path: string, startOffset: number | null, queueLockIdentifier: string) {
     const uploadId = await getApp().state.session.startChunkedUpload(Priority.LARGE_TASK, queueLockIdentifier, path, file.size, startOffset);
 
@@ -589,6 +628,7 @@ async function uploadLargeFile0(file: File, path: string, startOffset: number | 
     // else, all good!
 }
 
+/** @deprecated */
 async function getFileInfo(path: string): Promise<FolderEntry | null> {
     const listResult = await getApp().state.session.list(Priority.LARGE_TASK, dirname(path));
     const fileName = filename(path);
