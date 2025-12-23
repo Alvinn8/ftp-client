@@ -13,7 +13,7 @@ import { CancellationError, formatError, unexpectedErrorHandler } from "../error
 import { FileTree, FileTreeFile, Status } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
 import { usePath } from "../ui2/store/pathStore";
-import { openEditor } from "../ui/editor/editor";
+import { openChosenEditor, openEditor } from "../ui/editor/editor";
 import { getSession } from "../ui2/store/sessionStore";
 import { useNewUiStore } from "../ui2/store/newUiStore";
 import { performWithRetry } from "../task/taskActions";
@@ -24,6 +24,7 @@ interface Action {
     icon: string;
     label: string;
     onClick: () => void;
+    alternatives?: { label: string; onClick: () => void }[];
 }
 
 export function getActions(selectedEntries: FolderEntry[]): Action[] {
@@ -53,6 +54,14 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
                     unexpectedErrorHandler("Failed to open"),
                 );
             },
+            alternatives: [{
+                label: "Open as",
+                onClick: () => {
+                    openChosenEditor(selectedEntries[0]).catch(
+                        unexpectedErrorHandler("Failed to open"),
+                    );
+                }
+            }]
         });
     }
     if (oneFile) {

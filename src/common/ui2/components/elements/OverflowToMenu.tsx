@@ -7,6 +7,7 @@ export type OverflowAction = {
     label: string;
     onClick: () => void;
     key?: string;
+    alternatives?: { label: string; onClick: () => void }[];
 };
 
 type OverflowToMenuProps = {
@@ -105,6 +106,7 @@ const OverflowToMenu: React.FC<OverflowToMenuProps> = ({
                             size="large"
                             label={action.label}
                             onClick={action.onClick}
+                            alternatives={action.alternatives}
                         />
                     </React.Fragment>
                 ))}
@@ -124,19 +126,29 @@ const OverflowToMenu: React.FC<OverflowToMenuProps> = ({
                 onClose={() => setMenuOpen(false)}
             >
                 <div className="d-flex flex-column">
-                    {hiddenActions.map((action) => (
-                        <Button
-                            key={action.key ?? action.label}
-                            icon={action.icon}
-                            variant="ghost"
-                            size="large"
-                            label={action.label}
-                            onClick={() => {
-                                action.onClick();
-                                setMenuOpen(false);
-                            }}
-                        />
-                    ))}
+                    {hiddenActions
+                        .flatMap((action) => [
+                            action,
+                            ...(action.alternatives ?? []).map((alt) => ({
+                                icon: action.icon,
+                                label: alt.label,
+                                onClick: alt.onClick,
+                                key: `${action.key ?? action.label}-alt-${alt.label}`,
+                            })),
+                        ])
+                        .map((action) => (
+                            <Button
+                                key={action.key ?? action.label}
+                                icon={action.icon}
+                                variant="ghost"
+                                size="large"
+                                label={action.label}
+                                onClick={() => {
+                                    action.onClick();
+                                    setMenuOpen(false);
+                                }}
+                            />
+                        ))}
                 </div>
             </PopupMenu>
         </div>

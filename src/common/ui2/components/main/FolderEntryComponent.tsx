@@ -163,7 +163,10 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                     variant="ghost"
                     size="small"
                     severity={selected ? "white" : "secondary"}
-                    onClick={() => openContextMenu()}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        openContextMenu();
+                    }}
                 />
             </td>
             {contextMenuOpen &&
