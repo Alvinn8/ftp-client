@@ -2,9 +2,12 @@ import Dialog from "./Dialog";
 
 export function unexpectedErrorHandler(title: string) {
     return (err: unknown) => {
-        Dialog.message(title, "An unexpected error occured: " + formatError(err));
+        Dialog.message(
+            title,
+            "An unexpected error occured: " + formatError(err),
+        );
         reportError(err, title);
-    }
+    };
 }
 
 export function formatError(error: unknown) {
@@ -35,6 +38,13 @@ export class ConnectionClosedError extends Error {
         this.name = "ConnectionClosedError";
         this.code = code;
         this.reason = reason;
+    }
+}
+
+export class CancellationError extends Error {
+    constructor(message: string = "Operation cancelled") {
+        super(message);
+        this.name = "CancellationError";
     }
 }
 

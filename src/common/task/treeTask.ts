@@ -80,7 +80,9 @@ export type ProgressObject = {
 
 type TreeTaskOptions = {
     processRootDirectory?: boolean;
+    progress?: boolean;
     title: (treeTask: TreeTask) => string;
+    subTitle?: (treeTask: TreeTask) => string;
 }
 
 export enum TaskStatus {
@@ -115,6 +117,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
         this.title = "";
         this.options = {
             processRootDirectory: true,
+            progress: true,
             ...options
         };
         this.count = {

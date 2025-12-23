@@ -120,6 +120,7 @@ export function useFolderContent(session: FTPSession, path: string, active: bool
             return;
         }
         const listener = () => {
+            session.folderCache.fetchIfNotCached(session, path);
             setEntries(session.folderCache.get(path));
         };
         session.folderCache.fetchIfNotCached(session, path);

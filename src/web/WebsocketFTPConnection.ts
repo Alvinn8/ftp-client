@@ -6,7 +6,7 @@ import { ChunkedUploadResponse, ErrorReply, Packet, Packets } from "../protocol/
 import { LargeFileOperationInterface, largeFileOperationStore } from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
 import TaskManager from "../common/task/TaskManager";
-import { assertUnreachable, ConnectionClosedError, FTPError, SFTPError } from "../common/error";
+import { assertUnreachable, CancellationError, ConnectionClosedError, FTPError, SFTPError } from "../common/error";
 
 interface PendingReply {
     requestId: string;
@@ -98,7 +98,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 "Continue"
             );
             if (!confirmed) {
-                throw new Error("No internet connection, and the user decided to cancel.");
+                throw new CancellationError("No internet connection, and the user decided to cancel.");
             }
         }
 

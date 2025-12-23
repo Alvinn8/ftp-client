@@ -1,5 +1,5 @@
 import Dialog from "../Dialog";
-import { ConnectionClosedError, formatError } from "../error";
+import { CancellationError, ConnectionClosedError, formatError } from "../error";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
@@ -395,7 +395,7 @@ async function uploadDirectory(directory: Directory, task: Task, path: Directory
                 );
 
                 if (!shouldDelete) {
-                    throw new Error("A file occupied the name of a folder, and the user decided to cancel.");
+                    throw new CancellationError("A file occupied the name of a folder, and the user decided to cancel.");
                 }
 
                 await getApp().state.session.delete(Priority.LARGE_TASK, subdirPath);

@@ -38,9 +38,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
     function onDoubleClick(e: React.MouseEvent) {
         e.preventDefault();
         if (entry.isDirectory()) {
-            return () => {
-                setPath(entry.path);
-            };
+            setPath(entry.path);
         }
     }
 

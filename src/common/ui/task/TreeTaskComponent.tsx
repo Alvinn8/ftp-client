@@ -35,26 +35,35 @@ const TreeTaskComponent: React.FC<TaskProps> = ({ treeTask, onShowDetails }) => 
                 )}
             </div>
             <span className="text-muted-color text-small">{progress.text}</span>
-            <div className="progress my-1">
-                <div
-                    className={`progress-bar progress-bar-striped ${status === TaskStatus.IN_PROGRESS ? "progress-bar-animated" : ""}`}
-                    role="progressbar"
-                    aria-valuenow={progress.value} aria-valuemin={0} aria-valuemax={progress.max}
-                    style={{ width: (progress.value / progress.max) * 100 + "%" }}
-                />
-            </div>
-            <div className="d-flex justify-content-between gap-3 text-xs text-muted-color text-smaller">
-                {progress.totalFiles > 1 && (
-                    <span>
-                        {progress.completedFiles} of {progress.totalFiles} files
-                    </span>
-                )}
-                {progress.totalFileSize && (
-                    <span>
-                        {formatByteSize(progress.completedFileSize)} / {formatByteSize(progress.totalFileSize)}
-                    </span>
-                )}
-            </div>
+            {treeTask.options.progress && (
+                <>
+                    <div className="progress my-1">
+                        <div
+                            className={`progress-bar progress-bar-striped ${status === TaskStatus.IN_PROGRESS ? "progress-bar-animated" : ""}`}
+                            role="progressbar"
+                            aria-valuenow={progress.value} aria-valuemin={0} aria-valuemax={progress.max}
+                            style={{ width: (progress.value / progress.max) * 100 + "%" }}
+                        />
+                    </div>
+                    <div className="d-flex justify-content-between gap-3 text-xs text-muted-color text-smaller">
+                        {progress.totalFiles > 1 && (
+                            <span>
+                                {progress.completedFiles} of {progress.totalFiles} files
+                            </span>
+                        )}
+                        {progress.totalFileSize && (
+                            <span>
+                                {formatByteSize(progress.completedFileSize)} / {formatByteSize(progress.totalFileSize)}
+                            </span>
+                        )}
+                    </div>
+                </>
+            )}
+            {!treeTask.options.progress && treeTask.options.subTitle && (
+                <div className="text-xs text-muted-color text-smaller">
+                    {treeTask.options.subTitle(treeTask)}
+                </div>
+            )}
             <div className="d-flex flex-wrap gap-1 mt-2">
                 { status === TaskStatus.PAUSED ? (
                     <Button

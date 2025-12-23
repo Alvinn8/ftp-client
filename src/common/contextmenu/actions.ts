@@ -9,11 +9,14 @@ import Task from "../task/Task";
 import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
 import { joinPath, parentdir, sleep } from "../utils";
-import { formatError, unexpectedErrorHandler } from "../error";
-import { FileTree, FileTreeFile } from "../task/tree";
+import { CancellationError, formatError, unexpectedErrorHandler } from "../error";
+import { FileTree, FileTreeFile, Status } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
 import { usePath } from "../ui2/store/pathStore";
 import { openEditor } from "../ui/editor/editor";
+import { getSession } from "../ui2/store/sessionStore";
+import { useNewUiStore } from "../ui2/store/newUiStore";
+import { performWithRetry } from "../task/taskActions";
 
 const useTreeTasks = true;
 
@@ -52,13 +55,6 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
             },
         });
     }
-    if (one) {
-        actions.push({
-            icon: "pencil",
-            label: "Rename",
-            onClick: () => rename(selectedEntries[0]),
-        });
-    }
     if (oneFile) {
         actions.push({
             icon: "download",
@@ -80,6 +76,13 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
             }
         });
     }
+    if (one) {
+        actions.push({
+            icon: "pencil",
+            label: "Rename",
+            onClick: () => rename(selectedEntries[0]),
+        });
+    }
     actions.push({
         icon: "trash",
         label: "Delete",
@@ -94,6 +97,13 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
 
 export async function downloadFolderEntry(entry: FolderEntry) {
     console.log("Download one folder entry");
+    if (useNewUiStore.getState().useNewUi) {
+        performWithRetry(getSession(), parentdir(entry.path), async (connection) => {
+            const blob = await connection.download(entry);
+            download(blob, entry.name);
+        }).catch(unexpectedErrorHandler("Failed to download"));
+        return;
+    }
     try {
         const blob = await getApp().state.session.download(Priority.QUICK, entry);
         download(blob, entry.name);
@@ -106,17 +116,31 @@ export function rename(entry: FolderEntry) {
     Dialog.prompt("Rename "+ entry.name, "Enter the new name of the file", "Rename", entry.name, newName => {
         const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
         console.log("Renaming", entry.path, "to", newPath);
-        getApp().state.session.rename(Priority.QUICK, entry.path, newPath)
-            .catch(err => {
-                if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
-                    Dialog.message("Rename failed", "A file or folder with the new name already exists.");
-                } else {
-                    unexpectedErrorHandler("Failed to rename")(err);
+        if (useNewUiStore.getState().useNewUi) {
+            performWithRetry(getSession(), parentdir(entry.path), async (connection) => {
+                try {
+                    await connection.rename(entry.path, newPath);
+                } catch(err) {
+                    if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
+                        Dialog.message("Rename failed", "A file or folder with the new name already exists.");
+                    } else {
+                        unexpectedErrorHandler("Failed to rename")(err);
+                    }
                 }
-            })
-            .finally(() => {
-            getApp().refresh();
-            });
+            }).catch(unexpectedErrorHandler("Failed to rename"));
+        } else {
+            getApp().state.session.rename(Priority.QUICK, entry.path, newPath)
+                .catch(err => {
+                    if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
+                        Dialog.message("Rename failed", "A file or folder with the new name already exists.");
+                    } else {
+                        unexpectedErrorHandler("Failed to rename")(err);
+                    }
+                })
+                .finally(() => {
+                getApp().refresh();
+                });
+        }
     });
 }
 
@@ -180,37 +204,91 @@ async function entryToFileTree(entry: FolderEntry): Promise<FileTree> {
     return dirTree;
 }
 
+async function countEntriesToFileTree(entries: FolderEntry[], title: string): Promise<FileTree> {
+    let commonParent = parentdir(entries[0].path);
+    // Create a shallow file tree
+    const rootFileTree = new FileTree(commonParent);
+    for (const entry of entries) {
+        const parent = parentdir(entry.path);
+        if (parent !== commonParent) {
+            throw new Error("Entries are not in the same directory. Common parent: " + commonParent + ", entry parent: " + parent);
+        }
+       if (entry.isFile()) {
+            rootFileTree.addEntry(new FileTreeFile(entry.name, null, entry.size, rootFileTree));
+        } else if (entry.isDirectory()) {
+            rootFileTree.addEntry(new FileTree(entry.path));
+        }
+    }
+    // Start a tree task that will add to the file tree
+    return await new Promise<FileTree>((resolve, reject) => {
+        const session = getSession();
+        const task = new TreeTask(session, rootFileTree, {
+            processRootDirectory: false,
+            progress: false,
+            title: () => title,
+            subTitle: (treeTask) => (`Found ${treeTask.count.completedFiles} file` +
+                (treeTask.count.completedFiles === 1 ? "" : "s") +
+                ` in ${treeTask.count.completedDirectories} folder` +
+                (treeTask.count.completedDirectories === 1 ? "" : "s")),
+        }, {
+            beforeDirectory: async (directory, connection) => {
+                // Check cache first
+                let entries = session.folderCache.get(directory.path);
+                if (!entries) {
+                    // Fetch if not in cache
+                    entries = await connection.list(directory.path);
+                }
+                // Add files and nested directories to the file tree.
+                const existingEntries = directory.getEntries();
+                for (const entry of entries) {
+                    if (entry.isFile()) {
+                        if (existingEntries.find(e => e instanceof FileTreeFile && e.name === entry.name)) {
+                            continue;
+                        }
+                        directory.addEntry(new FileTreeFile(entry.name, null, entry.size, directory));
+                    } else if (entry.isDirectory()) {
+                        if (existingEntries.find(e => e instanceof FileTree && e.path === entry.path)) {
+                            continue;
+                        }
+                        directory.addEntry(new FileTree(entry.path));
+                    }
+                }
+            },
+            afterDirectory: async (_directory, _connection) => {},
+            file: async (_file, _connection) => {},
+            done(_fileTree, _connection) {
+                // The file tree will now have status DONE. Copy it.
+                resolve(copyFileTree(rootFileTree));
+            },
+            cancelled(_fileTree, _connection) {
+                reject(new CancellationError("Counting task was cancelled"));
+            },
+        });
+        session.taskManager.addTreeTask(task);
+    });
+}
+
+function copyFileTree(fileTree: FileTree): FileTree {
+    const newTree = new FileTree(fileTree.path);
+    for (const entry of fileTree.getEntries()) {
+        if (entry instanceof FileTreeFile) {
+            const newFile = new FileTreeFile(entry.name, null, entry.size, newTree);
+            newTree.addEntry(newFile);
+        } else if (entry instanceof FileTree) {
+            const newSubTree = copyFileTree(entry);
+            newTree.addEntry(newSubTree);
+        }
+    }
+    return newTree;
+}
+
 export async function deleteFolderEntries(entries: FolderEntry[]) {
     if (!TaskManager.requestNewTask()) return;
-    
-    // Counting can sometimes take a bit, start a task.
-    const countTask = new CountTask("Delete", "Counting files to delete", false);
-    TaskManager.setTask(countTask);
-    let totalCount: number | null = null;
-    try {
-        totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
-    } catch (err) {
-        countTask.complete();
-        Dialog.message(
-            "Delete failed",
-            `Failed to count files to delete. ${formatError(err)}`
-        );
-        return;
-    }
-    countTask.complete();
 
-    const description = totalCount === 1 && entries[0]
-        ? entries[0].name
-        : totalCount + (totalCount === 1 ? " file" : " files");
-
-    if (!await Dialog.confirm("Delete " + description, "You are about to delete "
-        + description +". This can not be undone. Are you sure?")) {
-        return;
-    }
     if (useTreeTasks) {
-        const session = getApp().state.session;
-        const rootFileTree = await entriesToFileTree(entries);
-        TaskManager.addTreeTask(new TreeTask(session, rootFileTree, {
+        const session = getSession();
+        const rootFileTree = await countEntriesToFileTree(entries, "Counting files to delete");
+        const task = new TreeTask(session, rootFileTree, {
             title: (treeTask) => "Deleting " + treeTask.count.totalFiles + " file" + (treeTask.count.totalFiles == 1 ? "" : "s"),
             // It is important that we do not process the root directory,
             // as it is the container for the files we want to delete.
@@ -246,10 +324,14 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
                         throw err;
                     }
                 }
-                const app = getApp();
-                delete app.state.session.cache[directory.path];
-                if (app.state.workdir === directory.path) {
-                    app.refresh();
+                if (useNewUiStore.getState().useNewUi) {
+                    getSession().folderCache.remove(directory.path);
+                } else {
+                    const app = getApp();
+                    delete app.state.session.cache[directory.path];
+                    if (app.state.workdir === directory.path) {
+                        app.refresh();
+                    }
                 }
             },
             async file(file, connection) {
@@ -264,17 +346,56 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
                 }
             },
             done(fileTree, connection) {
-                const app = getApp();
-                delete app.state.session.cache[fileTree.path];
-                if (app.state.workdir === fileTree.path) {
-                    app.refreshWithoutClear();
+                if (useNewUiStore.getState().useNewUi) {
+                    getSession().folderCache.remove(fileTree.path);
+                } else {
+                    const app = getApp();
+                    delete app.state.session.cache[fileTree.path];
+                    if (app.state.workdir === fileTree.path) {
+                        app.refreshWithoutClear();
+                    }
                 }
             },
-        }));
+        });
+        const description = task.count.totalFiles === 1 && entries[0]
+            ? entries[0].name
+            : task.count.totalFiles + (task.count.totalFiles === 1 ? " file" : " files");
+
+        if (!await Dialog.confirm("Delete " + description, "You are about to delete "
+            + task.count.totalFiles +" files and "+ task.count.totalDirectories +" folders. "+
+            "This can not be undone. Are you sure?")) {
+            return;
+        }
+        session.taskManager.addTreeTask(task);
         return;
     }
     if (!TaskManager.requestNewTask()) return;
     
+    // Counting can sometimes take a bit, start a task.
+    const countTask = new CountTask("Delete", "Counting files to delete", false);
+    TaskManager.setTask(countTask);
+    let totalCount: number | null = null;
+    try {
+        totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
+    } catch (err) {
+        countTask.complete();
+        Dialog.message(
+            "Delete failed",
+            `Failed to count files to delete. ${formatError(err)}`
+        );
+        return;
+    }
+    countTask.complete();
+
+    const description = totalCount === 1 && entries[0]
+        ? entries[0].name
+        : totalCount + (totalCount === 1 ? " file" : " files");
+
+    if (!await Dialog.confirm("Delete " + description, "You are about to delete "
+        + description +". This can not be undone. Are you sure?")) {
+        return;
+    }
+
     // Delete
     const task = new Task("Deleting " + totalCount + " file" + (totalCount == 1 ? "" : "s"), "", true);
     TaskManager.setTask(task);
@@ -383,31 +504,21 @@ async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath
 }
 
 export async function downloadAsZip(entries: FolderEntry[]) {
-    if (!TaskManager.requestNewTask()) return;
-
-    // Counting can sometimes take a bit, start a task.
-    const countTask = new CountTask("Download", "Counting files to download", false);
-    TaskManager.setTask(countTask);
-    let totalCount: number | null = null;
-    try {
-        totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
-    } catch (err) {
-        countTask.complete();
-        Dialog.message(
-            "Download failed",
-            `Failed to count files to download. ${formatError(err)}`
-        );
-        return;
-    }
-    countTask.complete();
-
     if (useTreeTasks) {
-        const fileTree = await entriesToFileTree(entries);
+        let fileTree: FileTree;
+        try {
+            fileTree = await countEntriesToFileTree(entries, "Counting files to download");
+        } catch (err) {
+            if (err instanceof CancellationError) {
+                return;
+            }
+            throw err;
+        }
         const zip = new JSZip();
         const rootPath = getDirectoryPath(entries).get();
         const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
-        const session = getApp().state.session;
-        TaskManager.addTreeTask(new TreeTask(session, fileTree, {
+        const session = getSession();
+        session.taskManager.addTreeTask(new TreeTask(session, fileTree, {
             title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
         }, {
             beforeDirectory: (directory, connection) => {
@@ -427,6 +538,24 @@ export async function downloadAsZip(entries: FolderEntry[]) {
         }));
         return;
     }
+
+    if (!TaskManager.requestNewTask()) return;
+
+    // Counting can sometimes take a bit, start a task.
+    const countTask = new CountTask("Download", "Counting files to download", false);
+    TaskManager.setTask(countTask);
+    let totalCount: number | null = null;
+    try {
+        totalCount = await countFilesRecursively(entries, getDirectoryPath(entries), countTask);
+    } catch (err) {
+        countTask.complete();
+        Dialog.message(
+            "Download failed",
+            `Failed to count files to download. ${formatError(err)}`
+        );
+        return;
+    }
+    countTask.complete();
 
     // Download
     if (!TaskManager.requestNewTask()) return;
@@ -456,6 +585,7 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     }
 }
 
+/** @deprecated */
 async function downloadRecursively(entries: FolderEntry[], zip: JSZip, task: Task, path: DirectoryPath, downloadCount: number, totalCount: number): Promise<number> {
     for (const entry of entries) {
         if (entry.isFile()) {

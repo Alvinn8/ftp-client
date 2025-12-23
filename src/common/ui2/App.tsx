@@ -3,8 +3,10 @@ import MainView from "./views/MainView";
 import "./colors.css";
 import { useSession } from "./store/sessionStore";
 import LoginView from "./views/LoginView";
-import Messages from "../ui/messages";
 import Tasks from "../ui/task/Tasks";
+import LargeFileOperation from "../ui/LargeFileOperation";
+import OpenEditors from "../ui/editor/OpenEditors";
+import Messages from "../ui/messages";
 
 const App: React.FC = () => {
     const hasSession = useSession((state) => state.hasSession());
@@ -23,8 +25,15 @@ const App: React.FC = () => {
                 features may be missing or incomplete.
             </div>
             {hasSession ? <MainView /> : <LoginView />}
+            <div
+                className="position-absolute bottom-0 end-0 p-3 d-flex flex-column"
+                style={{ gap: "8px" }}
+            >
+                <LargeFileOperation />
+                <Tasks />
+                <OpenEditors />
+            </div>
             <Messages />
-            <Tasks />
         </div>
     );
 };

@@ -26,7 +26,6 @@ const useSession = create<SessionState>((set, get) => ({
 function getSession(): FTPSession {
     if (useNewUiStore.getState().useNewUi) {
         let s = useSession.getState().getSession();
-        console.log("Got session from new store:", s);
         return s;
     }
     return getApp().state.session;
