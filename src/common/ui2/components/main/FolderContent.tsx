@@ -44,8 +44,7 @@ const FolderContent: React.FC = () => {
             <table className="folder-content-table w-100">
                 <thead>
                     <tr>
-                        <th></th>
-                        <th className="py-2">Name</th>
+                        <th className="py-2 ps-5">Name</th>
                         <th>Size</th>
                         <th className="last-modified">Last Modified</th>
                         <th></th>
@@ -55,17 +54,15 @@ const FolderContent: React.FC = () => {
                     {!entries &&
                         range(randomBetween(2, 8)).map((key) => (
                             <tr key={key}>
-                                <td className="ps-2">
+                                <td className="entry-name ps-2 d-flex align-items-center">
                                     <div
-                                        className="skeleton"
+                                        className="skeleton me-3"
                                         style={{
                                             width: "16px",
                                             height: "16px",
                                             margin: "6px",
                                         }}
                                     />
-                                </td>
-                                <td className="entry-name">
                                     <div
                                         className="skeleton"
                                         style={{

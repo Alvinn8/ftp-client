@@ -1,4 +1,4 @@
-import JSZip from "jszip";
+import JSZip, { remove } from "jszip";
 import Dialog from "../Dialog";
 import download from "../download";
 import FolderContentProviders from "../folder/FolderContentProviders";
@@ -12,8 +12,85 @@ import { joinPath, parentdir, sleep } from "../utils";
 import { formatError, unexpectedErrorHandler } from "../error";
 import { FileTree, FileTreeFile } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
+import { usePath } from "../ui2/store/pathStore";
+import { openEditor } from "../ui/editor/editor";
 
 const useTreeTasks = true;
+
+interface Action {
+    icon: string;
+    label: string;
+    onClick: () => void;
+}
+
+export function getActions(selectedEntries: FolderEntry[]): Action[] {
+    const actions: Action[] = [];
+    if (selectedEntries.length === 0) {
+        return actions;
+    }
+    const one = selectedEntries.length === 1;
+    const oneFile = one && selectedEntries[0].isFile();
+    const oneDirectory = one && selectedEntries[0].isDirectory();
+    if (oneDirectory) {
+        actions.push({
+            icon: "folder2-open",
+            label: "Open",
+            onClick: () => {
+                const setPath = usePath.getState().setPath;
+                setPath(selectedEntries[0].path);
+            },
+        });
+    }
+    if (oneFile) {
+        actions.push({
+            icon: "box-arrow-up-right",
+            label: "Open",
+            onClick: () => {
+                openEditor(selectedEntries[0]).catch(
+                    unexpectedErrorHandler("Failed to open"),
+                );
+            },
+        });
+    }
+    if (one) {
+        actions.push({
+            icon: "pencil",
+            label: "Rename",
+            onClick: () => rename(selectedEntries[0]),
+        });
+    }
+    if (oneFile) {
+        actions.push({
+            icon: "download",
+            label: "Download",
+            onClick: () => {
+                downloadFolderEntry(selectedEntries[0]).catch(
+                    unexpectedErrorHandler("Failed to download")
+                )
+            },
+        });
+    } else {
+        actions.push({
+            icon: "download",
+            label: "Download",
+            onClick: () => {
+                downloadAsZip(selectedEntries).catch(
+                    unexpectedErrorHandler("Failed to download")
+                )
+            }
+        });
+    }
+    actions.push({
+        icon: "trash",
+        label: "Delete",
+        onClick: () => {
+            deleteFolderEntries(selectedEntries).catch(
+                unexpectedErrorHandler("Failed to delete")
+            );
+        }
+    });
+    return actions;
+}
 
 export async function downloadFolderEntry(entry: FolderEntry) {
     console.log("Download one folder entry");
@@ -272,6 +349,7 @@ class CountTask extends Task {
     }
 }
 
+/** @deprecated */
 async function countFilesRecursively(entries: FolderEntry[], path: DirectoryPath, countTask: CountTask): Promise<number> {
     let count = 0;
     for (const entry of entries) {

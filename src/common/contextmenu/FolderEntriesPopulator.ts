@@ -6,6 +6,7 @@ import ContextMenuPopulator from "./ContextMenuPopulator";
 
 /**
  * A ContextMenuPopulator for when multiple folder entries are selected.
+ * @deprecated
  */
 export default class FolderEntriesPopulator implements ContextMenuPopulator {
     private readonly entries: FolderEntry[];

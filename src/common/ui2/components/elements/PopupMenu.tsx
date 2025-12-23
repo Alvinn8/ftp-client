@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export type PopupMenuProps = {
     anchorRef: React.RefObject<HTMLElement>;
+    x?: number;
+    y?: number;
     open: boolean;
     onClose: () => void;
     offset?: number;
@@ -12,6 +14,8 @@ export type PopupMenuProps = {
 
 const PopupMenu: React.FC<PopupMenuProps> = ({
     anchorRef,
+    x,
+    y,
     open,
     onClose,
     offset = 5,
@@ -26,11 +30,15 @@ const PopupMenu: React.FC<PopupMenuProps> = ({
     } | null>(null);
 
     const computePosition = useCallback(() => {
+        if (x !== undefined && y !== undefined) {
+            setPosition({ left: x, top: y });
+            return;
+        }
         const anchor = anchorRef.current;
         if (!anchor) return;
         const rect = anchor.getBoundingClientRect();
         setPosition({ left: rect.left, top: rect.bottom + offset });
-    }, [anchorRef, offset]);
+    }, [anchorRef, x, y, offset]);
 
     useEffect(() => {
         if (!open) {

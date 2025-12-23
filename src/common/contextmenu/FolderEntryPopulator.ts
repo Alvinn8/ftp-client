@@ -9,6 +9,7 @@ import ContextMenuPopulator from "./ContextMenuPopulator";
 
 /**
  * A ContextMenuPopulator for when one folder entry is selected.
+ * @deprecated
  */
 export default class FolderEntryPopulator implements ContextMenuPopulator {
     private readonly entry: FolderEntry;

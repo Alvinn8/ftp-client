@@ -10,6 +10,7 @@ import NotCachedError from "./NotCachedError";
  * This provider will throw a {@link NotCachedError} if the current folder was
  * not cached. Therefore it should most of the time not be used directly, and
  * rather trough the main folder content provider.
+ * @deprecated
  */
 export default class CacheFolderContentProvider implements FolderContentProvider {
     async getFolderEntries(_priority: number, path: string): Promise<FolderEntry[]> {

@@ -2,10 +2,6 @@
     border-collapse: collapse;
 }
 
-.folder-content-table thead {
-    border-bottom: 1px solid var(--border);
-}
-
 .folder-content-table td.entry-name {
     padding: 9px;
 }

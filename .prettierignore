@@ -3,3 +3,4 @@ src/common/ftp/**/*
 src/common/test/**/*
 src/common/task/**/*
 src/common/upload/**/*
+src/common/contextmenu/**/*

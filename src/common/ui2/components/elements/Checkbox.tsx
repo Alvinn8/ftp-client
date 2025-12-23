@@ -2,12 +2,14 @@ import React, { useId } from "react";
 import "./checkbox.css";
 
 interface CheckboxProps {
+    className?: string;
     checked: boolean;
     severity?: "primary" | "white";
     onChange: (checked: boolean) => void;
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
+    className,
     checked,
     severity = "primary",
     onChange,
@@ -15,7 +17,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
     const id = useId();
     return (
         <label
-            className={`checkbox-wrapper ${checked ? "checkbox-wrapper-checked" : ""} checkbox-wrapper-${severity}`}
+            className={`checkbox-wrapper ${checked ? "checkbox-wrapper-checked" : ""} checkbox-wrapper-${severity} ${className}`}
             htmlFor={id}
         >
             <input

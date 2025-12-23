@@ -1,6 +1,6 @@
 .main-view {
     background-color: var(--bg-dark);
-    height: 100%;
+    height: calc(100% - 40px);
     display: grid;
     grid-template-rows: auto auto 1fr;
     grid-template-columns: auto 1fr auto;
@@ -24,8 +24,7 @@
 
 .folder-explorer {
     grid-area: folder-explorer;
-    min-width: 200px;
-    max-width: 20vw;
+    width: 20vw;
 }
 
 @media (max-width: 768px) {

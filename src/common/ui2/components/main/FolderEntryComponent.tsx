@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Size from "../../../ui/Size";
 import FolderEntry from "../../../folder/FolderEntry";
 import { getIconFor } from "../../../ui/FileFormats";
@@ -9,6 +9,10 @@ import { usePath } from "../../store/pathStore";
 import "./folderEntry.css";
 import { useSession } from "../../store/sessionStore";
 import Dialog from "../../../Dialog";
+import { useContextMenu } from "../../store/contextMenu";
+import PopupMenu from "../elements/PopupMenu";
+import { getActions } from "../../../contextmenu/actions";
+import { createPortal } from "react-dom";
 
 interface FolderEntryComponentProps {
     entry: FolderEntry;
@@ -21,11 +25,18 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
 }) => {
     const selectedEntries = useSelection((state) => state.selectedEntries);
     const setPath = usePath((state) => state.setPath);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
+    const [contextMenuOpen, setContextMenuOpen] = useContextMenu();
+    const [menuPosition, setMenuPosition] = useState<{
+        x: number;
+        y: number;
+    } | null>(null);
 
     const [renaming, setRenaming] = useState(false);
     const [newName, setNewName] = useState(entry.name);
 
-    function onDoubleClick(entry: FolderEntry) {
+    function onDoubleClick(e: React.MouseEvent) {
+        e.preventDefault();
         if (entry.isDirectory()) {
             return () => {
                 setPath(entry.path);
@@ -59,6 +70,30 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
 
     const selected = selectedEntries.includes(entry);
 
+    function openContextMenu(x?: number, y?: number) {
+        const selection = selectedEntries;
+        if (selected && selection.length === 1) {
+            // This file was selected and then right clicked.
+        } else if (!selected && selection.length === 0) {
+            // No files were selected but this one was right clicked,
+            // select it and show the context menu for this file.
+            useSelection.getState().setSelection([entry]);
+        } else if (selected && selection.length > 1) {
+            // Selection and this entry is a part of it
+        } else if (!selected && selection.length > 0) {
+            // There is an existing selection and this entry is not a
+            // part of it, lets unselect it and only select this entry.
+            useSelection.getState().setSelection([entry]);
+        }
+
+        if (typeof x === "number" && typeof y === "number") {
+            setMenuPosition({ x, y });
+        } else {
+            setMenuPosition(null);
+        }
+        setContextMenuOpen(true);
+    }
+
     return (
         <tr
             key={entry.name}
@@ -71,16 +106,20 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                         e.target.tagName === "INPUT",
                 )
             }
-            onDoubleClick={onDoubleClick(entry)}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openContextMenu(e.clientX, e.clientY);
+            }}
+            onDoubleClick={onDoubleClick}
         >
-            <td className="ps-2">
+            <td className="entry-name ps-2 d-flex align-items-center">
                 <Checkbox
+                    className="me-3"
                     checked={selected}
                     severity={selected ? "white" : "primary"}
                     onChange={() => {}}
                 />
-            </td>
-            <td className="entry-name">
                 {icon(entry, renaming, newName, selected)}
                 {renaming ? (
                     <div className="folder-entry-rename-wrapper ms-2">
@@ -121,13 +160,45 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
             </td>
             <td>
                 <Button
+                    buttonRef={menuButtonRef}
                     icon="three-dots-vertical"
                     variant="ghost"
                     size="small"
                     severity={selected ? "white" : "secondary"}
-                    onClick={() => setRenaming(true)}
+                    onClick={() => openContextMenu()}
                 />
             </td>
+            {contextMenuOpen &&
+                createPortal(
+                    <PopupMenu
+                        open={contextMenuOpen}
+                        anchorRef={menuButtonRef}
+                        x={menuPosition?.x}
+                        y={menuPosition?.y}
+                        onClose={() => {
+                            setContextMenuOpen(false);
+                            setMenuPosition(null);
+                        }}
+                    >
+                        <div className="d-flex flex-column">
+                            {getActions(selectedEntries).map((action) => (
+                                <Button
+                                    key={action.label}
+                                    icon={action.icon}
+                                    variant="ghost"
+                                    size="large"
+                                    label={action.label}
+                                    onClick={() => {
+                                        action.onClick();
+                                        setContextMenuOpen(false);
+                                        setMenuPosition(null);
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </PopupMenu>,
+                    document.body,
+                )}
         </tr>
     );
 };

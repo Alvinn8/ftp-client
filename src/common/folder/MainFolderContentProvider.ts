@@ -8,6 +8,7 @@ import NotCachedError from "./NotCachedError";
  * An implementation of {@link FolderContentProvider} that first checks the
  * cache and returns the folder entries directly if they were cached. Otherwise
  * it fetches them from the ftp server.
+ * @deprecated
  */
 export default class MainFolderContentProvider implements FolderContentProvider {
     private pendingRequests: {[key: string]: Promise<FolderEntry[]>} = {};

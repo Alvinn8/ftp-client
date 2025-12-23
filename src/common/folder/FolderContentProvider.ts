@@ -2,6 +2,7 @@ import FolderEntry from "./FolderEntry";
 
 /**
  * Provides FolderEntries for directories.
+ * @deprecated
  */
 export default interface FolderContentProvider {
     /**

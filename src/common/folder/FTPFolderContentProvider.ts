@@ -5,6 +5,7 @@ import { getApp } from "../ui/App";
 /**
  * An implementation of {@link FolderContentProvider} that fetches the folder
  * entries from the ftp server.
+ * @deprecated
  */
 export default class FTPFolderContentProvider implements FolderContentProvider {
     async getFolderEntries(priority: number, path: string): Promise<FolderEntry[]> {
