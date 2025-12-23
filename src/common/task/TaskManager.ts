@@ -94,6 +94,13 @@ export class TaskManager extends EventEmitter {
      */
     addTreeTask(treeTask: TreeTask) {
         this.treeTasks.push(treeTask);
+        // Increase target connection count if there are many files.
+        const pool = this.session.getConnectionPool();
+        const current = pool.getTargetConnectionCount();
+        const desired = this.suggestedParallelConnections(treeTask.count.totalFiles);
+        if (desired > current) {
+            pool.setTargetConnectionCount(desired);
+        }
         treeTask.addNextSubTask(this.session);
         this.emit("change", this.task);
         this.session.tryExecutePoolRequest();
@@ -156,6 +163,20 @@ export class TaskManager extends EventEmitter {
         for (const treeTask of this.treeTasks) {
             treeTask.setPaused(true);
         }
+    }
+
+    private suggestedParallelConnections(totalFiles: number): number {
+        if (totalFiles <= 0) return 1;
+        if (totalFiles <= 5) return 1;
+        if (totalFiles <= 20) return 2;
+        if (totalFiles <= 50) return 3;
+        if (totalFiles <= 100) return 4;
+        if (totalFiles <= 200) return 5;
+        if (totalFiles <= 400) return 6;
+        if (totalFiles <= 600) return 7;
+        if (totalFiles <= 800) return 8;
+        if (totalFiles <= 1000) return 9;
+        return 10;
     }
 }
 

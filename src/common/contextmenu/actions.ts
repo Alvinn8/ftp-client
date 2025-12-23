@@ -222,6 +222,7 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string): Pr
     // Start a tree task that will add to the file tree
     return await new Promise<FileTree>((resolve, reject) => {
         const session = getSession();
+        let countUntilMoreConnections = 5 * session.getConnectionPool().getTargetConnectionCount();
         const task = new TreeTask(session, rootFileTree, {
             processRootDirectory: false,
             progress: false,
@@ -237,6 +238,17 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string): Pr
                 if (!entries) {
                     // Fetch if not in cache
                     entries = await connection.list(directory.path);
+                    countUntilMoreConnections--;
+                    if (countUntilMoreConnections <= 0) {
+                        // Seems like we have quite a lot of nested directories.
+                        // Time to increase the amount of parallel connections.
+                        const connectionPool = session.getConnectionPool();
+                        const currentCount = connectionPool.getTargetConnectionCount();
+                        connectionPool.setTargetConnectionCount(
+                            Math.min(10, currentCount + 1)
+                        );
+                        countUntilMoreConnections = 5 * connectionPool.getTargetConnectionCount();
+                    }
                 }
                 // Add files and nested directories to the file tree.
                 const existingEntries = directory.getEntries();
@@ -362,7 +374,10 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
             : task.count.totalFiles + (task.count.totalFiles === 1 ? " file" : " files");
 
         if (!await Dialog.confirm("Delete " + description, "You are about to delete "
-            + task.count.totalFiles +" files and "+ task.count.totalDirectories +" folders. "+
+            + task.count.totalFiles +" file" +
+            (task.count.totalFiles === 1 ? "" : "s") + " and "+
+            task.count.totalDirectories +" folder" +
+            (task.count.totalDirectories === 1 ? "" : "s") + ". "+
             "This can not be undone. Are you sure?")) {
             return;
         }
