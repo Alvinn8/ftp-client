@@ -16,7 +16,7 @@
 }
 
 .folder-entry-rename-wrapper {
-    border: 1px solid var(--border);
+    border: 1px solid white;
     border-radius: 5px;
     padding: 0px 8px;
     position: relative;

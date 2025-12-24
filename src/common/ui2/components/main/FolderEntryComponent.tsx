@@ -13,6 +13,11 @@ import { useContextMenu } from "../../store/contextMenu";
 import PopupMenu from "../elements/PopupMenu";
 import { getActions } from "../../../contextmenu/actions";
 import { createPortal } from "react-dom";
+import { openEditor } from "../../../ui/editor/editor";
+import { unexpectedErrorHandler } from "../../../error";
+import { useRename } from "../../store/renameStore";
+import { performWithRetry } from "../../../task/taskActions";
+import { parentdir } from "../../../utils";
 
 interface FolderEntryComponentProps {
     entry: FolderEntry;
@@ -32,20 +37,28 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
         y: number;
     } | null>(null);
 
-    const [renaming, setRenaming] = useState(false);
+    const [renaming, setRenaming] = useRename(entry);
     const [newName, setNewName] = useState(entry.name);
 
     function onDoubleClick(e: React.MouseEvent) {
+        if (renaming) return;
         e.preventDefault();
         if (entry.isDirectory()) {
             setPath(entry.path);
+        } else if (entry.isFile()) {
+            openEditor(entry).catch(unexpectedErrorHandler("Failed to open"));
         }
     }
 
     function saveRename() {
         setRenaming(false);
-        const path = usePath.getState().path;
-        const files = useSession.getState().getSession().folderCache.get(path);
+        if (newName === entry.name) {
+            // Same name, do nothing
+            return;
+        }
+        const dirName = parentdir(entry.path);
+        const session = useSession.getState().getSession();
+        const files = session.folderCache.get(dirName);
         if (files && files.some((entry) => entry.name === newName)) {
             Dialog.message(
                 "Name already taken",
@@ -54,6 +67,23 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
             setNewName(entry.name);
             return;
         }
+        const newPath = dirName + "/" + newName;
+        performWithRetry(session, dirName, async (connection) => {
+            try {
+                await connection.rename(entry.path, newPath);
+            } catch (err) {
+                if (
+                    String(err).includes("ENOTEMPTY") ||
+                    String(err).includes("ENOTDIR")
+                ) {
+                    Dialog.message("Rename failed", "Refresh and try again");
+                } else {
+                    unexpectedErrorHandler("Failed to rename")(err);
+                }
+            }
+        }).catch(unexpectedErrorHandler("Failed to rename"));
+        // Clear cache since the folder content changed.
+        session.folderCache.remove(dirName);
     }
 
     function onRenameKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -105,6 +135,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                 )
             }
             onContextMenu={(e) => {
+                if (renaming) return;
                 e.preventDefault();
                 e.stopPropagation();
                 openContextMenu(e.clientX, e.clientY);

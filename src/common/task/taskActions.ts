@@ -8,6 +8,7 @@ export async function performWithRetry<T>(session: FTPSession, directoryPath: st
         const tree = new FileTree(directoryPath);
         session.taskManager.addTreeTask(new TreeTask(session, tree, {
             processRootDirectory: true,
+            progress: false,
             title: () => "Processing folder " + directoryPath,
         }, {
             beforeDirectory() {},

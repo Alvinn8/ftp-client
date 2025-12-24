@@ -17,6 +17,7 @@ import { openChosenEditor, openEditor } from "../ui/editor/editor";
 import { getSession } from "../ui2/store/sessionStore";
 import { useNewUiStore } from "../ui2/store/newUiStore";
 import { performWithRetry } from "../task/taskActions";
+import { useRenameStore } from "../ui2/store/renameStore";
 
 const useTreeTasks = true;
 
@@ -89,7 +90,9 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
         actions.push({
             icon: "pencil",
             label: "Rename",
-            onClick: () => rename(selectedEntries[0]),
+            onClick: () => {
+                useRenameStore.getState().setRenaming(selectedEntries[0]);
+            },
         });
     }
     actions.push({
