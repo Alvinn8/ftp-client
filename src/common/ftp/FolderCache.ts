@@ -4,11 +4,12 @@ import FTPSession from "./FTPSession";
 import { performWithRetry } from "../task/taskActions";
 import Dialog from "../Dialog";
 import { usePath } from "../ui2/store/pathStore";
-import { parentdir } from "../utils";
+import { joinPath, parentdir } from "../utils";
 import { formatError, unexpectedErrorHandler } from "../error";
 
 export class FolderCache {
     private cache: Map<string, FolderEntry[]> = new Map();
+    private folderSizeCache: Map<string, number> = new Map();
     private listeners: Map<string, (() => void)[]> = new Map();
     private pendingFetches = new Set<string>();
 
@@ -20,12 +21,21 @@ export class FolderCache {
     }
 
     get(path: string): FolderEntry[] | null {
+        window["folderCache"] = this
         return this.cache.get(this.normalizePath(path)) || null;
     }
 
     set(path: string, entries: FolderEntry[]) {
         path = this.normalizePath(path);
         this.cache.set(path, entries);
+        // Remove all cached folder sizes for all folders
+        // that start with the path
+        for (const cachedPath of this.folderSizeCache.keys()) {
+            if (cachedPath.startsWith(path)) {
+                this.folderSizeCache.delete(cachedPath);
+            }
+        }
+        this.bubbleUpdateFolderSizes(path);
         if (this.listeners.has(path)) {
             for (const listener of this.listeners.get(path)!) {
                 listener();
@@ -50,6 +60,7 @@ export class FolderCache {
                 listener();
             }
         }
+        this.folderSizeCache.clear();
     }
 
     clearAndFetch(session: FTPSession, path: string) {
@@ -81,7 +92,6 @@ export class FolderCache {
             return;
         }
         this.pendingFetches.add(path);
-        console.log("fetching");
         performWithRetry(session, path, async (connection) => {
             try {
                 const list = await connection.list(path);
@@ -107,9 +117,50 @@ export class FolderCache {
     fetchIfNotCached(session: FTPSession, path: string) {
         path = this.normalizePath(path);
         if (!this.cache.has(path)) {
-            console.log("not cached, fetching " + path);
             this.fetch(session, path);
         }
+    }
+
+    getCachedFolderSize(path: string): number | null {
+        path = this.normalizePath(path);
+        return this.folderSizeCache.get(path) ?? null;
+    }
+
+    setCachedFolderSize(path: string, size: number) {
+        path = this.normalizePath(path);
+        this.folderSizeCache.set(path, size);
+        if (this.listeners.has(path)) {
+            for (const listener of this.listeners.get(path)!) {
+                listener();
+            }
+        }
+    }
+
+    private bubbleUpdateFolderSizes(path: string) {
+        path = this.normalizePath(path);
+        if (path === "/") return;
+        const entries = this.cache.get(path);
+        if (!entries) return;
+        let size = 0;
+        for (const entry of entries) {
+            if (entry.isFile()) {
+                size += entry.size;
+            } else if (entry.isDirectory()) {
+                const dirSize = this.folderSizeCache.get(
+                    this.normalizePath(joinPath(path, entry.name)),
+                );
+                if (dirSize === undefined) {
+                    // One was missing, we cannot continue.
+                    return;
+                }
+                size += dirSize;
+            } else {
+                // Symlink? We cannot continue.
+                return;
+            }
+        }
+        this.setCachedFolderSize(path, size);
+        this.bubbleUpdateFolderSizes(parentdir(path));
     }
 }
 
@@ -136,4 +187,27 @@ export function useFolderContent(session: FTPSession, path: string, active: bool
     }
 
     return entries;
+}
+
+export function useFolderCacheSize(session: FTPSession, path: string, active: boolean): number | null {
+    const [size, setSize] = useState(() => session.folderCache.getCachedFolderSize(path));
+    useEffect(() => {
+        if (!active) {
+            return;
+        }
+        const listener = () => {
+            setSize(session.folderCache.getCachedFolderSize(path));
+        };
+        session.folderCache.subscribe(path, listener);
+        listener();
+        return () => {
+            session.folderCache.unsubscribe(path, listener);
+        };
+    }, [session, path, active]);
+
+    if (!active) {
+        return null;
+    }
+
+    return size;
 }

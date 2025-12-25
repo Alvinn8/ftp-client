@@ -11,13 +11,14 @@ import { useSession } from "../../store/sessionStore";
 import Dialog from "../../../Dialog";
 import { useContextMenu } from "../../store/contextMenu";
 import PopupMenu from "../elements/PopupMenu";
-import { getActions } from "../../../contextmenu/actions";
+import { findDirectorySize, getActions } from "../../../contextmenu/actions";
 import { createPortal } from "react-dom";
 import { openEditor } from "../../../ui/editor/editor";
 import { unexpectedErrorHandler } from "../../../error";
 import { useRename } from "../../store/renameStore";
 import { performWithRetry } from "../../../task/taskActions";
 import { parentdir } from "../../../utils";
+import { useFolderCacheSize } from "../../../ftp/FolderCache";
 
 interface FolderEntryComponentProps {
     entry: FolderEntry;
@@ -39,6 +40,13 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
 
     const [renaming, setRenaming, creating] = useRename(entry);
     const [newName, setNewName] = useState(entry.name);
+    const session = useSession((state) => state.getSession());
+    const totalSize = useFolderCacheSize(
+        session,
+        entry.path,
+        entry.isDirectory(),
+    );
+    const [calculatingSize, setCalculatingSize] = useState(false);
 
     function onDoubleClick(e: React.MouseEvent) {
         if (renaming) return;
@@ -57,7 +65,6 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
             return;
         }
         const dirName = parentdir(entry.path);
-        const session = useSession.getState().getSession();
         const files = session.folderCache.get(dirName);
         if (files && files.some((entry) => entry.name === newName)) {
             Dialog.message(
@@ -187,14 +194,27 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                 {entry.isFile() && (
                     <Size size={entry.size} fractionDigits={1} />
                 )}
-                {entry.isDirectory() && (
+                {entry.isDirectory() && totalSize !== null && (
+                    <Size size={totalSize} fractionDigits={1} />
+                )}
+                {entry.isDirectory() && totalSize === null && (
                     <Button
                         icon="calculator"
                         label="Calculate"
                         variant="ghost"
                         size="small"
                         severity={selected ? "white" : "secondary"}
-                        onClick={() => {}}
+                        disabled={calculatingSize}
+                        loading={calculatingSize}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setCalculatingSize(true);
+                            findDirectorySize(entry).catch(
+                                unexpectedErrorHandler(
+                                    "Failed to calculate folder size",
+                                ),
+                            );
+                        }}
                     />
                 )}
             </td>

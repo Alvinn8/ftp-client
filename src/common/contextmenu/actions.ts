@@ -8,9 +8,9 @@ import Priority from "../ftp/Priority";
 import Task from "../task/Task";
 import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
-import { joinPath, parentdir, sleep } from "../utils";
+import { formatByteSize, joinPath, parentdir, sleep } from "../utils";
 import { CancellationError, formatError, unexpectedErrorHandler } from "../error";
-import { FileTree, FileTreeFile, Status } from "../task/tree";
+import { FileTree, FileTreeFile } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
 import { usePath } from "../ui2/store/pathStore";
 import { openChosenEditor, openEditor } from "../ui/editor/editor";
@@ -216,7 +216,7 @@ async function entryToFileTree(entry: FolderEntry): Promise<FileTree> {
     return dirTree;
 }
 
-async function countEntriesToFileTree(entries: FolderEntry[], title: string): Promise<FileTree> {
+async function countEntriesToFileTree(entries: FolderEntry[], title: string, subTitle?: (treeTask: TreeTask) => string): Promise<FileTree> {
     let commonParent = parentdir(entries[0].path);
     // Create a shallow file tree
     const rootFileTree = new FileTree(commonParent);
@@ -239,10 +239,10 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string): Pr
             processRootDirectory: false,
             progress: false,
             title: () => title,
-            subTitle: (treeTask) => (`Found ${treeTask.count.completedFiles} file` +
+            subTitle: subTitle ?? ((treeTask) => (`Found ${treeTask.count.completedFiles} file` +
                 (treeTask.count.completedFiles === 1 ? "" : "s") +
                 ` in ${treeTask.count.completedDirectories} folder` +
-                (treeTask.count.completedDirectories === 1 ? "" : "s")),
+                (treeTask.count.completedDirectories === 1 ? "" : "s"))),
         }, {
             beforeDirectory: async (directory, connection) => {
                 // Check cache first
@@ -250,6 +250,7 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string): Pr
                 if (!entries) {
                     // Fetch if not in cache
                     entries = await connection.list(directory.path);
+                    session.folderCache.set(directory.path, entries);
                     countUntilMoreConnections--;
                     if (countUntilMoreConnections <= 0) {
                         // Seems like we have quite a lot of nested directories.
@@ -290,6 +291,23 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string): Pr
         });
         session.taskManager.addTreeTask(task);
     });
+}
+
+/**
+ * Find size of a directory by scanning it. The size will be stored in the
+ * folder cache.
+ * 
+ * @param entry The directory entry. Must be a directory.
+ */
+export async function findDirectorySize(entry: FolderEntry): Promise<void> {
+    if (!entry.isDirectory()) {
+        throw new Error("findDirectorySize can only be used for directories, not files.");
+    }
+    await countEntriesToFileTree(
+        [entry],
+        "Calculating folder size",
+        (treeTask) => formatByteSize(treeTask.count.completedFileSize, 2)
+    );
 }
 
 function copyFileTree(fileTree: FileTree): FileTree {
