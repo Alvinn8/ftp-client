@@ -12,7 +12,7 @@ const App: React.FC = () => {
     const hasSession = useSession((state) => state.hasSession());
 
     return (
-        <div>
+        <div className="d-flex flex-column">
             <div
                 style={{
                     backgroundColor: "hsl(350, 80%, 15%)",
@@ -24,7 +24,9 @@ const App: React.FC = () => {
                 <strong>Note:</strong> The new UI is still experimental. Some
                 features may not work as intended. Please report all bugs!
             </div>
-            {hasSession ? <MainView /> : <LoginView />}
+            <div className="flex-grow-1">
+                {hasSession ? <MainView /> : <LoginView />}
+            </div>
             <div
                 className="position-absolute bottom-0 end-0 p-3 d-flex flex-column"
                 style={{ gap: "8px" }}
