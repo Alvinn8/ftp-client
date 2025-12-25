@@ -37,7 +37,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
         y: number;
     } | null>(null);
 
-    const [renaming, setRenaming] = useRename(entry);
+    const [renaming, setRenaming, creating] = useRename(entry);
     const [newName, setNewName] = useState(entry.name);
 
     function onDoubleClick(e: React.MouseEvent) {
@@ -52,7 +52,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
 
     function saveRename() {
         setRenaming(false);
-        if (newName === entry.name) {
+        if (newName === entry.name && !creating) {
             // Same name, do nothing
             return;
         }
@@ -70,7 +70,13 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
         const newPath = dirName + "/" + newName;
         performWithRetry(session, dirName, async (connection) => {
             try {
-                await connection.rename(entry.path, newPath);
+                if (creating === "file") {
+                    await connection.uploadSmall(new Blob([""]), newPath);
+                } else if (creating === "directory") {
+                    await connection.mkdir(newPath);
+                } else {
+                    await connection.rename(entry.path, newPath);
+                }
             } catch (err) {
                 if (
                     String(err).includes("ENOTEMPTY") ||
@@ -78,10 +84,18 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                 ) {
                     Dialog.message("Rename failed", "Refresh and try again");
                 } else {
-                    unexpectedErrorHandler("Failed to rename")(err);
+                    unexpectedErrorHandler(
+                        creating
+                            ? "Failed to create " + creating
+                            : "Failed to rename",
+                    )(err);
                 }
             }
-        }).catch(unexpectedErrorHandler("Failed to rename"));
+        }).catch(
+            unexpectedErrorHandler(
+                creating ? "Failed to create " + creating : "Failed to rename",
+            ),
+        );
         // Clear cache since the folder content changed.
         session.folderCache.remove(dirName);
     }

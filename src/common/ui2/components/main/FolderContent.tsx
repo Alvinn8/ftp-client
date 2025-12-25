@@ -9,6 +9,7 @@ import { useSelection } from "../../store/selectionStore";
 import { useDragAndDrop } from "../../../ui/DropZone";
 import { handleOnDrop } from "../../../upload/upload";
 import { unexpectedErrorHandler } from "../../../error";
+import { useRenameStore } from "../../store/renameStore";
 
 const FolderContent: React.FC = () => {
     const session = useSession((state) => state.getSession());
@@ -18,16 +19,14 @@ const FolderContent: React.FC = () => {
     const dropZoneElement = useDragAndDrop(dropZone, (e) => {
         handleOnDrop(e).catch(unexpectedErrorHandler("Failed to upload"));
     });
+    const renaming = useRenameStore((state) => state.renaming);
 
     const entries = useFolderContent(session, path);
-    if (entries) {
-        entries.sort((a, b) => {
-            if (a.isDirectory() && b.isFile()) return -1;
-            if (b.isDirectory() && a.isFile()) return 1;
-            if (a.name < b.name) return -1;
-            if (b.name > a.name) return 1;
-            return 0;
-        });
+    const folders = entries?.filter((entry) => entry.isDirectory());
+    const files = entries?.filter((entry) => !entry.isDirectory());
+    if (folders && files) {
+        folders.sort((a, b) => a.name.localeCompare(b.name));
+        files.sort((a, b) => a.name.localeCompare(b.name));
     }
 
     if (entries && entries.length === 0) {
@@ -83,15 +82,44 @@ const FolderContent: React.FC = () => {
                                 <td></td>
                             </tr>
                         ))}
-                    {entries &&
-                        entries.map((entry) => (
+                    {renaming && renaming.creating === "directory" && (
+                        <FolderEntryComponent
+                            key={renaming.entry.name}
+                            entry={renaming.entry}
+                            onSelect={() => {}}
+                        />
+                    )}
+                    {folders &&
+                        folders.map((entry) => (
                             <FolderEntryComponent
                                 key={entry.name}
                                 entry={entry}
                                 onSelect={(e, multiSelect) =>
                                     handleSelectionClick(
                                         entry,
-                                        entries,
+                                        folders,
+                                        e,
+                                        multiSelect,
+                                    )
+                                }
+                            />
+                        ))}
+                    {renaming && renaming.creating === "file" && (
+                        <FolderEntryComponent
+                            key={renaming.entry.name}
+                            entry={renaming.entry}
+                            onSelect={() => {}}
+                        />
+                    )}
+                    {files &&
+                        files.map((entry) => (
+                            <FolderEntryComponent
+                                key={entry.name}
+                                entry={entry}
+                                onSelect={(e, multiSelect) =>
+                                    handleSelectionClick(
+                                        entry,
+                                        files,
                                         e,
                                         multiSelect,
                                     )

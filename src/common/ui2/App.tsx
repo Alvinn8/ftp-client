@@ -21,8 +21,8 @@ const App: React.FC = () => {
                     textAlign: "center",
                 }}
             >
-                <strong>Note:</strong> The new UI is still in development. Some
-                features may be missing or incomplete.
+                <strong>Note:</strong> The new UI is still experimental. Some
+                features may not work as intended. Please report all bugs!
             </div>
             {hasSession ? <MainView /> : <LoginView />}
             <div

@@ -60,5 +60,5 @@ export function useRename(entry: FolderEntry) {
         }
     }
 
-    return [renaming, set] as const;
+    return [renaming, set, renamingStore.renaming?.creating] as const;
 }
