@@ -13,6 +13,7 @@
 .navigation {
     grid-area: navigation;
     max-width: 1000px;
+    min-width: 0;
 }
 
 .path-container {
@@ -20,6 +21,8 @@
     background-color: var(--bg-base);
     border: 1px solid var(--border);
     padding: 2px 4px;
+    min-width: 0;
+    overflow-x: auto;
 }
 
 .folder-explorer {
