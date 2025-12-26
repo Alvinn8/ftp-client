@@ -6,6 +6,7 @@ interface CheckboxProps {
     checked: boolean;
     severity?: "primary" | "white";
     onChange: (checked: boolean) => void;
+    disabled?: boolean;
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
@@ -13,11 +14,12 @@ const Checkbox: React.FC<CheckboxProps> = ({
     checked,
     severity = "primary",
     onChange,
+    disabled = false,
 }) => {
     const id = useId();
     return (
         <label
-            className={`checkbox-wrapper ${checked ? "checkbox-wrapper-checked" : ""} checkbox-wrapper-${severity} ${className}`}
+            className={`checkbox-wrapper ${checked ? "checkbox-wrapper-checked" : ""} checkbox-wrapper-${severity} ${disabled ? "checkbox-wrapper-disabled" : ""} ${className}`}
             htmlFor={id}
         >
             <input
@@ -26,6 +28,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
                 className="checkbox"
                 checked={checked}
                 onChange={(e) => onChange(e.target.checked)}
+                disabled={disabled}
             />
             {checked && <i className="bi bi-check checkbox-check" />}
         </label>

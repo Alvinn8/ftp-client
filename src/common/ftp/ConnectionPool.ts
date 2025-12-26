@@ -112,7 +112,7 @@ export class ConnectionPool extends EventEmitter {
                         this.connections.push({ connection, locked: false });
                         this.emit("connectionAvailable");
                     } else {
-                        connection.websocket.close();
+                        connection.close();
                         this.amountOfConnectionAttempts++;
                     }
                 } catch (error) {
@@ -138,6 +138,21 @@ export class ConnectionPool extends EventEmitter {
             await connection.connectToSftp(host, port, username, password);
         }
         return connection;
+    }
+
+    /**
+     * Create the initial connection for the pool. Useful for testing if the
+     * profile parameters are correct.
+     */
+    async createInitialConnection(): Promise<void> {
+        const connection = await this.createConnection();
+        if (await connection.isConnected()) {
+            this.connections.push({ connection, locked: false });
+            this.emit("connectionAvailable");
+        } else {
+            connection.close();
+            throw new Error("Failed to connect.");
+        }
     }
 
     closeAllConnections() {

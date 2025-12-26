@@ -1,0 +1,122 @@
+.login-view {
+    background-color: var(--bg-dark);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-container {
+    background-color: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+    .login-container {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+}
+
+.login-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.login-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+}
+
+.login-subtitle {
+    font-size: 14px;
+    color: var(--text-muted-color);
+    margin: 0;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-group-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+@media (max-width: 480px) {
+    .form-group-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.protocol-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background-color: var(--bg-base);
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 200ms ease-in-out;
+}
+
+.protocol-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color-hover);
+}
+
+.form-group-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.login-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.login-error {
+    padding: 12px;
+    border-radius: 6px;
+    background-color: hsl(350, 80%, 95%);
+    border: 1px solid hsl(350, 80%, 60%);
+    color: hsl(350, 80%, 25%);
+    font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .login-error {
+        background-color: hsl(350, 80%, 15%);
+        border: 1px solid hsl(350, 80%, 45%);
+        color: hsl(350, 80%, 75%);
+    }
+}
