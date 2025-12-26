@@ -40,7 +40,7 @@ describe("ftp-client tests", () => {
 
     it("connect form is rendered", () => {
         render(<App />);
-        expect(screen.getByText(/Log in to the ftp server/)).toBeInTheDocument();
+        expect(screen.getByText(/Log in to the ftp or sftp server./)).toBeInTheDocument();
     });
 
     it("list", async () => {
@@ -109,7 +109,7 @@ describe("ftp-client tests", () => {
 
         await userEvent.click(await screen.findByText("test.txt"));
         await userEvent.click(await screen.findByRole("button", { name: "Delete" }));
-        const el = await screen.findByText("You are about to delete test.txt. This can not be undone. Are you sure?");
+        const el = await screen.findByText("You are about to delete 1 file and 0 folders. This can not be undone. Are you sure?");
         const ok = await within(el.parentElement.parentElement).findByRole("button", { name: "OK"});
         await userEvent.click(ok);
         
@@ -128,7 +128,7 @@ describe("ftp-client tests", () => {
 
         await userEvent.click(await screen.findByText("test.txt"));
         await userEvent.click(await screen.findByRole("button", { name: "Delete" }));
-        const el = await screen.findByText("You are about to delete test.txt. This can not be undone. Are you sure?");
+        const el = await screen.findByText("You are about to delete 1 file and 0 folders. This can not be undone. Are you sure?");
         const cancel = await within(el.parentElement.parentElement).findByRole("button", { name: "Cancel"});
         await userEvent.click(cancel);
 
@@ -144,7 +144,7 @@ describe("ftp-client tests", () => {
 
         fireEvent.contextMenu(await screen.findByText("test.txt"));
         await userEvent.click(await findContextMenuEntry("Delete"));
-        const el = await screen.findByText("You are about to delete test.txt. This can not be undone. Are you sure?");
+        const el = await screen.findByText("You are about to delete 1 file and 0 folders. This can not be undone. Are you sure?");
         const ok = await within(el.parentElement.parentElement).findByRole("button", { name: "OK"});
         await userEvent.click(ok);
 
