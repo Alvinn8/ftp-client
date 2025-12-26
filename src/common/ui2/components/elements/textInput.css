@@ -39,5 +39,5 @@
 }
 
 .text-input::placeholder {
-    color: var(--text-muted-color);
+    color: var(--text-muted);
 }

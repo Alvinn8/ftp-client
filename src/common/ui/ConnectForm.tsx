@@ -2,6 +2,7 @@ import * as React from "react";
 import { FTPProfile, Profile, SFTPProfile } from "../ftp/profile";
 import FTPSession from "../ftp/FTPSession";
 import { State } from "./App";
+import { isHostAllowed } from "../config/config";
 
 let url = new URL(location.href);
 
@@ -45,6 +46,11 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
             profile = new FTPProfile(host, port, username, password, secure);
         } else if (protocol === "sftp") {
             profile = new SFTPProfile(host, port, username, password);
+        }
+        if (!isHostAllowed(host)) {
+            this.props.onProgress(State.FAILED_TO_CONNECT_TO_FTP);
+            this.props.onConnectError("Host not allowed.");
+            return;
         }
         const session = new FTPSession(profile);
         this.props.onNewSession(session);

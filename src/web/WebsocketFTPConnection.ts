@@ -7,6 +7,7 @@ import { LargeFileOperationInterface, largeFileOperationStore } from "../common/
 import Dialog from "../common/Dialog";
 import TaskManager from "../common/task/TaskManager";
 import { assertUnreachable, CancellationError, ConnectionClosedError, FTPError, SFTPError } from "../common/error";
+import { getConfig } from "../common/config/config";
 
 interface PendingReply {
     requestId: string;
@@ -19,13 +20,8 @@ export const PROTOCOL_VERSION  = 1;
 
 const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
 
-/**
- * The URL to the websocket to connect to.
- */
-export const WEBSOCKET_URL = location.hostname == "ftp-client.alvinn8.repl.co" ? "wss://ftp-client-ws.alvinn8.repl.co" : location.protocol.replace("http", "ws") + "//" + location.hostname + ":8081";
-
 async function attemptRequest() {
-    const response = await fetch(WEBSOCKET_URL.replace(/^ws/, "http"));
+    const response = await fetch(getConfig().websocket_url.replace(/^ws/, "http"));
     if (response.status != 200) {
         throw new Error("Non 200 response: " + response.status);
     }
@@ -92,7 +88,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
             console.log('navigator.onLine', navigator.onLine, new Error().stack);
             const confirmed = await Dialog.confirm(
                 "No internet connection",
-                `It appears you are not connected to the internet, or the ftp-client is experiencing
+                `It appears you are not connected to the internet, or ${getConfig().branding.appName} is experiencing
                 downtime. Double check you internet connection and press "Continue" when you are online.`,
                 "Cancel",
                 "Continue"
@@ -103,7 +99,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
         }
 
         await new Promise<void>((resolve, reject) => {
-            this.websocket = new WebSocket(WEBSOCKET_URL);
+            this.websocket = new WebSocket(getConfig().websocket_url);
             this.websocket.addEventListener("message", e => {
                 const json = JSON.parse(e.data);
                 const requestId = json.requestId;
@@ -273,7 +269,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
             largeDownload: folderEntry.size > LARGE_FILE_THRESHOLD
         });
         if (response.downloadId) {
-            const url = WEBSOCKET_URL.replace(/^ws/, "http") + "/download/" + response.downloadId;
+            const url = getConfig().websocket_url.replace(/^ws/, "http") + "/download/" + response.downloadId;
             return await new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.responseType = "blob";

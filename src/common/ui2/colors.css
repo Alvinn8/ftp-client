@@ -1,29 +1,38 @@
 :root {
-    --bg-dark: hsl(226 31% 93%);
-    --bg-base: white;
-    --bg-highlight: hsl(226 73% 96%);
-    --bg-hover: hsl(195, 40%, 95%);
+    --bg-dark: var(--theme-light-bg-dark, white);
+    --bg-base: var(--theme-light-bg-base, white);
+    --bg-highlight: var(--theme-light-bg-highlight, white);
+    --bg-hover: var(--theme-light-bg-hover, white);
 
-    --text: hsl(0, 0%, 5%);
-    --text-muted: hsl(0, 0%, 50%);
+    --text: var(--theme-light-text, black);
+    --text-muted: var(--theme-light-text-muted, black);
 
-    --border: hsl(0, 0%, 80%);
+    --border: var(--theme-light-border);
 
-    --primary-color: hsl(215, 95%, 52%);
-    --primary-color-hover: hsl(215, 95%, 48%);
+    --primary-color: var(--theme-light-primary-color);
+    --primary-color-hover: var(--theme-light-primary-color-hover);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg-dark: hsl(198, 55%, 5%);
-        --bg-base: hsl(0, 0%, 12%);
-        --bg-highlight: hsl(0, 0%, 20%);
-        --bg-hover: hsl(0, 0%, 18%);
+        --bg-dark: var(--theme-dark-bg-dark, black);
+        --bg-base: var(--theme-dark-bg-base, black);
+        --bg-highlight: var(--theme-dark-bg-highlight, black);
+        --bg-hover: var(--theme-dark-bg-hover, black);
 
-        --text: hsl(0, 0%, 95%);
-        --text-muted: hsl(0, 0%, 70%);
+        --text: var(--theme-dark-text, white);
+        --text-muted: var(--theme-dark-text-muted, white);
 
-        --border: hsl(0, 0%, 30%);
+        --border: var(--theme-dark-border);
+
+        --primary-color: var(
+            --theme-dark-primary-color,
+            var(--theme-light-primary-color)
+        );
+        --primary-color-hover: var(
+            --theme-dark-primary-color-hover,
+            var(--theme-light-primary-color-hover)
+        );
     }
 }
 

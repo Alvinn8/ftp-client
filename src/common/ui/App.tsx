@@ -24,6 +24,7 @@ import { FTPProfile } from "../ftp/profile";
 import Button from "../ui2/components/elements/Button";
 import { useNewUiStore } from "../ui2/store/newUiStore";
 import { useSession } from "../ui2/store/sessionStore";
+import { getConfig } from "../config/config";
 
 let app: App;
 
@@ -249,6 +250,8 @@ export class App extends React.Component<AppProps, AppState> {
             useNewUiStore.getState().toggleUseNewUi();
         };
 
+        const config = getConfig();
+
         return (
             <div>
                 {this.state.state == State.LOGIN && (
@@ -259,14 +262,14 @@ export class App extends React.Component<AppProps, AppState> {
                         onError={e => this.setState({ state: State.LOGIN })}
                     />
                 )}
-                {this.state.state == State.CONNECTING_TO_SERVER && <ConnectingScreen title="Connecting to ftp-client" body="Connecting to ftp-client..." />}
-                {this.state.state == State.FAILED_TO_CONNECT_TO_SERVER && <ErrorScreen title="Failed to connect to ftp-client" body="Please try again." />}
+                {this.state.state == State.CONNECTING_TO_SERVER && <ConnectingScreen title={"Connecting to " + config.branding.appName} body={"Connecting to " + config.branding.appName + "..."} />}
+                {this.state.state == State.FAILED_TO_CONNECT_TO_SERVER && <ErrorScreen title={"Failed to connect to " + config.branding.appName} body="Please try again." />}
                 {this.state.state == State.CONNECTING_TO_FTP && <ConnectingScreen title="Connecting" body="Connecting to your files..." />}
                 {this.state.state == State.FAILED_TO_CONNECT_TO_FTP && <ErrorScreen title="Failed to connect" body={this.state.connectionError} action={failAction} />}
                 {this.state.state == State.CONNECTED &&
                     <div id="grid">
                         <header>
-                            <h1>ftp-client</h1>
+                            <h1>{config.branding.appName}</h1>
                         </header>
                         <div id="folder-content">
                             <FolderContent

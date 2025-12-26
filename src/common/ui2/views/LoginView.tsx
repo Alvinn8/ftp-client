@@ -7,6 +7,7 @@ import { useSession } from "../store/sessionStore";
 import FTPSession from "../../ftp/FTPSession";
 import "./loginView.css";
 import { formatError, unexpectedErrorHandler } from "../../error";
+import { getConfig } from "../../config/config";
 
 const LoginView: React.FC = () => {
     const setSession = useSession((state) => state.setSession);
@@ -18,6 +19,7 @@ const LoginView: React.FC = () => {
     const [secure, setSecure] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const config = getConfig();
 
     // Update port when protocol changes
     useEffect(() => {
@@ -118,7 +120,7 @@ const LoginView: React.FC = () => {
         <div className="login-view">
             <div className="login-container">
                 <div className="login-header">
-                    <h1 className="login-title">FTP Client</h1>
+                    <h1 className="login-title">{config.branding.appName}</h1>
                     <p className="login-subtitle">
                         Sign in to your FTP or SFTP server
                     </p>
