@@ -7,7 +7,7 @@ import { useSession } from "../store/sessionStore";
 import FTPSession from "../../ftp/FTPSession";
 import "./loginView.css";
 import { formatError, unexpectedErrorHandler } from "../../error";
-import { getConfig } from "../../config/config";
+import { getConfig, isHostAllowed } from "../../config/config";
 
 const LoginView: React.FC = () => {
     const setSession = useSession((state) => state.setSession);
@@ -78,6 +78,12 @@ const LoginView: React.FC = () => {
             if (!hostVal || !userVal || !passVal) {
                 throw new Error(
                     "Missing required login parameters: host, username, and password.",
+                );
+            }
+
+            if (!isHostAllowed(hostVal)) {
+                throw new Error(
+                    `Connection to host "${hostVal}" is not allowed.`,
                 );
             }
 

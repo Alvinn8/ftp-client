@@ -89,7 +89,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
             const confirmed = await Dialog.confirm(
                 "No internet connection",
                 `It appears you are not connected to the internet, or ${getConfig().branding.appName} is experiencing
-                downtime. Double check you internet connection and press "Continue" when you are online.`,
+                downtime. Double check your internet connection and press "Continue" when you are online.`,
                 "Cancel",
                 "Continue"
             );
