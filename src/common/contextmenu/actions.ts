@@ -18,6 +18,7 @@ import { getSession } from "../ui2/store/sessionStore";
 import { useNewUiStore } from "../ui2/store/newUiStore";
 import { performWithRetry } from "../task/taskActions";
 import { useRenameStore } from "../ui2/store/renameStore";
+import { BlobReader, ZipWriter } from "@zip.js/zip.js";
 
 interface Action {
     icon: string;
@@ -375,6 +376,9 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
 }
 
 export async function downloadAsZip(entries: FolderEntry[]) {
+    if (typeof window.showSaveFilePicker === "function") {
+        return await downloadAsZipStreaming(entries);
+    }
     let fileTree: FileTree;
     try {
         fileTree = await countEntriesToFileTree(entries, "Counting files to download");
@@ -405,6 +409,77 @@ export async function downloadAsZip(entries: FolderEntry[]) {
             const blob = await rootFolder.generateAsync({ type: "blob" });
             download(blob, fileName);
         }
+    }));
+}
+
+declare global {
+    interface FileSystemFileHandle {
+        remove(): Promise<void>;
+    }
+}
+
+export async function downloadAsZipStreaming(entries: FolderEntry[]) {
+    const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
+    const opts: SaveFilePickerOptions = {
+        suggestedName: fileName,
+        types: [{
+            description: "ZIP Archive",
+            accept: { "application/zip": [".zip"] },
+        }],
+    }
+    let fileHandle: FileSystemFileHandle;
+    try {
+        fileHandle = await window.showSaveFilePicker(opts)
+    } catch (err) {
+        if (err.name === "AbortError") {
+            return;
+        }
+        throw err;
+    }
+
+    let fileTree: FileTree;
+    try {
+        fileTree = await countEntriesToFileTree(entries, "Counting files to download");
+    } catch (err) {
+        if (err instanceof CancellationError) {
+            try {
+                await fileHandle.remove();
+            } catch {}
+            return;
+        }
+        throw err;
+    }
+
+    const writable = await fileHandle.createWritable();
+    const zipWriter = new ZipWriter({ writable });
+
+    const session = getSession();
+    session.taskManager.addTreeTask(new TreeTask(session, fileTree, {
+        title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
+    }, {
+        beforeDirectory: async (directory, connection) => {
+            await zipWriter.add(directory.path, null, { directory: true });
+        },
+        afterDirectory: (directory, connection) => {},
+        file: async (file, connection) => {
+            const path = joinPath(file.parent.path, file.name);
+            const blob = await connection.download(new FolderEntry(path, file.name, file.size, FolderEntryType.File, ""), file.progress.bind(file));
+            await zipWriter.add(path, new BlobReader(blob));
+        },
+        done: async (fileTree, connection) => {
+            await zipWriter.close();
+        },
+        cancelled: async (fileTree, connection) => {
+            try {
+                await zipWriter.close();
+            } catch {}
+            try {
+                await writable.close();
+            } catch {}
+            try {
+                await fileHandle.remove();
+            } catch {}
+        },
     }));
 }
 

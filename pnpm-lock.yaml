@@ -11,6 +11,9 @@ importers:
       '@uiw/react-codemirror':
         specifier: ^4.12.4
         version: 4.23.7(@babel/runtime@7.26.7)(@codemirror/autocomplete@6.18.4)(@codemirror/language@6.10.8)(@codemirror/lint@6.8.4)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.2)(codemirror@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@zip.js/zip.js':
+        specifier: 2.6.15
+        version: 2.6.15
       basic-ftp:
         specifier: ^5.0.5
         version: 5.0.5
@@ -81,6 +84,9 @@ importers:
       '@types/ssh2-sftp-client':
         specifier: ^9.0.5
         version: 9.0.5
+      '@types/wicg-file-system-access':
+        specifier: ^2023.10.7
+        version: 2023.10.7
       '@types/ws':
         specifier: ^7.4.7
         version: 7.4.7
@@ -639,6 +645,9 @@ packages:
   '@types/testing-library__jest-dom@5.14.9':
     resolution: {integrity: sha512-FSYhIjFlfOpGSRyVoMBMuS3ws5ehFQODymf3vlI7U1K8c7PHwWwFY7VREfmsuzHSOnoKs/9/Y983ayOs7eRzqw==}
 
+  '@types/wicg-file-system-access@2023.10.7':
+    resolution: {integrity: sha512-g49ijasEJvCd7ifmAY2D0wdEtt1xRjBbA33PJTiv8mKBr7DoMsPeISoJ8oQOTopSRi+FBWPpPW5ouDj2QPKtGA==}
+
   '@types/ws@7.4.7':
     resolution: {integrity: sha512-JQbbmxZTZehdc2iszGKs5oC3NFnjeay7mtAWrdt7qNtAVK0g19muApzAy4bm9byz79xa2ZnO/BOBC2R8RC5Lww==}
 
@@ -725,6 +734,10 @@ packages:
 
   '@vitest/ui@0.18.1':
     resolution: {integrity: sha512-JgYewAWfx9fN/cjOW6fPh63j9EDiHmDpVXzvp7UJeza+26QoYHXVsgjCmnzP/jjH3i/LkOXlJLqEJw/nJQ+IJg==}
+
+  '@zip.js/zip.js@2.6.15':
+    resolution: {integrity: sha512-rWfXA5mWqZ+RTk36IH6vyY3DavY3HMudOkdn+//B51xYFR0rnprWU6COLSVrBiHaLTlgRiiWB6P4BoTDfvsUHg==}
+    engines: {deno: '>=1.0.0', node: '>=16.5.0'}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2804,6 +2817,8 @@ snapshots:
     dependencies:
       '@types/jest': 29.5.14
 
+  '@types/wicg-file-system-access@2023.10.7': {}
+
   '@types/ws@7.4.7':
     dependencies:
       '@types/node': 16.18.125
@@ -2934,6 +2949,8 @@ snapshots:
   '@vitest/ui@0.18.1':
     dependencies:
       sirv: 2.0.4
+
+  '@zip.js/zip.js@2.6.15': {}
 
   acorn-jsx@5.3.2(acorn@8.14.1):
     dependencies:
