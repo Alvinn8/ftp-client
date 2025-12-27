@@ -1,5 +1,6 @@
 /**
  * The path of a directory, for example a working directory.
+ * @deprecated
  */
 export default class DirectoryPath {
     private path: string;
