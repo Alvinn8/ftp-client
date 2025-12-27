@@ -45,6 +45,13 @@ export async function loadConfig(): Promise<void> {
     }
 }
 
+export function loadDefaultConfigForTesting() {
+    config = deepMerge(defaultConfig, distributionConfig);
+    applyConfig();
+    emitter?.emit("load");
+    emitter = null;
+}
+
 function applyConfig() {
     if (config == null) {
         throw new Error("Config has not been loaded yet.");

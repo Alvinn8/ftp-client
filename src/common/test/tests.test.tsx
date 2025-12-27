@@ -1,6 +1,6 @@
 import * as React from "react";
 import { afterEach, beforeEach, vi, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor, waitForElementToBeRemoved, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { getApp, App, DeviceSize } from "../ui/App";
 import FTPSession from "../ftp/FTPSession";
@@ -10,9 +10,9 @@ import FolderEntry, { FolderEntryType } from "../folder/FolderEntry";
 import * as downloadModule from "../download";
 import FolderContentProviders from "../folder/FolderContentProviders";
 import Priority from "../ftp/Priority";
-import VERSION from "../../protocol/version";
 import { sleep } from "../utils";
 import taskManager from "../task/TaskManager";
+import { loadDefaultConfigForTesting } from "../config/config";
 
 vi.spyOn(downloadModule, "default").mockImplementation(() => { });
 
@@ -26,6 +26,7 @@ describe("ftp-client tests", () => {
         connection = new TestFTPConnection();
         session.setConnection(connection);
         session.getConnectionPool()["createConnection"] = vi.fn().mockResolvedValue(connection);
+        loadDefaultConfigForTesting();
 
         window.innerWidth = 1024;
     });
