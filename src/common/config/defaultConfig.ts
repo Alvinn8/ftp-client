@@ -10,6 +10,7 @@ export const defaultConfig = {
         enabled: false,
         allowedHosts: [] as string[], // can use * as wildcard
     },
+    useNewUiByDefault: false,
     theme: "auto" as "light" | "dark" | "auto",
     themes: {
         light: {
