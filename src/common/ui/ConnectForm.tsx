@@ -49,7 +49,7 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
         }
         if (!isHostAllowed(host)) {
             this.props.onProgress(State.FAILED_TO_CONNECT_TO_FTP);
-            this.props.onConnectError("Host not allowed.");
+            this.props.onConnectError(`Host ${host} not allowed.`);
             return;
         }
         const session = new FTPSession(profile);
