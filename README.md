@@ -1,9 +1,9 @@
 # ftp-client
-FTP Client that can be used as a WebFTP (and as an electron app).
 
-**Note:** The electron app does not exist yet.
+An application that can be used as a web-based file manager using FTP and SFTP connections.
 
 ## Features
+
 - Editing text files
 - Viewing images
 - Drag and drop uploading
@@ -14,7 +14,37 @@ FTP Client that can be used as a WebFTP (and as an electron app).
 - Calculate the size of folders
 - Viewing gzipped files
 - Editing Minecraft NBT files
-  - Enabling and disabling Bedrock edition experiments
+    - Enabling and disabling Bedrock edition experiments
+
+# Deployment
+
+Docker images are publushed to GitHub Container Registry. You can deploy the application using the following `docker-compose.yml` file:
+
+```yaml
+services:
+    backend:
+        image: ghcr.io/alvinn8/ftp-client-backend:latest
+        ports:
+            - "8081:8081"
+    frontend:
+        image: ghcr.io/alvinn8/ftp-client-frontend:latest
+        ports:
+            - "80:80"
+        volumes:
+            - ./config.json:/usr/share/nginx/html/config.json
+        depends_on:
+            - backend
+```
+
+You may modify the port mapping as needed. Create a `config.json` file in the same directory as the `docker-compose.yml` file with the following content. You may also configure other parts of the application in this file. See [`defaultConfig.ts`](src/web/defaultConfig.ts) for all available options.
+
+```json
+{
+    "websocket_url": "ws://localhost:8081"
+}
+```
+
+Then run `docker compose up -d` to start the application.
 
 # Technical information
 
@@ -41,6 +71,7 @@ The server code is also inside the `src` folder, which might be a little confusi
 The easiest way to start developing is to use Docker: `docker-compose up`
 
 ## Wireframes
+
 Desktop
 ![Desktop](./img/desktop.png)
 
@@ -48,6 +79,7 @@ Mobile
 ![Mobile](./img/mobile.png)
 
 ## Features & TODO
+
 - [x] Context menu
 - [x] Editor base
 - [x] Previewing images
