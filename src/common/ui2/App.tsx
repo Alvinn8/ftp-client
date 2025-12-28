@@ -12,7 +12,7 @@ const App: React.FC = () => {
     const hasSession = useSession((state) => state.hasSession());
 
     return (
-        <div className="d-flex flex-column">
+        <div className="d-flex flex-column overflow-hidden">
             <div
                 style={{
                     backgroundColor: "hsl(350, 80%, 15%)",
@@ -24,7 +24,10 @@ const App: React.FC = () => {
                 <strong>Note:</strong> The new UI is still experimental. Some
                 features may not work as intended. Please report all bugs!
             </div>
-            <div className="flex-grow-1">
+            <div
+                className="flex-grow-1 d-flex flex-column overflow-hidden"
+                style={{ minHeight: 0 }}
+            >
                 {hasSession ? <MainView /> : <LoginView />}
             </div>
             <div
