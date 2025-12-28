@@ -8,7 +8,7 @@ import Priority from "../ftp/Priority";
 import Task from "../task/Task";
 import TaskManager from "../task/TaskManager";
 import { getApp } from "../ui/App";
-import { formatByteSize, joinPath, parentdir } from "../utils";
+import { formatByteSize, joinPath, parentdir, trailingSlash } from "../utils";
 import { CancellationError, formatError, unexpectedErrorHandler } from "../error";
 import { FileTree, FileTreeFile } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
@@ -453,18 +453,29 @@ export async function downloadAsZipStreaming(entries: FolderEntry[]) {
     const writable = await fileHandle.createWritable();
     const zipWriter = new ZipWriter({ writable });
 
+    const rootPath = trailingSlash(getDirectoryPath(entries));
+    function getRelativePath(fullPath: string) {
+        if (fullPath.startsWith(rootPath)) {
+            return fullPath.substring(rootPath.length);
+        }
+        throw new Error("Path " + fullPath + " is not under root path " + rootPath);
+    }
     const session = getSession();
     session.taskManager.addTreeTask(new TreeTask(session, fileTree, {
         title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
     }, {
         beforeDirectory: async (directory, connection) => {
-            await zipWriter.add(directory.path, null, { directory: true });
+            await zipWriter.add(
+                getRelativePath(trailingSlash(directory.path)),
+                null,
+                { directory: true }
+            );
         },
         afterDirectory: (directory, connection) => {},
         file: async (file, connection) => {
             const path = joinPath(file.parent.path, file.name);
             const blob = await connection.download(new FolderEntry(path, file.name, file.size, FolderEntryType.File, ""), file.progress.bind(file));
-            await zipWriter.add(path, new BlobReader(blob));
+            await zipWriter.add(getRelativePath(path), new BlobReader(blob));
         },
         done: async (fileTree, connection) => {
             await zipWriter.close();

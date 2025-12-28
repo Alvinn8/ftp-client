@@ -8,7 +8,9 @@ export function ensureAbsolute(path: string) {
 
 export function joinPath(a: string, b: string) {
     if (b.startsWith("/")) {
-        throw new Error("Absolute paths are not allowed in joinPath. a: " + a + ", b: " + b);
+        throw new Error(
+            "Absolute paths are not allowed in joinPath. a: " + a + ", b: " + b,
+        );
     }
     if (!a.endsWith("/")) {
         a += "/";
@@ -17,7 +19,7 @@ export function joinPath(a: string, b: string) {
 }
 
 export function dirname(path: string): string {
-    const index = path.lastIndexOf('/');
+    const index = path.lastIndexOf("/");
     if (index <= 0) {
         return "/";
     }
@@ -28,7 +30,7 @@ export function filename(path: string): string {
     if (!path.includes("/")) {
         return path;
     }
-    return path.substring(path.lastIndexOf('/') + 1 );
+    return path.substring(path.lastIndexOf("/") + 1);
 }
 
 export function parentdir(path: string): string {
@@ -41,51 +43,69 @@ export function parentdir(path: string): string {
     return dirname(path);
 }
 
+export function trailingSlash(path: string): string {
+    if (!path.endsWith("/")) {
+        path += "/";
+    }
+    return path;
+}
+
 export async function blobToBase64(blob: Blob): Promise<string> {
-    return await new Promise<string>(function(resolve, reject) {
+    return await new Promise<string>(function (resolve, reject) {
         const reader = new FileReader();
-        reader.onload = function() {
-            const dataURL = (reader.result as string);
+        reader.onload = function () {
+            const dataURL = reader.result as string;
             resolve(dataURL.substring(dataURL.indexOf(",") + 1));
-        }
+        };
         reader.onerror = function () {
             const name = blob instanceof File ? blob.name : "blob";
-            reject(new Error(`Failed to read ${name} with size ${blob.size}`, { cause: reader.error }));
+            reject(
+                new Error(`Failed to read ${name} with size ${blob.size}`, {
+                    cause: reader.error,
+                }),
+            );
         };
         reader.readAsDataURL(blob);
     });
 }
 
 export async function sleep(ms: number) {
-    return await new Promise(resolve => setInterval(resolve, ms));
+    return await new Promise((resolve) => setInterval(resolve, ms));
 }
 
 export function copyToClipboard(text: string) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).catch(unexpectedErrorHandler("Failed to copy to clipboard"));
+        navigator.clipboard
+            .writeText(text)
+            .catch(unexpectedErrorHandler("Failed to copy to clipboard"));
     } else {
-        const textArea = document.createElement('textarea');
+        const textArea = document.createElement("textarea");
         textArea.value = text;
         document.body.appendChild(textArea);
         textArea.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         document.body.removeChild(textArea);
     }
 }
 
 export function range(length: number) {
-    return Array(length).fill(0).map((_, i) => i + 1);
+    return Array(length)
+        .fill(0)
+        .map((_, i) => i + 1);
 }
 
 export function randomBetween(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function formatByteSize(size: number, fractionDigits: number = 2): string {
-    if (size > 10**9) {
+export function formatByteSize(
+    size: number,
+    fractionDigits: number = 2,
+): string {
+    if (size > 10 ** 9) {
         return (size / 10 ** 9).toFixed(fractionDigits) + " GB";
     }
-    if (size > 10**6) {
+    if (size > 10 ** 6) {
         return (size / 10 ** 6).toFixed(fractionDigits) + " MB";
     }
     if (size > 1000) {
@@ -98,5 +118,5 @@ export async function sha256(blob: Blob): Promise<string> {
     const buffer = await blob.arrayBuffer();
     const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
