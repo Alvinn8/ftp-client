@@ -10,6 +10,12 @@ import { ftpPacketHandlers } from "./ftp";
 import { sftpPacketHandlers } from "./sftp";
 import SftpClient from "ssh2-sftp-client";
 
+// Prevent uncaught promise rejections from crashing the application
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled Promise Rejection:", reason);
+    // Don't crash the backend application :)
+});
+
 const PORT = parseInt(process.env.PORT) || 8081;
 const PROTOCOL_VERSION = 1;
 

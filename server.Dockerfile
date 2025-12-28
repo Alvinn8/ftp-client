@@ -1,16 +1,21 @@
-FROM node:16.15-alpine3.14 AS build
+FROM node:24-alpine AS build
 
 WORKDIR /app/server
-COPY server/package*.json ./
-RUN npm install --only=dev
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
+COPY server/package.json /app/server/
+RUN pnpm install --frozen-lockfile
 COPY . /app/
-RUN npm run build
+RUN pnpm run build
 
-FROM node:12
-WORKDIR /app
-COPY ./server/package*.json ./
-RUN npm install --only=prod
-COPY --from=build app/server/bundle.js ./
+FROM node:24-alpine
+
+WORKDIR /app/server
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
+COPY server/package.json ./
+RUN pnpm install --prod --frozen-lockfile
+COPY --from=build /app/server/bundle.js ./bundle.js
 ENV PORT=8081
 EXPOSE 8081
 CMD [ "node", "bundle.js" ]
