@@ -32,6 +32,20 @@ const Tasks: React.FC = () => {
         };
     }, []);
 
+    // Auto-switch to next task when a task signals its next task
+    React.useEffect(() => {
+        if (!treeTaskDetails) return;
+
+        const handleNextTask = (nextTask: TreeTask) => {
+            setTreeTaskDetails(nextTask);
+        };
+
+        treeTaskDetails.on("nextTask", handleNextTask);
+        return () => {
+            treeTaskDetails.off("nextTask", handleNextTask);
+        };
+    }, [treeTaskDetails]);
+
     return (
         <div className="d-flex flex-column gap-2">
             {task != null && (
@@ -46,5 +60,14 @@ const Tasks: React.FC = () => {
         </div>
     );
 };
+
+/**
+ * Determines if a task is a counting task.
+ * Counting tasks are temporary tasks that count files before the actual operation.
+ */
+function isCounting(treeTask: TreeTask): boolean {
+    const title = treeTask.title.toLowerCase();
+    return title.includes("counting") || title.includes("calculating");
+}
 
 export default Tasks;

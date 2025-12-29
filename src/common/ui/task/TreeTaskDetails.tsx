@@ -28,6 +28,10 @@ const TreeTaskDetails: React.FC<TreeTaskDetailsProps> = ({ treeTask, onClose }) 
     const [status, setStatus] = useState(treeTask.status);
 
     useEffect(() => {
+        setStatus(treeTask.status);
+    }, [treeTask]);
+
+    useEffect(() => {
         const modalElement = modalRef.current;
         if (modalElement) {
             const modal = new Modal(modalElement, {
@@ -144,6 +148,13 @@ const OverviewTab: React.FC<{ treeTask: TreeTask }> = ({ treeTask }) => {
     const [status, setStatus] = useState(treeTask.status);
     const [activeTasks, setActiveTasks] = useState(treeTask.activeTasks);
     const [errorTasks, setErrorTasks] = useState(treeTask.errorTasks);
+
+    useEffect(() => {
+        setProgress(treeTask.progress);
+        setStatus(treeTask.status);
+        setActiveTasks(treeTask.activeTasks);
+        setErrorTasks(treeTask.errorTasks);
+    }, [treeTask]);
 
     useEffect(() => {
         const progressHandler = (progress: ProgressObject) => setProgress({...progress});

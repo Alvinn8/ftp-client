@@ -43,6 +43,14 @@ export const FileTreeComponent: React.FC<FileTreeProps> = ({ fileTree, deep }) =
     const open = userOpened === null ? defaultOpen : userOpened;
 
     useEffect(() => {
+        setBeforeStatus(fileTree.getBeforeStatus());
+        setAfterStatus(fileTree.getAfterStatus());
+        setAttempt(fileTree.getAttempt());
+        setError(fileTree.getError());
+        setEntries(fileTree.getEntries());
+    }, [fileTree]);
+
+    useEffect(() => {
         const beforeStatusHandler = (status: Status) => setBeforeStatus(status);
         const afterStatusHandler = (status: Status) => setAfterStatus(status);
         const attemptHandler = (attempt: number) => setAttempt(attempt);
@@ -147,6 +155,13 @@ export const FileTreeFileComponent: React.FC<FileTreeFileProps> = ({ fileTreeFil
     const [attempt, setAttempt] = useState(fileTreeFile.getAttempt());
     const [error, setError] = useState<unknown | null>(fileTreeFile.getError());
     const [progress, setProgress] = useState<{ value: number, max: number } | null>(fileTreeFile.currentProgress);
+
+    useEffect(() => {
+        setStatus(fileTreeFile.getStatus());
+        setAttempt(fileTreeFile.getAttempt());
+        setError(fileTreeFile.getError());
+        setProgress(fileTreeFile.currentProgress);
+    }, [fileTreeFile]);
 
     useEffect(() => {
         const statusHandler = (newStatus: Status) => setStatus(newStatus);

@@ -147,6 +147,16 @@ export class TreeTask<T = unknown> extends EventEmitter {
         this.emit("statusChange", status);
     }
 
+    /**
+     * Set the next task that should be shown when this task completes.
+     * This is useful for counting tasks to signal which task follows them.
+     * 
+     * @param task The next task to show.
+     */
+    setNextTask(task: TreeTask) {
+        this.emit("nextTask", task);
+    }
+
     get paused(): boolean {
         return this.status === TaskStatus.PAUSED || this.status === TaskStatus.PAUSING;
     }

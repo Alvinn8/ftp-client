@@ -180,7 +180,7 @@ function getDirectoryPath(entries: FolderEntry[]) {
     return dir;
 }
 
-async function countEntriesToFileTree(entries: FolderEntry[], title: string, subTitle?: (treeTask: TreeTask) => string): Promise<FileTree> {
+async function countEntriesToFileTree(entries: FolderEntry[], title: string, subTitle?: (treeTask: TreeTask) => string): Promise<[FileTree, TreeTask]> {
     let commonParent = parentdir(entries[0].path);
     // Create a shallow file tree
     const rootFileTree = new FileTree(commonParent);
@@ -196,7 +196,7 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string, sub
         }
     }
     // Start a tree task that will add to the file tree
-    return await new Promise<FileTree>((resolve, reject) => {
+    return await new Promise<[FileTree, TreeTask]>((resolve, reject) => {
         const session = getSession();
         let countUntilMoreConnections = 5 * session.getConnectionPool().getTargetConnectionCount();
         const task = new TreeTask(session, rootFileTree, {
@@ -247,7 +247,7 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string, sub
             file: async (_file, _connection) => {},
             done(_fileTree, _connection) {
                 // The file tree will now have status DONE. Copy it.
-                resolve(copyFileTree(rootFileTree));
+                resolve([copyFileTree(rootFileTree), task]);
             },
             cancelled(_fileTree, _connection) {
                 reject(new CancellationError("Counting task was cancelled"));
@@ -298,8 +298,9 @@ function copyFileTree(fileTree: FileTree): FileTree {
 export async function deleteFolderEntries(entries: FolderEntry[]) {
     const session = getSession();
     let rootFileTree: FileTree;
+    let countingTask: TreeTask | null = null;
     try {
-        rootFileTree = await countEntriesToFileTree(entries, "Counting files to delete");
+        [rootFileTree, countingTask] = await countEntriesToFileTree(entries, "Counting files to delete");
     } catch (err) {
         if (err instanceof CancellationError) {
             return;
@@ -388,6 +389,7 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
         return;
     }
     session.taskManager.addTreeTask(task);
+    countingTask.setNextTask(task);
 }
 
 export async function downloadAsZip(entries: FolderEntry[]) {
@@ -395,8 +397,9 @@ export async function downloadAsZip(entries: FolderEntry[]) {
         return await downloadAsZipStreaming(entries);
     }
     let fileTree: FileTree;
+    let countingTask: TreeTask | null = null;
     try {
-        fileTree = await countEntriesToFileTree(entries, "Counting files to download");
+        [fileTree, countingTask] = await countEntriesToFileTree(entries, "Counting files to download");
     } catch (err) {
         if (err instanceof CancellationError) {
             return;
@@ -407,7 +410,7 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     const rootPath = getDirectoryPath(entries);
     const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
     const session = getSession();
-    session.taskManager.addTreeTask(new TreeTask(session, fileTree, {
+    const task = new TreeTask(session, fileTree, {
         title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
     }, {
         beforeDirectory: (directory, connection) => {
@@ -424,7 +427,9 @@ export async function downloadAsZip(entries: FolderEntry[]) {
             const blob = await rootFolder.generateAsync({ type: "blob" });
             download(blob, fileName);
         }
-    }));
+    });
+    session.taskManager.addTreeTask(task);
+    countingTask.setNextTask(task);
 }
 
 declare global {
@@ -453,8 +458,9 @@ export async function downloadAsZipStreaming(entries: FolderEntry[]) {
     }
 
     let fileTree: FileTree;
+    let countingTask: TreeTask | null = null;
     try {
-        fileTree = await countEntriesToFileTree(entries, "Counting files to download");
+        [fileTree, countingTask] = await countEntriesToFileTree(entries, "Counting files to download");
     } catch (err) {
         if (err instanceof CancellationError) {
             try {
@@ -476,7 +482,7 @@ export async function downloadAsZipStreaming(entries: FolderEntry[]) {
         throw new Error("Path " + fullPath + " is not under root path " + rootPath);
     }
     const session = getSession();
-    session.taskManager.addTreeTask(new TreeTask(session, fileTree, {
+    const task = new TreeTask(session, fileTree, {
         title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
     }, {
         beforeDirectory: async (directory, connection) => {
@@ -506,7 +512,11 @@ export async function downloadAsZipStreaming(entries: FolderEntry[]) {
                 await fileHandle.remove();
             } catch {}
         },
-    }));
+    });
+    if (countingTask) {
+        countingTask.setNextTask(task);
+    }
+    session.taskManager.addTreeTask(task);
 }
 
 export async function computeSize(entries: FolderEntry[]): Promise<number> {
