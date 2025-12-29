@@ -267,11 +267,18 @@ export async function findDirectorySize(entry: FolderEntry): Promise<void> {
     if (!entry.isDirectory()) {
         throw new Error("findDirectorySize can only be used for directories, not files.");
     }
-    await countEntriesToFileTree(
-        [entry],
-        "Calculating folder size",
-        (treeTask) => formatByteSize(treeTask.count.completedFileSize, 2)
-    );
+    try {
+        await countEntriesToFileTree(
+            [entry],
+            "Calculating folder size",
+            (treeTask) => formatByteSize(treeTask.count.completedFileSize, 2)
+        );
+    } catch (err) {
+        if (err instanceof CancellationError) {
+            return;
+        }
+        throw err;
+    }
 }
 
 function copyFileTree(fileTree: FileTree): FileTree {
@@ -290,7 +297,15 @@ function copyFileTree(fileTree: FileTree): FileTree {
 
 export async function deleteFolderEntries(entries: FolderEntry[]) {
     const session = getSession();
-    const rootFileTree = await countEntriesToFileTree(entries, "Counting files to delete");
+    let rootFileTree: FileTree;
+    try {
+        rootFileTree = await countEntriesToFileTree(entries, "Counting files to delete");
+    } catch (err) {
+        if (err instanceof CancellationError) {
+            return;
+        }
+        throw err;
+    }
     const task = new TreeTask(session, rootFileTree, {
         title: (treeTask) => "Deleting " + treeTask.count.totalFiles + " file" + (treeTask.count.totalFiles == 1 ? "" : "s"),
         // It is important that we do not process the root directory,
