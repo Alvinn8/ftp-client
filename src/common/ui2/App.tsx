@@ -1,6 +1,7 @@
 import React from "react";
 import MainView from "./views/MainView";
 import "./colors.css";
+import "./scrollbars.css";
 import { useSession } from "./store/sessionStore";
 import LoginView from "./views/LoginView";
 import Tasks from "../ui/task/Tasks";
