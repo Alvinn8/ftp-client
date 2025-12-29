@@ -173,6 +173,25 @@ server.on("listening", function() {
     console.log("Started WebSocket server on port " + PORT);
 });
 
+// Graceful shutdown handling
+const gracefulShutdown = () => {
+    console.log("Shutting down gracefully...");
+    
+    // Close all WebSocket connections
+    server.clients.forEach((client) => {
+        client.close();
+    });
+    
+    // Close the HTTP server
+    httpServer.close(() => {
+        console.log("Server closed");
+        process.exit(0);
+    });
+};
+
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
+
 server.on("connection", function(ws) {
     let connection: Connection = null;
     let userClosed = false;
