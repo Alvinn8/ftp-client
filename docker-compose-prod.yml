@@ -6,6 +6,8 @@ services:
       dockerfile: web.Dockerfile
     ports:
       - "80:80"
+    volumes:
+      - ./public/config.json:/usr/share/nginx/html/config.json
   server_prod:
     build:
       context: ./
