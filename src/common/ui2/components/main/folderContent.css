@@ -2,6 +2,10 @@
     border-collapse: collapse;
 }
 
+.folder-content-table thead {
+    z-index: 2;
+}
+
 .folder-content-table td.entry-name {
     padding: 9px;
 }
@@ -9,7 +13,7 @@
     padding: 10px;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
     .folder-content-table .last-modified {
         display: none;
     }

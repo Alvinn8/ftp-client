@@ -8,11 +8,15 @@ import { usePath } from "../store/pathStore";
 import { parentdir } from "../../utils";
 import Actions from "../components/main/Actions";
 import FolderExplorer from "../components/main/FolderExplorer";
+import Ad from "../components/elements/Ad";
+import { getConfig } from "../../config/config";
 
 const MainView: React.FC = () => {
     const session = useSession((state) => state.session);
     const path = usePath((state) => state.path);
     const setPath = usePath((state) => state.setPath);
+
+    const adConfig = getConfig().ads;
 
     return (
         <main className="main-view">
@@ -47,6 +51,29 @@ const MainView: React.FC = () => {
             <div className="content flex-grow-1 overflow-y-auto m-2 rounded">
                 <FolderContent />
             </div>
+            {adConfig.enabled && adConfig.slots.rightAd && (
+                <div className="right-content align-items-center">
+                    <Ad
+                        sizes={[
+                            [160, 600],
+                            [120, 600],
+                        ]}
+                    />
+                </div>
+            )}
+            {adConfig.enabled && adConfig.slots.bottomAd && (
+                <div
+                    className={`bottom-content bottomAdDesktop-${adConfig.slots.bottomAdDesktop}`}
+                >
+                    <Ad
+                        sizes={[
+                            [300, 50],
+                            [728, 90],
+                            [468, 60],
+                        ]}
+                    />
+                </div>
+            )}
         </main>
     );
 };

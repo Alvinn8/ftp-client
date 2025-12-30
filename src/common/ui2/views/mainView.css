@@ -7,7 +7,8 @@
     grid-template-areas:
         ".               actions     right-content"
         ".               navigation  right-content"
-        "folder-explorer content     right-content";
+        "folder-explorer content     right-content"
+        "bottom-content  bottom-content bottom-content";
 }
 
 .navigation {
@@ -30,7 +31,7 @@
     width: 20vw;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .folder-explorer {
         display: none;
     }
@@ -46,4 +47,29 @@
     border-bottom: 1px solid var(--border);
     background-color: var(--bg-base);
     max-width: 1000px;
+}
+
+.right-content {
+    grid-area: right-content;
+    display: flex;
+}
+
+.bottom-content {
+    grid-area: bottom-content;
+    justify-content: center;
+    display: flex;
+}
+
+.bottom-content.bottomAdDesktop-false {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .right-content {
+        display: none;
+    }
+    .bottom-content,
+    .bottom-content.bottomAdDesktop-false {
+        display: flex;
+    }
 }

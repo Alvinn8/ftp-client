@@ -32,9 +32,24 @@ export const defaultConfig = {
             text: "hsl(0, 0%, 95%)",
             "text-muted": "hsl(0, 0%, 70%)",
             border: "hsl(0, 0%, 30%)",
+            "primary-color": "hsl(215, 95%, 52%)",
+            "primary-color-hover": "hsl(215, 95%, 48%)",
+        },
+    },
+    ads: {
+        enabled: false,
+        slots: {
+            rightAd: true,
+            bottomAd: true,
+            bottomAdDesktop: false,
         },
     },
 };
 
 // Distrubution-specific config defaults
-export const distributionConfig: Partial<Config> = {};
+type DeepPartial<T> = T extends object
+    ? {
+          [P in keyof T]?: DeepPartial<T[P]>;
+      }
+    : T;
+export const distributionConfig: DeepPartial<Config> = {};
