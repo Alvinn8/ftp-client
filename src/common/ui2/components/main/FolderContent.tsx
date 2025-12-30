@@ -29,7 +29,7 @@ const FolderContent: React.FC = () => {
         files.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    if (entries && entries.length === 0) {
+    if (entries && entries.length === 0 && !renaming?.creating) {
         return (
             <div className="p-3 text-center text-muted-color d-flex flex-column flex-grow-1">
                 <i className="bi bi-folder fs-1" />
@@ -41,7 +41,7 @@ const FolderContent: React.FC = () => {
     return (
         <div className="flex-grow-1 bg-base-ui2">
             <table className="folder-content-table w-100">
-                <thead>
+                <thead className="position-sticky top-0 bg-base-ui2">
                     <tr>
                         <th className="py-2 ps-5">Name</th>
                         <th>Size</th>
