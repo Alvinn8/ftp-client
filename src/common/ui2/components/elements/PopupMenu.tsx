@@ -27,6 +27,7 @@ const PopupMenu: React.FC<PopupMenuProps> = ({
     const [position, setPosition] = useState<{
         left: number;
         top: number;
+        anchorRect?: DOMRect;
     } | null>(null);
 
     const computePosition = useCallback(() => {
@@ -37,7 +38,11 @@ const PopupMenu: React.FC<PopupMenuProps> = ({
         const anchor = anchorRef.current;
         if (!anchor) return;
         const rect = anchor.getBoundingClientRect();
-        setPosition({ left: rect.left, top: rect.bottom + offset });
+        setPosition({
+            left: rect.left,
+            top: rect.bottom + offset,
+            anchorRect: rect,
+        });
     }, [anchorRef, x, y, offset]);
 
     useEffect(() => {
@@ -77,14 +82,32 @@ const PopupMenu: React.FC<PopupMenuProps> = ({
         if (!open || !menuRef.current || !position) return;
         const menuRect = menuRef.current.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
         const maxLeft = Math.max(8, viewportWidth - menuRect.width - 8);
+        let clampedTop = Math.min(
+            position.top,
+            Math.max(8, viewportHeight - menuRect.height - 8),
+        );
         const clampedLeft = Math.min(position.left, maxLeft);
-        if (Math.abs(clampedLeft - position.left) > 1) {
+
+        // If anchor-positioned and menu is clamped at bottom, try flipping above
+        if (position.anchorRect && clampedTop < position.top) {
+            const topAboveAnchor =
+                position.anchorRect.top - menuRect.height - offset;
+            if (topAboveAnchor >= 8) {
+                clampedTop = topAboveAnchor;
+            }
+        }
+
+        if (
+            Math.abs(clampedLeft - position.left) > 1 ||
+            Math.abs(clampedTop - position.top) > 1
+        ) {
             setPosition((prev) =>
-                prev ? { ...prev, left: clampedLeft } : prev,
+                prev ? { ...prev, left: clampedLeft, top: clampedTop } : prev,
             );
         }
-    }, [open, position]);
+    }, [open, position, offset]);
 
     if (!open || !position) return null;
 
@@ -96,6 +119,7 @@ const PopupMenu: React.FC<PopupMenuProps> = ({
                 left: position.left,
                 top: position.top,
                 minWidth: `${minWidth}px`,
+                zIndex: 10,
             }}
         >
             {children}
