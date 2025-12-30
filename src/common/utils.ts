@@ -50,6 +50,13 @@ export function trailingSlash(path: string): string {
     return path;
 }
 
+export function noTrailingSlash(path: string): string {
+    if (path.endsWith("/") && path.length > 1) {
+        path = path.slice(0, -1);
+    }
+    return path;
+}
+
 export async function blobToBase64(blob: Blob): Promise<string> {
     return await new Promise<string>(function (resolve, reject) {
         const reader = new FileReader();

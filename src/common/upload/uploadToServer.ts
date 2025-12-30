@@ -16,7 +16,7 @@ import { largeFileOperationStore } from "../ui/LargeFileOperation";
 import { useNewUiStore } from "../ui2/store/newUiStore";
 import { usePath } from "../ui2/store/pathStore";
 import { useSession } from "../ui2/store/sessionStore";
-import { dirname, filename, joinPath, sleep } from "../utils";
+import { dirname, filename, joinPath, noTrailingSlash, sleep } from "../utils";
 import Directory from "./Directory";
 
 const LARGE_FILE_THRESHOLD = 10E6; // 10 MB
@@ -136,8 +136,8 @@ function uploadUsingTreeTask(uploads: Directory) {
             }
             // Check if the directory exists
             let exists = false;
-            const name = filename(node.path);
-            const list = await connection.list(dirname(node.path));
+            const name = filename(noTrailingSlash(node.path));
+            const list = await connection.list(dirname(noTrailingSlash(node.path)));
             for (const entry of list) {
                 if (entry.name === name && entry.isDirectory()) {
                     exists = true;
