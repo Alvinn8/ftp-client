@@ -187,7 +187,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                         />
                     </div>
                 ) : (
-                    <span className="ms-2">{entry.name}</span>
+                    <span className="folder-entry-name-text ms-2">{entry.name}</span>
                 )}
             </td>
             <td className="text-muted-color">
