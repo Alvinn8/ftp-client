@@ -67,7 +67,7 @@ window.addEventListener("focus", () => {
  */
 function openWindow(name: string, url: string, folderEntry: FolderEntry): Window {
     let wind: Window = null;
-    if (window.innerWidth > 600) {
+    if (window.innerWidth > 768) {
         // Try open popup window on desktop
         try {
             wind = window.open(url, name, "width=600,height=600");
