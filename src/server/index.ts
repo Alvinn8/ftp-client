@@ -16,6 +16,13 @@ process.on("unhandledRejection", (reason, promise) => {
     // Don't crash the backend application :)
 });
 
+// Prevent uncaught exceptions from crashing the application
+process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error);
+    // Don't crash the backend application :)
+    // This can happen when streams are closed during FTP operations
+});
+
 const PORT = parseInt(process.env.PORT) || 8081;
 const PROTOCOL_VERSION = 1;
 
@@ -132,6 +139,12 @@ const httpServer = createServer(function (req, res) {
                             "Content-Length": size
                         };
                         res.writeHead(200, downloadHeaders);
+
+                        // Handle response stream errors to prevent crash
+                        res.on("error", (err) => {
+                            largeDownload.connection.log("Response stream error: " + err.message);
+                        });
+
                         await largeDownload.connection.client.downloadTo(res, largeDownload.path);
                         res.end();
                     } else {
@@ -144,6 +157,12 @@ const httpServer = createServer(function (req, res) {
                     if (!largeDownload.connection.userClosed) {
                         // The connection was not closed, but we still got an unexpected error.
                         largeDownload.connection.log("Download error " + err);
+                    }
+                    if (!res.headersSent) {
+                        res.writeHead(500, headers);
+                    }
+                    if (!res.writableEnded) {
+                        res.end();
                     }
                 });
                 return;
