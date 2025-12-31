@@ -4,6 +4,7 @@ import FolderEntry from "../../folder/FolderEntry";
 import TaskManager from "../../task/TaskManager";
 import { getApp } from "../App";
 import Size from "../Size";
+import { unexpectedErrorHandler } from "../../error";
 
 interface CompuseSizeProps {
     selection: FolderEntry[];
@@ -39,17 +40,19 @@ export default class CompuseSize extends React.Component<CompuseSizeProps, Compu
         }
     }
 
-    async handleClick() {
+    handleClick() {
         if (!TaskManager.requestNewTask()) return;
 
         this.setState({
             computing: true,
             size: null
         });
-        const size = await computeSize(this.props.selection);
-        this.setState({
-            computing: false,
-            size: size
-        });
+        (async () => {
+            const size = await computeSize(this.props.selection);
+            this.setState({
+                computing: false,
+                size: size
+            });
+        })().catch(unexpectedErrorHandler("Failed to compute size"));
     }
 }
