@@ -39,6 +39,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
     } | null>(null);
 
     const [renaming, setRenaming, creating] = useRename(entry);
+    const enterPressedRef = useRef(false);
     const [newName, setNewName] = useState(entry.name);
     const session = useSession((state) => state.getSession());
     const totalSize = useFolderCacheSize(
@@ -59,9 +60,15 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
     }
 
     function saveRename() {
+        if (!renaming) return;
         setRenaming(false);
-        if (newName === entry.name && !creating) {
-            // Same name, do nothing
+        if (!newName || (newName === entry.name && !creating)) {
+            // Empty name or same name, do nothing
+            return;
+        }
+        if (newName.includes("/")) {
+            Dialog.message("Invalid name", "The name cannot contain slashes.");
+            setNewName(entry.name);
             return;
         }
         const dirName = parentdir(entry.path);
@@ -109,6 +116,8 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
 
     function onRenameKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
         if (e.key === "Enter") {
+            // Avoid double rename since blur also triggers.
+            enterPressedRef.current = true;
             saveRename();
         }
         if (e.key === "Escape") {
@@ -173,21 +182,30 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                 {icon(entry, renaming, newName, selected)}
                 {renaming ? (
                     <div className="folder-entry-rename-wrapper ms-2">
-                        <span className="folder-entry-rename-size">
+                        <div className="folder-entry-rename-size">
                             {newName}
-                        </span>
+                        </div>
                         <input
                             className="folder-entry-rename-input"
                             type="text"
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
-                            onBlur={() => saveRename()}
+                            onBlur={() => {
+                                if (enterPressedRef.current) {
+                                    // Avoid double rename when enter is pressed.
+                                    enterPressedRef.current = false;
+                                    return;
+                                }
+                                saveRename();
+                            }}
                             onKeyDown={onRenameKeyDown}
                             autoFocus
                         />
                     </div>
                 ) : (
-                    <span className="folder-entry-name-text ms-2">{entry.name}</span>
+                    <span className="folder-entry-name-text ms-2">
+                        {entry.name}
+                    </span>
                 )}
             </td>
             <td className="text-muted-color">

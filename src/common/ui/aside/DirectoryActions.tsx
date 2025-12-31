@@ -18,6 +18,9 @@ interface DirectoryActionsProps {
 const DirectoryActions: React.FC<DirectoryActionsProps> = (props) => {
     function mkdir() {
         Dialog.prompt("Create New Folder", "Enter the name of the new folder", "OK", "", name => {
+            if (!name) {
+                return;
+            }
             if (name.includes("/")) {
                 Dialog.message("Invalid folder name", "The name of a folder cannot contain slashes.");
                 return;
@@ -38,6 +41,9 @@ const DirectoryActions: React.FC<DirectoryActionsProps> = (props) => {
 
     function createFile() {
         Dialog.prompt("Create New File", "Enter the name of the new file", "OK", "", name => {
+            if (!name) {
+                return;
+            }
             console.log("Creating new file with name " + name);
             (async () => {
                 const entries = await FolderContentProviders.FTP.getFolderEntries(Priority.QUICK, props.workdir);

@@ -125,33 +125,38 @@ export async function downloadFolderEntry(entry: FolderEntry) {
 
 export function rename(entry: FolderEntry) {
     Dialog.prompt("Rename "+ entry.name, "Enter the new name of the file", "Rename", entry.name, newName => {
-        const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
-        console.log("Renaming", entry.path, "to", newPath);
-        if (useNewUiStore.getState().useNewUi) {
-            performWithRetry(getSession(), parentdir(entry.path), async (connection) => {
-                try {
-                    await connection.rename(entry.path, newPath);
-                } catch(err) {
-                    if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
-                        Dialog.message("Rename failed", "A file or folder with the new name already exists.");
-                    } else {
-                        unexpectedErrorHandler("Failed to rename")(err);
-                    }
-                }
-            }).catch(unexpectedErrorHandler("Failed to rename"));
-        } else {
-            getApp().state.session.rename(Priority.QUICK, entry.path, newPath)
-                .catch(err => {
-                    if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
-                        Dialog.message("Rename failed", "A file or folder with the new name already exists.");
-                    } else {
-                        unexpectedErrorHandler("Failed to rename")(err);
-                    }
-                })
-                .finally(() => {
-                getApp().refresh();
-                });
+if (!newName) {
+            return;
         }
+        if (newName.includes("/")) {
+            Dialog.message("Invalid name", "The name cannot contain slashes.");
+            return;
+        }
+        const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
+
+        (async () => {
+            const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.QUICK, parentdir(entry.path));
+            if (list && list.some((entry) => entry.name === newName)) {
+                Dialog.message(
+                    "Name already taken",
+                    "A file or folder with that name already exists.",
+                );
+                return;
+            }
+        console.log("Renaming", entry.path, "to", newPath);
+        
+                try {
+                    await getApp().state.session.rename(Priority.QUICK, entry.path, newPath);
+                } catch (err) {
+                    if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
+                        Dialog.message("Rename failed", "A file or folder with the new name already exists.");
+                    } else {
+                        throw err;
+                    }
+                } finally {
+                getApp().refresh();
+                        }
+})().catch(unexpectedErrorHandler("Failed to rename"));
     });
 }
 

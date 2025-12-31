@@ -29,7 +29,7 @@ export default class Actions extends React.Component<ActionsProps, {}> {
         if (selection.length == 0) {
             return (
                 <div id="mobile-actions" className="d-flex align-items-end justify-content-end p-1">
-                    <Button variant="ghost" label="Try new UI" onClick={() => goToNewUi()} />
+                    <Button variant="ghost" label="Try new design" onClick={() => goToNewUi()} />
                 </div>
             );
         } else if (selection.length == 1) {
