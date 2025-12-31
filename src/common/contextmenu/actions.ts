@@ -112,7 +112,12 @@ export async function downloadFolderEntry(entry: FolderEntry) {
         performWithRetry(getSession(), parentdir(entry.path), async (connection) => {
             const blob = await connection.download(entry);
             download(blob, entry.name);
-        }).catch(unexpectedErrorHandler("Failed to download"));
+        }).catch((err) => {
+            if (err instanceof CancellationError) {
+                return;
+            }
+            unexpectedErrorHandler("Failed to download")(err);
+        });
         return;
     }
     try {
@@ -125,7 +130,7 @@ export async function downloadFolderEntry(entry: FolderEntry) {
 
 export function rename(entry: FolderEntry) {
     Dialog.prompt("Rename "+ entry.name, "Enter the new name of the file", "Rename", entry.name, newName => {
-if (!newName) {
+        if (!newName) {
             return;
         }
         if (newName.includes("/")) {
@@ -143,20 +148,20 @@ if (!newName) {
                 );
                 return;
             }
-        console.log("Renaming", entry.path, "to", newPath);
-        
-                try {
-                    await getApp().state.session.rename(Priority.QUICK, entry.path, newPath);
-                } catch (err) {
-                    if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
-                        Dialog.message("Rename failed", "A file or folder with the new name already exists.");
-                    } else {
-                        throw err;
-                    }
-                } finally {
+            console.log("Renaming", entry.path, "to", newPath);
+
+            try {
+                await getApp().state.session.rename(Priority.QUICK, entry.path, newPath);
+            } catch (err) {
+                if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
+                    Dialog.message("Rename failed", "A file or folder with the new name already exists.");
+                } else {
+                    throw err;
+                }
+            } finally {
                 getApp().refresh();
-                        }
-})().catch(unexpectedErrorHandler("Failed to rename"));
+            }
+        })().catch(unexpectedErrorHandler("Failed to rename"));
     });
 }
 
