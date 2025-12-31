@@ -4,10 +4,11 @@ import IgnoreErrorBoundary from "./IgnoreErrorBoundary";
 type Size = [number, number]; // width, height
 
 interface AdProps {
+    name: "right-ad" | "bottom-ad";
     sizes: Size[];
 }
 
-const Ad: React.FC<AdProps> = ({ sizes }) => {
+const Ad: React.FC<AdProps> = ({ name: _, sizes }) => {
     // Placeholder for ad component
     const [sizesThatFit, setSizesThatFit] = useState<Size[]>([]);
     const [size, setSize] = useState<Size>([0, 0]);

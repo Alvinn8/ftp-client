@@ -54,6 +54,7 @@ const MainView: React.FC = () => {
             {adConfig.enabled && adConfig.slots.rightAd && (
                 <div className="right-content align-items-center">
                     <Ad
+                        name="right-ad"
                         sizes={[
                             [160, 600],
                             [120, 600],
@@ -66,6 +67,7 @@ const MainView: React.FC = () => {
                     className={`bottom-content bottomAdDesktop-${adConfig.slots.bottomAdDesktop}`}
                 >
                     <Ad
+                        name="bottom-ad"
                         sizes={[
                             [300, 50],
                             [728, 90],
