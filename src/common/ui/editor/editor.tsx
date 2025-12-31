@@ -204,20 +204,23 @@ export async function openTextEditor(folderEntry: FolderEntry) {
 
     wind["save"] = async (text: string) => {
         const newFileInfo = await getFile(folderEntry);
-        const afterHash = await sha256(newFileInfo.blob);
         const blob = new Blob([text]);
         const contentHash = await sha256(blob);
-        if (beforeHash !== afterHash && afterHash !== contentHash) {
+        if (newFileInfo === null) {
+            // TODO when this happens we get another ugly modal warning that the file has been deleted.
+            //  see the implementation of getFile. It will also ask for gzip, but that should be irelevant
+            //  here since gzipped files cannot be saved.
             try {
                 window.focus();
             } catch {}
             const shouldContinue = await Dialog.confirm(
-                "File has changed",
-                "The file has changed since you opened it. Do you want to discard your changes or overwrite the server content?",
+                "File has been deleted",
+                "The file you are editing has been deleted since you opened it. Do you want to discard your changes or overwrite the server content?",
                 "Discard changes",
                 "Overwrite changes on server"
             );
             if (!shouldContinue) {
+                // TODO this does NOT work when in an iframe
                 try {
                     wind.close();
                 } catch {}
@@ -226,6 +229,28 @@ export async function openTextEditor(folderEntry: FolderEntry) {
             try {
                 wind.focus();
             } catch {}
+        } else {
+            const afterHash = await sha256(newFileInfo.blob);
+            if (beforeHash !== afterHash && afterHash !== contentHash) {
+                try {
+                    window.focus();
+                } catch {}
+                const shouldContinue = await Dialog.confirm(
+                    "File has changed",
+                    "The file has changed since you opened it. Do you want to discard your changes or overwrite the server content?",
+                    "Discard changes",
+                    "Overwrite changes on server"
+                );
+                if (!shouldContinue) {
+                    try {
+                        wind.close();
+                    } catch {}
+                    return;
+                }
+                try {
+                    wind.focus();
+                } catch {}
+            }
         }
         if (useNewUiStore.getState().useNewUi) {
             await performWithRetry(useSession.getState().getSession(), absolutePath, async (connection) => {
