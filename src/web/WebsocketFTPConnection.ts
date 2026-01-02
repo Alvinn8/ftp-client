@@ -158,11 +158,6 @@ export default class WebsocketFTPConnection implements FTPConnection {
                         if (data.message == "Not connected") {
                             this.websocket.close();
                         }
-                        addMessage({
-                            color: "danger",
-                            message: data.message,
-                            stayForMillis: 10000
-                        });
                         let error: Error;
                         if (data.type === "FTPError") {
                             error = new FTPError(data.message, typeof data.code === "number" ? data.code : 0);
