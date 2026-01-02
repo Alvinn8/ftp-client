@@ -9,7 +9,16 @@ const OpenEditors = () => {
         setEditorWindows(editorWindows.map(editorWindow => editorWindow.window));
     });
 
-    const openWindows = [...editorWindows].filter(wind => !wind.closed);
+    function accessWindowVariable<T>(window: Window, varName: string, defaultValue: T): T | undefined {
+        try {
+            const value = (window as any)[varName];
+            return value as T;
+        } catch {
+            return defaultValue;
+        }
+    }
+
+    const openWindows = [...editorWindows].filter(wind => !accessWindowVariable(wind, "closed", true));
 
     if (openWindows.length === 0) {
         return null;
@@ -25,7 +34,7 @@ const OpenEditors = () => {
             <ul className="list-group list-group-flush">
                 {openWindows.map((editorWindow, index) => (
                     <li key={index} onClick={() => editorWindow.focus()} className={"list-group-item cursor-pointer" + darkThemeClasses}>
-                        { editorWindow.name }
+                        { accessWindowVariable(editorWindow, "name", "Unnamed Window") }
                     </li>
                 ))}
             </ul>

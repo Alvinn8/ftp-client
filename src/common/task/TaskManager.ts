@@ -116,6 +116,7 @@ export class TaskManager extends EventEmitter {
             }
         });
         this.startMonitor();
+        console.log("Starting tree task " + treeTask.title);
     }
 
     getTreeTasks(): TreeTask[] {

@@ -51,6 +51,10 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
 
     function onDoubleClick(e: React.MouseEvent) {
         if (renaming) return;
+        // Do not open if multiple entries are selected.
+        // The user might have misclicked when selecting
+        // and is not expecting to open anything.
+        if (selectedEntries.length > 1) return;
         e.preventDefault();
         if (entry.isDirectory()) {
             setPath(entry.path);

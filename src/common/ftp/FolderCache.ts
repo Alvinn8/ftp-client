@@ -107,6 +107,8 @@ export class FolderCache {
                     if (path !== "/") {
                         setPath(parentdir(path));
                     }
+                } else {
+                    throw err;
                 }
             } finally {
                 this.pendingFetches.delete(path);

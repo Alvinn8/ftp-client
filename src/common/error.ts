@@ -26,7 +26,7 @@ export function reportError(error: unknown, message?: string) {
         message || "An error was reported",
         { cause: error },
     );
-    console.error("Reported error: " + reportedError.message, reportedError);
+    console.error("Reported error:", reportedError);
 }
 
 export function assertUnreachable(x: never): never {

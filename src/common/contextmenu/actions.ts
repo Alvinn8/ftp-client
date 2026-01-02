@@ -223,7 +223,19 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string, sub
                 let entries = session.folderCache.get(directory.path);
                 if (!entries) {
                     // Fetch if not in cache
-                    entries = await connection.list(directory.path);
+                    try {
+                        entries = await connection.list(directory.path);
+                    } catch (err) {
+                        if (String(err).includes("ENOENT")) {
+                            // Oops, this directory does not exist. Invalidate cache
+                            // and retry parent directory.
+                            session.folderCache.remove(directory.path);
+                            session.folderCache.remove(parentdir(directory.path));
+                            directory.parent?.retry();
+                            return;
+                        }
+                        throw err;
+                    }
                     session.folderCache.set(directory.path, entries);
                     countUntilMoreConnections--;
                     if (countUntilMoreConnections <= 0) {

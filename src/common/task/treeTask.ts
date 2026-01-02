@@ -4,7 +4,6 @@ import { FileTree, FileTreeFile, Status } from "./tree"
 import FTPSession from "../ftp/FTPSession"
 import Priority from "../ftp/Priority"
 import { unexpectedErrorHandler } from "../error"
-import { getApp } from "../ui/App"
 import { sleep } from "../utils"
 
 type MaybePromise<T> = Promise<T> | T;
@@ -108,6 +107,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
     errorTasks: (FileTree<T> | FileTreeFile<T>)[] = [];
     count: CountObject;
     progress: ProgressObject;
+    constructorError: Error; // Used to print stack traces for where the task was created.
 
     constructor(session: FTPSession, fileTree: FileTree<T>, options: TreeTaskOptions, handler: TreeTaskHandler<T>) {
         super();
@@ -140,6 +140,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
             totalFileSize: this.count.totalFileSize
         };
         this.updateProgress();
+        this.constructorError = new Error();
     }
 
     setStatus(status: TaskStatus) {

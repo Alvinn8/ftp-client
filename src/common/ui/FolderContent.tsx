@@ -12,7 +12,7 @@ import FolderEntryComponent from "./FolderEntryComponent";
 import { parentdir, randomBetween, range } from "../utils";
 import Dialog from "../Dialog";
 import { getApp } from "./App";
-import { formatError, unexpectedErrorHandler } from "../error";
+import { ConnectionClosedError, formatError, unexpectedErrorHandler } from "../error";
 
 interface FolderContentProps {
     workdir: string;
@@ -60,6 +60,8 @@ export default class FolderContent extends React.Component<FolderContentProps, F
                         getApp().refresh(true);
                     }, 1000);
                 }
+            } else if (err instanceof ConnectionClosedError) {
+                Dialog.message("Connection closed", "Press refresh to try again.");
             } else {
                 unexpectedErrorHandler("Failed to fetch files")(err);
             }

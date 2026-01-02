@@ -1,3 +1,4 @@
+import { CancellationError } from "../error";
 import FTPConnection from "../ftp/FTPConnection";
 import FTPSession from "../ftp/FTPSession";
 import { FileTree } from "./tree";
@@ -21,7 +22,7 @@ export async function performWithRetry<T>(session: FTPSession, directoryPath: st
             },
             file() {},
             cancelled(fileTree, connection) {
-                reject(new Error("Operation cancelled"));
+                reject(new CancellationError("Operation cancelled"));
             },
         }));
     });

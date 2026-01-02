@@ -16,6 +16,7 @@ const ERRORS_TO_NOT_REPORT = ["NotReadableError", "NotFoundError", "ConnectionCl
 export class FileTree<T = unknown> extends EventEmitter {
     readonly path: string;
     task?: TreeTask<T>;
+    parent?: FileTree<T>;
     private entries: (FileTree<T> | FileTreeFile<T>)[];
     suggestedNextIndex: number = 0;
     private beforeStatus: Status;
@@ -65,6 +66,15 @@ export class FileTree<T = unknown> extends EventEmitter {
 
     addEntry(entry: FileTree<T> | FileTreeFile<T>) {
         this.entries.push(entry);
+        if (entry instanceof FileTree) {
+            entry.parent = this;
+        }
+        entry.task = this.task;
+        this.emit("entriesChange", this.entries);
+    }
+
+    removeEntry(entry: FileTree<T> | FileTreeFile<T>) {
+        this.entries = this.entries.filter(e => e !== entry);
         this.emit("entriesChange", this.entries);
     }
 
@@ -197,8 +207,10 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
     }
 
     setError(error: unknown) {
+        if (this.error !== error) {
+            console.log("Emmitting changed error", String(error));
+        }
         this.error = error;
-        console.log("Emmitting error", String(error));
         this.emit("errorChange", error);
     }
 

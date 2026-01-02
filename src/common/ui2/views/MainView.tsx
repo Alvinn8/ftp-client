@@ -26,7 +26,7 @@ const MainView: React.FC = () => {
             <div className="actions p-2 m-2 rounded">
                 <Actions />
             </div>
-            <div className="navigation d-flex flex-row align-items-center gap-2 mx-2 my-3 rounded">
+            <div className="navigation d-flex flex-row align-items-center gap-2 m-2 rounded">
                 <Button
                     icon="house"
                     severity="bg-base"

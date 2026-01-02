@@ -8,7 +8,7 @@ import { FileType, getFileType } from "../FileFormats";
 import { getApp } from "../App";
 import { addMessage } from "../messages";
 import { EventEmitter } from "eventemitter3";
-import { formatError } from "../../error";
+import { CancellationError, formatError } from "../../error";
 import { sha256 } from "../../utils";
 import { useNewUiStore } from "../../ui2/store/newUiStore";
 import { performWithRetry } from "../../task/taskActions";
@@ -418,9 +418,16 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
     let blob: Blob;
     try {
         if (useNewUiStore.getState().useNewUi) {
-            blob = await performWithRetry(useSession.getState().getSession(), folderEntry.path, async (connection) => {
-                return await connection.download(folderEntry);
-            });
+            try {
+                blob = await performWithRetry(useSession.getState().getSession(), folderEntry.path, async (connection) => {
+                    return await connection.download(folderEntry);
+                });
+            } catch (err) {
+                if (err instanceof CancellationError) {
+                    return;
+                }
+                throw err;
+            }
         } else {
             blob = await getApp().state.session.download(Priority.QUICK, folderEntry);
         }

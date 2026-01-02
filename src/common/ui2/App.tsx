@@ -23,7 +23,7 @@ const App: React.FC = () => {
                 }}
             >
                 <strong>Note:</strong> The new design is still experimental.
-                Some features may not work as intended. Please report all bugs!
+                Please report all bugs!
             </div>
             <div
                 className="flex-grow-1 d-flex flex-column overflow-hidden"
@@ -32,7 +32,7 @@ const App: React.FC = () => {
                 {hasSession ? <MainView /> : <LoginView />}
             </div>
             <div
-                className="position-absolute bottom-0 end-0 p-3 d-flex flex-column"
+                className="position-absolute bottom-0 end-0 p-3 d-flex flex-column bottom-toast"
                 style={{ gap: "8px" }}
             >
                 <LargeFileOperation />
