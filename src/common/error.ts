@@ -22,11 +22,22 @@ export function formatError(error: unknown) {
 }
 
 export function reportError(error: unknown, message?: string) {
-    console.error("Reported error: " + message, error);
+    const reportedError = new ReportedError(
+        message || "An error was reported",
+        { cause: error },
+    );
+    console.error("Reported error: " + reportedError.message, reportedError);
 }
 
 export function assertUnreachable(x: never): never {
     throw new Error("unreachable, unexpected: " + String(x));
+}
+
+export class ReportedError extends Error {
+    constructor(message: string, opts: { cause: unknown }) {
+        super(message, opts);
+        this.name = "ReportedError";
+    }
 }
 
 export class ConnectionClosedError extends Error {
