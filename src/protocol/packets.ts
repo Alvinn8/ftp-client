@@ -114,6 +114,7 @@ export interface ChunkedUploadStopData {
 }
 
 export const packetMap = new Map<number, Packet<any, any>>();
+export const packetNameMap = new Map<string, Packet<any, any>>();
 
 let idCount = 1;
 
@@ -122,25 +123,28 @@ let idCount = 1;
  * and where {@code Response} is the type the server replies with.
  */
 export class Packet<Data, Response> {
-    public readonly id;
+    public readonly id: number;
+    public readonly name: string;
 
-    constructor() {
+    constructor(name: string) {
         this.id = idCount++;
+        this.name = name;
         packetMap.set(this.id, this);
+        packetNameMap.set(this.name, this);
     }
 }
 
 export namespace Packets {
-    export const Ping = new Packet<{}, PingReply>();
-    export const ConnectFtp = new Packet<ConnectFtpData, void>();
-    export const ConnectSftp = new Packet<ConnectSftpData, void>();
-    export const List = new Packet<ListData, ListReply>();
-    export const Download = new Packet<DownloadData, DownloadReply>();
-    export const Upload = new Packet<UploadData, void>();
-    export const Mkdir = new Packet<PathData, void>();
-    export const Rename = new Packet<RenameData, void>();
-    export const Delete = new Packet<PathData, void>();
-    export const ChunkedUploadStart = new Packet<ChunkedUploadStartData, ChunkedUploadStartResponse>();
-    export const ChunkedUpload = new Packet<ChunkedUploadData, ChunkedUploadResponse>();
-    export const ChunkedUploadStop = new Packet<ChunkedUploadStopData, void>();
+    export const Ping = new Packet<{}, PingReply>("ping");
+    export const ConnectFtp = new Packet<ConnectFtpData, void>("connect_ftp");
+    export const ConnectSftp = new Packet<ConnectSftpData, void>("connect_sftp");
+    export const List = new Packet<ListData, ListReply>("list");
+    export const Download = new Packet<DownloadData, DownloadReply>("download");
+    export const Upload = new Packet<UploadData, void>("upload");
+    export const Mkdir = new Packet<PathData, void>("mkdir");
+    export const Rename = new Packet<RenameData, void>("rename");
+    export const Delete = new Packet<PathData, void>("delete");
+    export const ChunkedUploadStart = new Packet<ChunkedUploadStartData, ChunkedUploadStartResponse>("chunked_upload_start");
+    export const ChunkedUpload = new Packet<ChunkedUploadData, ChunkedUploadResponse>("chunked_upload");
+    export const ChunkedUploadStop = new Packet<ChunkedUploadStopData, void>("chunked_upload_stop");
 }

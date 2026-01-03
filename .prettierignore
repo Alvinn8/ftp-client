@@ -4,3 +4,6 @@ src/common/test/**/*
 src/common/task/**/*
 src/common/upload/**/*
 src/common/contextmenu/**/*
+src/web/WebsocketFTPConnection.ts
+src/server/index.ts
+src/protocol/packets.ts

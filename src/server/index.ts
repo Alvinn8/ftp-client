@@ -2,7 +2,7 @@ import * as ftp from "basic-ftp";
 import { FTPError } from "basic-ftp";
 import { createServer } from "http";
 import * as ws from "ws";
-import { ChunkedUploadStatus, ErrorReply, Packet, packetMap, Packets } from "../protocol/packets";
+import { ChunkedUploadStatus, ErrorReply, Packet, packetMap, packetNameMap, Packets } from "../protocol/packets";
 import { PassThrough } from "stream";
 import { createHash } from "crypto";
 import VERSION from "../protocol/version";
@@ -251,10 +251,11 @@ server.on("connection", function(ws) {
             let json = JSON.parse(message);
             if (typeof json.packetId == "number") {
                 const packetId: number = json.packetId;
-                connection.log("Got packet id: " + packetId);
+                const packetName = String(json.packetName);
+                connection.log("Got packet id: " + packetId + " name: " + packetName);
 
                 // Get the packet
-                const packet = packetMap.get(packetId);
+                const packet = packetNameMap.get(packetName) || packetMap.get(packetId);
                 if (packet != null && packet !== Packets.Ping && packet !== Packets.ConnectFtp && packet !== Packets.ConnectSftp) {
                     // Ensure the client is connected before attempting to interact.
                     if (!connection.isClientConnected()) {

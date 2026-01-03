@@ -148,6 +148,7 @@ export default class WebsocketFTPConnection implements FTPConnection {
     async send<Data, Response>(packet: Packet<Data, Response>, data: Data): Promise<Response> {
         return await new Promise<Response>((resolve, reject) => {
             data["packetId"] = packet.id;
+            data["packetName"] = packet.name;
             const requestId = this.getRandomId();
             data["requestId"] = requestId;
             this.pendingReplies.push({
