@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@sayari/eslint-plugin':
+        specifier: 0.0.1-rc.4
+        version: 0.0.1-rc.4(eslint@9.25.1)
       '@uiw/react-codemirror':
         specifier: ^4.12.4
         version: 4.23.7(@babel/runtime@7.26.7)(@codemirror/autocomplete@6.18.4)(@codemirror/language@6.10.8)(@codemirror/lint@6.8.4)(@codemirror/search@6.5.8)(@codemirror/state@6.5.1)(@codemirror/theme-one-dark@6.1.2)(@codemirror/view@6.36.2)(codemirror@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -570,6 +573,12 @@ packages:
 
   '@popperjs/core@2.11.8':
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
+
+  '@sayari/eslint-plugin@0.0.1-rc.4':
+    resolution: {integrity: sha512-epr+ovlyp+JPuPqUOW6S+aFcLIwnyBsBMr65yMi4qjQ9/8SlsAjVjt8Q8O9Al8fT1dk9MZlTomKI/UMr4bUT5A==}
+    engines: {node: '>=0.10.0'}
+    peerDependencies:
+      eslint: ^8.5.0
 
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
@@ -2766,6 +2775,10 @@ snapshots:
   '@polka/url@1.0.0-next.29': {}
 
   '@popperjs/core@2.11.8': {}
+
+  '@sayari/eslint-plugin@0.0.1-rc.4(eslint@9.25.1)':
+    dependencies:
+      eslint: 9.25.1
 
   '@sinclair/typebox@0.27.8': {}
 

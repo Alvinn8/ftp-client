@@ -24,7 +24,7 @@ export default class EntriesInfo extends React.Component<EntriesInfoProps, {}> {
             <div>
                 <p>{ this.props.selection.length } selected entries.</p>
                 { size != null && (
-                    <p>Combined size: <Size size={size} /></p>
+                    <p><span>Combined size: </span><Size size={size} /></p>
                 )}
                 {size == null && (
                     <CompuseSize selection={this.props.selection} key={Math.random()} />

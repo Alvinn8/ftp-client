@@ -296,7 +296,7 @@ export class App extends React.Component<AppProps, AppState> {
                                     {actions}
                                     <small id="version" className="text-secondary">
                                         <Button variant="ghost" label="Try new design" onClick={() => goToNewUi()} />
-                                        Version: { VERSION }
+                                        <span>{ `Version: ${VERSION}` }</span>
                                     </small>
                                 </aside>
                             </>

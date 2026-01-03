@@ -28,7 +28,7 @@ const TextInput: React.FC<TextInputProps> = ({
         <div className={`text-input-wrapper ${className || ""}`}>
             {label && (
                 <label htmlFor={id} className="text-input-label">
-                    {label}
+                    <span>{label}</span>
                     {required && <span className="text-input-required">*</span>}
                 </label>
             )}

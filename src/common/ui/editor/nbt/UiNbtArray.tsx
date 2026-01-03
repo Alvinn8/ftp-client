@@ -11,7 +11,10 @@ export default class UiNbtArray extends React.Component<UiNbtArrayProps, {}> {
         const type = getType(this.props.tag);
         return <>
             {this.props.children != null && (
-                <span>{this.props.children}{": array of " + length + " " + type + (length == 1 ? "" : "s")}</span>
+                <span>
+                    {this.props.children}
+                    <span>{": array of " + length + " " + type + (length == 1 ? "" : "s")}</span>
+                </span>
             )}
         </>
     }

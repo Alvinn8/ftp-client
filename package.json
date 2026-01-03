@@ -15,6 +15,7 @@
         "check": "tsc"
     },
     "dependencies": {
+        "@sayari/eslint-plugin": "0.0.1-rc.4",
         "@uiw/react-codemirror": "^4.12.4",
         "@zip.js/zip.js": "2.6.15",
         "basic-ftp": "^5.0.5",

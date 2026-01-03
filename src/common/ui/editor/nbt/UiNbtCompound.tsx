@@ -45,7 +45,10 @@ export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, 
                     </NbtTagContainer>
                 )}
                 {!this.state.open && emptyText != null && !isBedrockExperiments && (
-                    <span>: {emptyText}</span>
+                    <span>
+                        <span>: </span>
+                        {emptyText}
+                    </span>
                 )}
                 {isBedrockExperiments && (
                     <button className="btn btn-primary btn-sm" onClick={() => this.setState({ bedrockExperimentsOpen: true })}>Edit Experiments</button>

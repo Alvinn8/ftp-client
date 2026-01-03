@@ -23,7 +23,7 @@ const ImageEditor: React.FC = () => {
     return (
         <div className="image-editor-container">
             <img src={url} ref={ref} className="image" />
-            <p>Image size: {dimensions}</p>
+            <p>{`Image size: ${dimensions}`}</p>
             <EditorControls allowSaving={false} />
         </div>
     );

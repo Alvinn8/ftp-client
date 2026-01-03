@@ -44,7 +44,7 @@ const EditorControls: React.FC<TextEditorControlsProps> = ({ allowSaving, onSave
                     className="btn btn-primary float-end"
                     onClick={save}
                     disabled={saving}>
-                    {saving ? <div className="spinner-border" role="status" /> : "Save"}
+                    {saving ? <div className="spinner-border" role="status" /> : <span>Save</span>}
                 </button>
             )}
         </div>

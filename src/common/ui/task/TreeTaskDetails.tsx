@@ -188,12 +188,12 @@ const OverviewTab: React.FC<{ treeTask: TreeTask }> = ({ treeTask }) => {
                     <div className="d-flex justify-content-between gap-3 mb-3 text-xs text-muted-color text-small">
                         {progress.totalFiles > 1 && (
                             <span>
-                                {progress.completedFiles} of {progress.totalFiles} files
+                                {`${progress.completedFiles} of ${progress.totalFiles} files`}
                             </span>
                         )}
                         {progress.totalFileSize && (
                             <span>
-                                {formatByteSize(progress.completedFileSize)} / {formatByteSize(progress.totalFileSize)}
+                                {`${formatByteSize(progress.completedFileSize)} / ${formatByteSize(progress.totalFileSize)}`}
                             </span>
                         )}
                     </div>

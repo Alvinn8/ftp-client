@@ -22,8 +22,11 @@ const App: React.FC = () => {
                     textAlign: "center",
                 }}
             >
-                <strong>Note:</strong> The new design is still experimental.
-                Please report all bugs!
+                <strong>Note: </strong>
+                <span>
+                    The new design is still experimental. Please report all
+                    bugs!
+                </span>
             </div>
             <div
                 className="flex-grow-1 d-flex flex-column overflow-hidden"

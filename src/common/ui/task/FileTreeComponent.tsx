@@ -113,7 +113,7 @@ export const FileTreeComponent: React.FC<FileTreeProps> = ({ fileTree, deep }) =
                     <span className="file-name text-truncate">{filename(fileTree.path)}</span>
                     { attempt > 1 && (
                         <span className="badge bg-highlight text-smaller ms-2">
-                            Attempt {attempt}
+                            {`Attempt ${attempt}`}
                         </span>
                     )}
                 </div>
@@ -192,7 +192,7 @@ export const FileTreeFileComponent: React.FC<FileTreeFileProps> = ({ fileTreeFil
                         <span className="file-name text-truncate">{fileTreeFile.name}</span>
                         { attempt > 1 && (
                             <span className="badge bg-highlight text-smaller ms-2">
-                                Attempt {attempt}
+                                {`Attempt ${attempt}`}
                             </span>
                         )}
                     </div>

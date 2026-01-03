@@ -3,6 +3,7 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
+import pluginSayari from "@sayari/eslint-plugin";
 
 export default tseslint.config(
     // Eventually we would want to enable all these. But it would involve a lot of cleanup.
@@ -19,6 +20,9 @@ export default tseslint.config(
                 tsconfigRootDir: import.meta.dirname,
             },
         },
+        plugins: {
+            "@sayari": pluginSayari,
+        },
         rules: {
             // Rules to ensure promises are handled with care to avoid uncaught rejections.
             "@typescript-eslint/no-floating-promises": "error",
@@ -31,6 +35,9 @@ export default tseslint.config(
             "@typescript-eslint/return-await": ["error", "always"],
             "@typescript-eslint/await-thenable": "error",
             "no-async-promise-executor": "error",
-        }
-    }
+            // Rule to ensure text is wrapped to avoid errors when users use Google
+            // translate that manipulate the DOM.
+            "@sayari/no-unwrapped-jsx-text": "error",
+        },
+    },
 );

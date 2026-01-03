@@ -36,7 +36,7 @@ export default class CompuseSize extends React.Component<CompuseSizeProps, Compu
         if (this.state.size == null) {
             return <button className="btn btn-primary" onClick={this.handleClick.bind(this)}>Compute size</button>;
         } else {
-            return <p>Size: <Size size={this.state.size} /></p>;
+            return <p><span>Size: </span><Size size={this.state.size} /></p>;
         }
     }
 

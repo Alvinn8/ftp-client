@@ -50,7 +50,7 @@ export default class UiNbtList extends React.Component<UiNbtListProps, UiNbtList
                             <span>: [ </span>
                             {this.props.tag.data.map((tag, index) => (
                                 <React.Fragment key={index}>
-                                    {index > 0 && ", "}
+                                    {index > 0 && <span>, </span>}
                                     <UiNbtTag tag={tag} root={false} parent={{parent: this.props.tag, index, reRenderUi}} />
                                 </React.Fragment>
                             ))}

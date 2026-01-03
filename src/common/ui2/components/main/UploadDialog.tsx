@@ -51,7 +51,8 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ onClose }) => {
                 <div className="modal-content bg-base-ui2 text-color">
                     <div className="modal-header">
                         <h5 className="modal-title me-auto">
-                            <i className="bi bi-upload" /> Upload Files
+                            <i className="bi bi-upload" />
+                            <span>&nbsp;Upload Files</span>
                         </h5>
                         <button
                             type="button"
@@ -63,7 +64,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ onClose }) => {
                     <div className="modal-body">
                         <small>
                             <span className="text-muted-color">
-                                Upload files to{" "}
+                                {"Upload files to "}
                             </span>
                             <span>{path}</span>
                         </small>

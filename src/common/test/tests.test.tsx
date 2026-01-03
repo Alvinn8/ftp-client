@@ -269,7 +269,7 @@ describe("ftp-client tests", () => {
         expect(folderEntry).toBeInTheDocument();
         await userEvent.click(folderEntry);
         await userEvent.click(await screen.findByRole("button", { name: "Compute size" }));
-        expect((await screen.findByText(/Size:/)).textContent).toBe("Size: 3 B");
+        expect(((await screen.findByText(/Size:/)).parentElement).textContent).toBe("Size: 3 B");
     });
 });
 

@@ -30,7 +30,7 @@ const TreeTaskComponent: React.FC<TaskProps> = ({ treeTask, onShowDetails }) => 
                 {status === TaskStatus.ERROR && (
                     <span className="badge bg-danger d-inline-flex gap-1">
                         <i className="bi bi-exclamation-triangle" />
-                        Action required
+                        <span>Action required</span>
                     </span>
                 )}
             </div>
