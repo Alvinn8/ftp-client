@@ -147,6 +147,22 @@ const httpServer = createServer(function (req, res) {
 
                         await largeDownload.connection.client.downloadTo(res, largeDownload.path);
                         res.end();
+                    } else if (largeDownload.connection.client instanceof SftpClient) {
+                        const stat = await largeDownload.connection.client.stat(largeDownload.path);
+                        const size = stat.size;
+                        const downloadHeaders = {
+                            ...headers,
+                            "Content-Length": size
+                        };
+                        res.writeHead(200, downloadHeaders);
+
+                        // Handle response stream errors to prevent crash
+                        res.on("error", (err) => {
+                            largeDownload.connection.log("Response stream error: " + err.message);
+                        });
+
+                        await largeDownload.connection.client.get(largeDownload.path, res);
+                        res.end();
                     } else {
                         res.writeHead(500, headers);
                         res.write("500 Unknown connection type.");
