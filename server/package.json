@@ -2,6 +2,7 @@
     "name": "ftp-client-server",
     "version": "1.0.0",
     "main": "bundle.js",
+    "type": "module",
     "scripts": {
         "build": "node esbuild.config.js",
         "start": "node bundle.js",
@@ -9,7 +10,7 @@
     },
     "dependencies": {
         "ssh2-sftp-client": "^12.0.1",
-        "ws": "^8.0.0"
+        "ws": "^8.18.3"
     },
     "devDependencies": {
         "esbuild": "^0.27.2"

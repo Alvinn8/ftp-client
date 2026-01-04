@@ -1,8 +1,10 @@
-require("esbuild").build({
-    entryPoints: [__dirname + "/../src/server/index.ts"],
+import * as esbuild from "esbuild";
+
+esbuild.build({
+    entryPoints: [import.meta.dirname + "/../src/server/index.ts"],
     platform: "node",
-    format: "cjs",
+    format: "esm",
     bundle: true,
     outfile: "bundle.js",
-    external: ["ws", "basic-ftp", "ssh2-sftp-client"]
+    packages: "external",
 });

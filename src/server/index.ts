@@ -1,11 +1,16 @@
 import * as ftp from "basic-ftp";
-import { FTPError } from "basic-ftp";
+import { FileType, FTPError } from "basic-ftp";
+import { Dirent, promises as fs } from "fs";
 import { createServer, ServerResponse } from "http";
-import * as ws from "ws";
-import { ChunkedUploadStatus, ErrorReply, Packet, packetMap, packetNameMap, Packets } from "../protocol/packets";
+import path from "path";
 import { PassThrough } from "stream";
 import { createHash } from "crypto";
+import { pathToFileURL } from "url";
+// @ts-ignore I'm not sure why ws and @types/ws disagree.
+import WebSocket, { WebSocketServer } from "ws";
+import { ChunkedUploadStatus, ErrorReply, Packet, packetMap, packetNameMap, Packets } from "../protocol/packets";
 import VERSION from "../protocol/version";
+import { ReadableMemoryStream, WritableMemoryStream } from "./memoryStreams";
 
 // Prevent uncaught promise rejections from crashing the application
 process.on("unhandledRejection", (reason, promise) => {
@@ -70,13 +75,85 @@ export const chunkedUploads: ChunkedUpload[] = [];
 
 const protocols = new Map<string, PacketHandler>();
 
+async function registerCustomProtocol(protocolName: string, modulePath: string) {
+    const moduleUrl = pathToFileURL(modulePath).href;
+    let mod: any;
+
+    try {
+        mod = await import(moduleUrl);
+    } catch (err) {
+        console.error(`Error importing custom protocol "${protocolName}" from ${modulePath}:`, err);
+        return;
+    }
+
+    const setupFn = typeof mod.default === "function"
+        ? mod.default
+        : (typeof mod.setup === "function" ? mod.setup : null);
+
+    if (typeof setupFn !== "function") {
+        console.warn(`Custom protocol "${protocolName}" does not export a default setup function. Skipping.`);
+        return;
+    }
+
+    const packetHandlers = newPacketHandlersMap();
+    const handler = packetHandlers.push;
+
+    try {
+        const setupResult = setupFn({
+            handler,
+            Packets,
+            ServerPackets,
+            CORS_HEADERS,
+            largeDownloads,
+            chunkedUploads,
+            WritableMemoryStream,
+            ReadableMemoryStream,
+            PassThrough,
+            FileType,
+        });
+        if (setupResult instanceof Promise) {
+            await setupResult;
+        }
+        protocols.set(protocolName, packetHandlers);
+        console.log(`Registered custom protocol "${protocolName}" from ${modulePath}`);
+    } catch (err) {
+        console.error(`Error running setup for custom protocol "${protocolName}" from ${modulePath}:`, err);
+    }
+}
+
+async function loadCustomProtocols() {
+    const extensionsDir = path.resolve(process.cwd(), "extensions");
+    console.log("Searching for extensions in", extensionsDir);
+    const baseDir = path.resolve(extensionsDir, "protocol");
+    let entries: Dirent[];
+
+    try {
+        entries = await fs.readdir(baseDir, { withFileTypes: true });
+    } catch (err: any) {
+        if (err && err.code === "ENOENT") {
+            // No extensions directory; nothing to load.
+            return;
+        }
+        console.error("Error reading custom protocol directory:", err);
+        return;
+    }
+
+    for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith(".js")) {
+            const protocolName = entry.name.substring(0, entry.name.length - ".js".length);
+            await registerCustomProtocol(protocolName, path.join(baseDir, entry.name));
+        }
+    }
+}
+
 // Import after ServerPackets has been defined.
 Promise.all([
     import("./ftp"),
     import("./sftp"),
-]).then(([ftp, sftp]) => {
+]).then(async ([ftp, sftp]) => {
     protocols.set("ftp", ftp.ftpPacketHandlers);
     protocols.set("sftp", sftp.sftpPacketHandlers);
+    await loadCustomProtocols();
 }).catch(err => {
     console.error("Error importing protocol handlers:", err);
     process.exit(1);
@@ -200,7 +277,7 @@ const httpServer = createServer(function (req, res) {
     }
 });
 
-const server = new ws.Server({ server: httpServer });
+const server = new WebSocketServer({ server: httpServer });
 
 httpServer.listen(PORT);
 
@@ -279,6 +356,17 @@ server.on("connection", function(ws) {
                 let handler = packetHandlers?.map.get(packet);
                 if (!handler) {
                     handler = genericPacketHandlers.map.get(packet);
+                }
+                if (!handler && json["requestId"]) {
+                    const response: ErrorReply = {
+                        action: "error",
+                        type: "Error",
+                        message: `No handler for packet "${packetName}" in protocol "${connection.protocol}"`,
+                    };
+                    response["requestId"] = json["requestId"];
+                    if (connection) {
+                        connection.sendJson(response);
+                    }
                 }
                 // If they exist...
                 if (packet != null && handler != null) {
@@ -388,12 +476,12 @@ server.on("connection", function(ws) {
 let nextId = 1;
 export class Connection<T = unknown> {
     public readonly id = nextId++;
-    public readonly ws: ws;
+    public readonly ws: WebSocket;
     public userClosed: boolean = false;
     protocol: string;
     client: T;
 
-    constructor(ws: ws) {
+    constructor(ws: WebSocket) {
         this.ws = ws;
     }
 

@@ -44,7 +44,7 @@
         "@types/react-dom": "^18.2.0",
         "@types/ssh2-sftp-client": "^9.0.5",
         "@types/wicg-file-system-access": "^2023.10.7",
-        "@types/ws": "^7.4.7",
+        "@types/ws": "^8.18.1",
         "@vitejs/plugin-react": "^2.0.0",
         "@vitest/ui": "^0.18.1",
         "eslint": "^9.25.1",
