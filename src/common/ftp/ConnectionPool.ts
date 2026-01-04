@@ -130,13 +130,7 @@ export class ConnectionPool extends EventEmitter {
     private async createConnection(): Promise<WebsocketFTPConnection> {
         const connection = new WebsocketFTPConnection();
         await connection.connectToWebsocket();
-        if (this.profile.protocol === "ftp") {
-            const { host, port, username, password, secure } = this.profile;
-            await connection.connectToFtp(host, port, username, password, secure);
-        } else if (this.profile.protocol === "sftp") {
-            const { host, port, username, password } = this.profile;
-            await connection.connectToSftp(host, port, username, password);
-        }
+        await connection.connect(this.profile);
         return connection;
     }
 

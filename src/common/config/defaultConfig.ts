@@ -1,4 +1,4 @@
-import { Config } from "./config";
+import { Config, ProtocolConfig } from "./config";
 
 export const defaultConfig = {
     websocket_url: "ws://localhost:8081",
@@ -44,6 +44,65 @@ export const defaultConfig = {
             bottomAdDesktop: false,
         },
     },
+    protocols: {
+        ftp: {
+            enabled: true,
+            name: "FTP",
+            fields: [
+                {
+                    name: "host",
+                    type: "string",
+                    label: "Host",
+                    placeholder: "example.com",
+                },
+                { name: "port", type: "number", label: "Port", default: 21 },
+                {
+                    name: "username",
+                    type: "string",
+                    label: "Username",
+                    placeholder: "Enter your username",
+                },
+                {
+                    name: "password",
+                    type: "string",
+                    label: "Password",
+                    placeholder: "Enter your password",
+                },
+                {
+                    name: "secure",
+                    type: "boolean",
+                    label: "Use Secure Connection (FTPS)",
+                    default: false,
+                    optional: true,
+                },
+            ],
+        },
+        sftp: {
+            enabled: true,
+            name: "SFTP",
+            fields: [
+                {
+                    name: "host",
+                    type: "string",
+                    label: "Host",
+                    placeholder: "example.com",
+                },
+                { name: "port", type: "number", label: "Port", default: 22 },
+                {
+                    name: "username",
+                    type: "string",
+                    label: "Username",
+                    placeholder: "Enter your username",
+                },
+                {
+                    name: "password",
+                    type: "string",
+                    label: "Password",
+                    placeholder: "Enter your password",
+                },
+            ],
+        },
+    } as Record<string, ProtocolConfig>,
 };
 
 // Distrubution-specific config defaults

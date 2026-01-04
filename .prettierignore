@@ -5,5 +5,5 @@ src/common/task/**/*
 src/common/upload/**/*
 src/common/contextmenu/**/*
 src/web/WebsocketFTPConnection.ts
-src/server/index.ts
+src/server/*
 src/protocol/packets.ts

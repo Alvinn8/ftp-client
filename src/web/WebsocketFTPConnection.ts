@@ -2,7 +2,7 @@ import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
 import FTPConnection from "../common/ftp/FTPConnection";
 import { addMessage } from "../common/ui/messages";
 import { blobToBase64, ensureAbsolute, filename, sleep } from "../common/utils";
-import { ChunkedUploadResponse, ErrorReply, Packet, Packets } from "../protocol/packets";
+import { ChunkedUploadResponse, ConnectData, ConnectReply, ErrorReply, Packet, Packets } from "../protocol/packets";
 import { LargeFileOperationInterface, largeFileOperationStore } from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
 import TaskManager from "../common/task/TaskManager";
@@ -189,16 +189,22 @@ export default class WebsocketFTPConnection implements FTPConnection {
         }
     }
 
+    /** @deprecated */
     async connectToFtp(host: string, port: number, username: string, password: string, secure: boolean): Promise<void> {
         await this.send(Packets.ConnectFtp, {
             host, port, username, password, secure
         });
     }
 
+    /** @deprecated */
     async connectToSftp(host: string, port: number, username: string, password: string): Promise<void> {
         await this.send(Packets.ConnectSftp, {
             host, port, username, password
         });
+    }
+
+    async connect(data: ConnectData): Promise<ConnectReply> {
+        return await this.send(Packets.Connect, data);
     }
 
     async isConnected(): Promise<boolean> {

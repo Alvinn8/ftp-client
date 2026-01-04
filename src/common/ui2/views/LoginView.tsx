@@ -1,106 +1,148 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Button from "../components/elements/Button";
 import TextInput from "../components/elements/TextInput";
 import Checkbox from "../components/elements/Checkbox";
-import { FTPProfile, Profile, SFTPProfile } from "../../ftp/profile";
+import { Profile } from "../../ftp/profile";
 import { useSession } from "../store/sessionStore";
 import FTPSession from "../../ftp/FTPSession";
 import "./loginView.css";
 import { formatError, unexpectedErrorHandler } from "../../error";
-import { getConfig, isHostAllowed } from "../../config/config";
+import { getConfig, isHostAllowed, ProtocolConfig } from "../../config/config";
 
 const LoginView: React.FC = () => {
     const setSession = useSession((state) => state.setSession);
-    const [protocol, setProtocol] = useState<"ftp" | "sftp">("ftp");
-    const [host, setHost] = useState("");
-    const [port, setPort] = useState(protocol === "sftp" ? "22" : "21");
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [secure, setSecure] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const config = getConfig();
 
-    // Update port when protocol changes
+    // Get enabled protocols from config
+    const enabledProtocols = useMemo(() => {
+        return Object.entries(config.protocols)
+            .filter(([_, protocolConfig]) => protocolConfig.enabled)
+            .map(([key, protocolConfig]) => ({
+                key,
+                config: protocolConfig,
+            }));
+    }, [config]);
+
+    // Initialize with the first enabled protocol
+    const [protocol, setProtocol] = useState<string>(
+        enabledProtocols.length > 0 ? enabledProtocols[0].key : "ftp",
+    );
+
+    const [formData, setFormData] = useState<Record<string, any>>({});
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const currentProtocolConfig = config.protocols[protocol];
+
+    // Initialize form data with defaults when protocol changes
     useEffect(() => {
-        if (protocol === "sftp" && port === "21") {
-            setPort("22");
-        } else if (protocol === "ftp" && port === "22") {
-            setPort("21");
-        }
-    }, [protocol]);
+        if (!currentProtocolConfig) return;
+
+        const initialData: Record<string, any> = {};
+        currentProtocolConfig.fields.forEach((field) => {
+            if (field.default !== undefined) {
+                initialData[field.name] = field.default;
+            } else if (field.type === "string") {
+                initialData[field.name] = "";
+            } else if (field.type === "number") {
+                initialData[field.name] = "";
+            } else if (field.type === "boolean") {
+                initialData[field.name] = false;
+            }
+        });
+        setFormData(initialData);
+    }, [protocol, currentProtocolConfig]);
 
     // Extract parameters from URL on mount
     useEffect(() => {
         const url = new URL(location.href);
         const urlProtocol = url.searchParams.get("protocol") || "ftp";
-        const urlHost = url.searchParams.get("host");
-        const urlPort = url.searchParams.get("port");
-        const urlUsername = url.searchParams.get("username");
-        const urlPassword = url.searchParams.get("password");
-        const urlSecure = url.searchParams.get("secure") === "true";
+        if (!urlProtocol) {
+            return;
+        }
 
-        if (urlProtocol) setProtocol(urlProtocol as "ftp" | "sftp");
-        if (urlHost) setHost(urlHost);
-        if (urlPort) setPort(urlPort);
-        if (urlUsername) setUsername(urlUsername);
-        if (urlPassword) setPassword(urlPassword);
-        if (urlSecure) setSecure(urlSecure);
+        // Check if protocol is valid and enabled
+        const protocolConfig = config.protocols[urlProtocol];
+        if (!protocolConfig) {
+            if (url.searchParams.has("protocol")) {
+                setError(`Protocol "${urlProtocol}" is not supported.`);
+            }
+            return;
+        }
+        console.log(2, protocolConfig);
+        if (!protocolConfig.enabled) {
+            setError(`Protocol "${urlProtocol}" is not enabled.`);
+            return;
+        }
+        setProtocol(urlProtocol);
+        // Extract field values from URL
+        const urlData: Record<string, any> = {};
+        protocolConfig.fields.forEach((field) => {
+            const value = url.searchParams.get(field.name);
+            if (value !== null) {
+                if (field.type === "number") {
+                    urlData[field.name] = parseInt(value);
+                } else if (field.type === "boolean") {
+                    urlData[field.name] = value === "true";
+                } else {
+                    urlData[field.name] = value;
+                }
+            } else if (field.default !== undefined) {
+                urlData[field.name] = field.default;
+            }
+        });
 
-        // If all parameters are present, attempt auto-login
-        if (urlHost && urlUsername && urlPassword) {
-            performLogin(
-                urlProtocol as "ftp" | "sftp",
-                urlHost,
-                parseInt(urlPort || (urlProtocol === "sftp" ? "22" : "21")),
-                urlUsername,
-                urlPassword,
-                urlSecure,
-            ).catch(unexpectedErrorHandler("Auto Login Error"));
+        const hasAllRequired = protocolConfig.fields
+            .filter((field) => !field.optional)
+            .every(
+                (field) =>
+                    urlData[field.name] !== undefined &&
+                    urlData[field.name] !== "",
+            );
+
+        if (hasAllRequired) {
+            performLogin(urlProtocol, urlData).catch(
+                unexpectedErrorHandler("Auto Login Error"),
+            );
             // Clear credentials from URL
             url.search = "";
             window.history.replaceState(null, "", url.href);
+        } else if (Object.keys(urlData).length > 0) {
+            // Set partial data from URL
+            setFormData((prev) => ({ ...prev, ...urlData }));
         }
     }, []);
 
-    async function performLogin(
-        proto: "ftp" | "sftp",
-        hostVal: string,
-        portVal: number,
-        userVal: string,
-        passVal: string,
-        secureVal: boolean,
-    ) {
+    async function performLogin(protocol: string, data: Record<string, any>) {
         setError(null);
         setLoading(true);
 
         try {
-            if (!hostVal || !userVal || !passVal) {
-                throw new Error(
-                    "Missing required login parameters: host, username, and password.",
-                );
+            const protocolConfig = config.protocols[protocol];
+            if (!protocolConfig || !protocolConfig.enabled) {
+                throw new Error(`Protocol "${protocol}" is not enabled.`);
             }
 
-            if (!isHostAllowed(hostVal)) {
-                throw new Error(
-                    `Connection to host "${hostVal}" is not allowed.`,
-                );
+            // Validate required fields
+            for (const field of protocolConfig.fields) {
+                if (
+                    !field.optional &&
+                    (data[field.name] === undefined || data[field.name] === "")
+                ) {
+                    throw new Error(`Missing required field: ${field.label}`);
+                }
             }
 
-            let profile: Profile;
-            if (proto === "ftp") {
-                profile = new FTPProfile(
-                    hostVal,
-                    portVal,
-                    userVal,
-                    passVal,
-                    secureVal,
-                );
-            } else if (proto === "sftp") {
-                profile = new SFTPProfile(hostVal, portVal, userVal, passVal);
-            } else {
-                throw new Error("Unsupported protocol.");
+            // Check host filter
+            const host = data.host;
+            if (typeof host === "string" && !isHostAllowed(host)) {
+                throw new Error(`Connection to host "${host}" is not allowed.`);
             }
+
+            let profile: Profile = { protocol };
+            protocolConfig.fields.forEach((field) => {
+                profile[field.name] = data[field.name];
+            });
 
             const session = new FTPSession(profile);
             await session.getConnectionPool().createInitialConnection();
@@ -112,14 +154,100 @@ const LoginView: React.FC = () => {
     }
 
     function handleLogin() {
-        performLogin(
-            protocol,
-            host,
-            parseInt(port) || 21,
-            username,
-            password,
-            secure,
-        ).catch(unexpectedErrorHandler("Login Error"));
+        performLogin(protocol, formData).catch(
+            unexpectedErrorHandler("Login Error"),
+        );
+    }
+
+    function updateField(fieldName: string, value: any) {
+        setFormData((prev) => ({ ...prev, [fieldName]: value }));
+    }
+
+    // Render form field based on field config
+    function renderField(field: ProtocolConfig["fields"][0]) {
+        const value = formData[field.name] ?? "";
+
+        if (field.type === "boolean") {
+            return (
+                <div key={field.name} className="form-group">
+                    <div className="checkbox-group">
+                        <Checkbox
+                            checked={!!formData[field.name]}
+                            onChange={(checked) =>
+                                updateField(field.name, checked)
+                            }
+                            disabled={loading}
+                        />
+                        <label
+                            className="form-group-label"
+                            style={{ cursor: "pointer", margin: 0 }}
+                        >
+                            {field.label}
+                        </label>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <TextInput
+                key={field.name}
+                label={field.label}
+                type={
+                    field.name === "password"
+                        ? "password"
+                        : field.type === "number"
+                          ? "number"
+                          : "text"
+                }
+                value={String(value)}
+                onChange={(val) =>
+                    updateField(
+                        field.name,
+                        field.type === "number"
+                            ? val
+                                ? parseInt(val)
+                                : ""
+                            : val,
+                    )
+                }
+                placeholder={field.placeholder?.toString() || ""}
+                required={!field.optional}
+                disabled={loading}
+            />
+        );
+    }
+
+    // Group fields for special layout (host and port together)
+    function renderFields() {
+        const fields = currentProtocolConfig?.fields || [];
+        const hostField = fields.find((f) => f.name === "host");
+        const portField = fields.find((f) => f.name === "port");
+        const otherFields = fields.filter(
+            (f) => f.name !== "host" && f.name !== "port",
+        );
+
+        const elements: JSX.Element[] = [];
+
+        // Render host and port together if both exist
+        if (hostField && portField) {
+            elements.push(
+                <div key="host-port" className="form-group-row">
+                    {renderField(hostField)}
+                    {renderField(portField)}
+                </div>,
+            );
+        } else {
+            if (hostField) elements.push(renderField(hostField));
+            if (portField) elements.push(renderField(portField));
+        }
+
+        // Render other fields
+        otherFields.forEach((field) => {
+            elements.push(renderField(field));
+        });
+
+        return elements;
     }
 
     return (
@@ -141,77 +269,25 @@ const LoginView: React.FC = () => {
                         handleLogin();
                     }}
                 >
-                    <div className="form-group">
-                        <label className="form-group-label">Protocol</label>
-                        <select
-                            className="protocol-select"
-                            value={protocol}
-                            onChange={(e) =>
-                                setProtocol(e.target.value as "ftp" | "sftp")
-                            }
-                            disabled={loading}
-                        >
-                            <option value="ftp">FTP</option>
-                            <option value="sftp">SFTP</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group-row">
-                        <TextInput
-                            label="Host"
-                            value={host}
-                            onChange={setHost}
-                            placeholder="example.com"
-                            required
-                            disabled={loading}
-                        />
-                        <TextInput
-                            label="Port"
-                            type="number"
-                            value={port}
-                            onChange={setPort}
-                            placeholder={protocol === "sftp" ? "22" : "21"}
-                            required
-                            disabled={loading}
-                        />
-                    </div>
-
-                    <TextInput
-                        label="Username"
-                        value={username}
-                        onChange={setUsername}
-                        placeholder="Enter your username"
-                        required
-                        disabled={loading}
-                    />
-
-                    <TextInput
-                        label="Password"
-                        type="password"
-                        value={password}
-                        onChange={setPassword}
-                        placeholder="Enter your password"
-                        required
-                        disabled={loading}
-                    />
-
-                    {protocol === "ftp" && (
+                    {enabledProtocols.length > 1 && (
                         <div className="form-group">
-                            <div className="checkbox-group">
-                                <Checkbox
-                                    checked={secure}
-                                    onChange={setSecure}
-                                    disabled={loading}
-                                />
-                                <label
-                                    className="form-group-label"
-                                    style={{ cursor: "pointer", margin: 0 }}
-                                >
-                                    Use Secure Connection (FTPS)
-                                </label>
-                            </div>
+                            <label className="form-group-label">Protocol</label>
+                            <select
+                                className="protocol-select"
+                                value={protocol}
+                                onChange={(e) => setProtocol(e.target.value)}
+                                disabled={loading}
+                            >
+                                {enabledProtocols.map(({ key, config }) => (
+                                    <option key={key} value={key}>
+                                        {config.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     )}
+
+                    {renderFields()}
 
                     <div className="login-actions">
                         <Button

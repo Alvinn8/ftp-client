@@ -1,5 +1,5 @@
 import * as ftp from "basic-ftp";
-import { ChunkedUpload, chunkedUploads, largeDownloads, newPacketHandlersMap } from ".";
+import { ChunkedUpload, chunkedUploads, CORS_HEADERS, largeDownloads, newPacketHandlersMap, ServerPackets } from ".";
 import { Packets, ListReply } from "../protocol/packets";
 import { WritableMemoryStream, ReadableMemoryStream } from "./memoryStreams";
 import { PassThrough } from "stream";
@@ -14,6 +14,19 @@ handler(Packets.Ping, (packet, data, connection) => {
     };
 });
 
+handler(ServerPackets.IsConnected, (packet, data, connection) => {
+    return {
+        isConnected: connection.client == null ? false : !connection.client.closed
+    };
+});
+
+handler(ServerPackets.Disconnect, (packet, data, connection) => {
+    if (connection.client) {
+        connection.client.close();
+        connection.client = null;
+    }
+});
+
 handler(Packets.ConnectFtp, async (packet, data, connection) => {
     connection.client = new ftp.Client();
 
@@ -24,6 +37,21 @@ handler(Packets.ConnectFtp, async (packet, data, connection) => {
         password: data.password,
         secure: data.secure
     });
+});
+
+handler(Packets.Connect, async (packet, data, connection) => {
+    connection.client = new ftp.Client();
+
+    await connection.client.access({
+        host: data.host,
+        port: data.port,
+        user: data.username,
+        password: data.password,
+        secure: data.secure
+    });
+    return {
+        readOnly: false
+    };
 });
 
 handler(Packets.List, async (packet, data, connection) => {
@@ -61,6 +89,24 @@ handler(Packets.Download, async (packet, data, connection) => {
             data: stream.getBuffer().toString("base64")
         };
     }
+});
+
+handler(ServerPackets.LargeDownload, async (packet, data, connection) => {
+    const { largeDownload, response } = data;
+    const size = await connection.client.size(largeDownload.path);
+    const downloadHeaders = {
+        ...CORS_HEADERS,
+        "Content-Length": size
+    };
+    response.writeHead(200, downloadHeaders);
+
+    // Handle response stream errors to prevent crash
+    response.on("error", (err) => {
+        connection.log("Response stream error: " + err.message);
+    });
+
+    await connection.client.downloadTo(response, largeDownload.path);
+    response.end();
 });
 
 handler(Packets.Upload, async (packet, data, connection) => {

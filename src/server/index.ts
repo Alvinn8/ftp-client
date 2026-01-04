@@ -1,14 +1,11 @@
 import * as ftp from "basic-ftp";
 import { FTPError } from "basic-ftp";
-import { createServer } from "http";
+import { createServer, ServerResponse } from "http";
 import * as ws from "ws";
 import { ChunkedUploadStatus, ErrorReply, Packet, packetMap, packetNameMap, Packets } from "../protocol/packets";
 import { PassThrough } from "stream";
 import { createHash } from "crypto";
 import VERSION from "../protocol/version";
-import { ftpPacketHandlers } from "./ftp";
-import { sftpPacketHandlers } from "./sftp";
-import SftpClient from "ssh2-sftp-client";
 
 // Prevent uncaught promise rejections from crashing the application
 process.on("unhandledRejection", (reason, promise) => {
@@ -25,6 +22,28 @@ process.on("uncaughtException", (error) => {
 
 const PORT = parseInt(process.env.PORT) || 8081;
 const PROTOCOL_VERSION = 1;
+
+export const CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST"
+};
+
+/**
+ * Internal server packets sent by the server to packet handlers.
+ * 
+ * These are not exposed to the client.
+ */
+export namespace ServerPackets {
+    /** This packet may not be handled async. */
+    export const IsConnected = new Packet<{}, { isConnected: boolean }>("is_connected");
+    export const Disconnect = new Packet<{}, void>("disconnect");
+    export const LargeDownload = new Packet<LargeDownloadData, void>("large_download");
+}
+
+export interface LargeDownloadData {
+    largeDownload: LargeDownload;
+    response: ServerResponse;
+}
 
 export interface LargeDownload {
     id: string;
@@ -48,6 +67,20 @@ export interface ChunkedUpload {
 // TODO maybe not export?
 export const largeDownloads: LargeDownload[] = [];
 export const chunkedUploads: ChunkedUpload[] = [];
+
+const protocols = new Map<string, PacketHandler>();
+
+// Import after ServerPackets has been defined.
+Promise.all([
+    import("./ftp"),
+    import("./sftp"),
+]).then(([ftp, sftp]) => {
+    protocols.set("ftp", ftp.ftpPacketHandlers);
+    protocols.set("sftp", sftp.sftpPacketHandlers);
+}).catch(err => {
+    console.error("Error importing protocol handlers:", err);
+    process.exit(1);
+});
 
 if (false) {
     const originalCloseWithError = ftp.FTPContext.prototype.closeWithError;
@@ -112,6 +145,9 @@ export function formatErrorMessage(error: any): string | null {
     if (str === "Error: This socket has been ended by the other party") {
         return str;
     }
+    if (str.startsWith("Error: Unsupported protocol:")) {
+        return str;
+    }
     return null;
 }
 
@@ -120,11 +156,6 @@ export async function sleep(ms: number) {
 }
 
 const httpServer = createServer(function (req, res) {
-    const headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST"
-    };
-
     if (req.method == "GET") {
         if (req.url && req.url.startsWith("/download/")) {
             const downloadId = req.url.substring("/download/".length);
@@ -132,50 +163,19 @@ const httpServer = createServer(function (req, res) {
             if (largeDownload) {
                 largeDownloads.splice(largeDownloads.indexOf(largeDownload), 1);
                 (async () => {
-                    if (largeDownload.connection.client instanceof ftp.Client) {
-                        const size = await largeDownload.connection.client.size(largeDownload.path);
-                        const downloadHeaders = {
-                            ...headers,
-                            "Content-Length": size
-                        };
-                        res.writeHead(200, downloadHeaders);
-
-                        // Handle response stream errors to prevent crash
-                        res.on("error", (err) => {
-                            largeDownload.connection.log("Response stream error: " + err.message);
-                        });
-
-                        await largeDownload.connection.client.downloadTo(res, largeDownload.path);
-                        res.end();
-                    } else if (largeDownload.connection.client instanceof SftpClient) {
-                        const stat = await largeDownload.connection.client.stat(largeDownload.path);
-                        const size = stat.size;
-                        const downloadHeaders = {
-                            ...headers,
-                            "Content-Length": size
-                        };
-                        res.writeHead(200, downloadHeaders);
-
-                        // Handle response stream errors to prevent crash
-                        res.on("error", (err) => {
-                            largeDownload.connection.log("Response stream error: " + err.message);
-                        });
-
-                        await largeDownload.connection.client.get(largeDownload.path, res);
-                        res.end();
-                    } else {
-                        res.writeHead(500, headers);
-                        res.write("500 Unknown connection type.");
-                        res.end();
-                        return;
+                    const packetHandlers = protocols.get(largeDownload.connection.protocol);
+                    const handler = packetHandlers?.map.get(ServerPackets.LargeDownload);
+                    if (!handler) {
+                        throw new Error("No handler for LargeDownload packet for protocol " + largeDownload.connection.protocol);
                     }
+                    return await handler(ServerPackets.LargeDownload, { largeDownload, response: res }, largeDownload.connection);
                 })().catch(err => {
                     if (!largeDownload.connection.userClosed) {
                         // The connection was not closed, but we still got an unexpected error.
                         largeDownload.connection.log("Download error " + err);
                     }
                     if (!res.headersSent) {
-                        res.writeHead(500, headers);
+                        res.writeHead(500, CORS_HEADERS);
                     }
                     if (!res.writableEnded) {
                         res.end();
@@ -183,16 +183,16 @@ const httpServer = createServer(function (req, res) {
                 });
                 return;
             }
-            res.writeHead(404, headers);
+            res.writeHead(404, CORS_HEADERS);
             res.write("404 download id not found");
             res.end();
             return;
         }
-        res.writeHead(200, headers);
+        res.writeHead(200, CORS_HEADERS);
         res.write("Server is up. Version is " + VERSION);
         res.end();
     } else if (req.method == "OPTIONS") {
-        res.writeHead(204, headers);
+        res.writeHead(204, CORS_HEADERS);
         res.end();
     } else {
         res.writeHead(405);
@@ -256,7 +256,7 @@ server.on("connection", function(ws) {
 
                 // Get the packet
                 const packet = packetNameMap.get(packetName) || packetMap.get(packetId);
-                if (packet != null && packet !== Packets.Ping && packet !== Packets.ConnectFtp && packet !== Packets.ConnectSftp) {
+                if (packet != null && connection.protocol && packet !== Packets.Ping && packet !== Packets.ConnectFtp && packet !== Packets.ConnectSftp && packet !== Packets.Connect) {
                     // Ensure the client is connected before attempting to interact.
                     if (!connection.isClientConnected()) {
                         const requestId = json["requestId"];
@@ -275,12 +275,8 @@ server.on("connection", function(ws) {
                     }
                 }
                 // Get the packet handler
-                let handler: <Data, Response> (packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response> | Response;
-                if (connection.client instanceof ftp.Client || packet === Packets.ConnectFtp) {
-                    handler = ftpPacketHandlers.map.get(packet);
-                } else {
-                    handler = sftpPacketHandlers.map.get(packet);
-                }
+                const packetHandlers = protocols.get(connection.protocol);
+                let handler = packetHandlers?.map.get(packet);
                 if (!handler) {
                     handler = genericPacketHandlers.map.get(packet);
                 }
@@ -367,11 +363,11 @@ server.on("connection", function(ws) {
                 // Mark the connection as closed to avoid reporting errors.
                 userClosed = true;
                 connection.userClosed = true;
-                if (connection.client instanceof ftp.Client) {
-                    connection.client.close();
-                } else if (connection.client instanceof SftpClient) {
-                    connection.client.end().catch(err => {
-                        connection.log("Error disconnecting SFTP: " + err.message);
+                const packetHandlers = protocols.get(connection.protocol);
+                const handler = packetHandlers?.map.get(ServerPackets.Disconnect);
+                if (handler) {
+                    Promise.resolve(handler(ServerPackets.Disconnect, {}, connection)).catch(err => {
+                        connection.log("Error during disconnect: " + err.message);
                     });
                 }
             } catch (err) {
@@ -394,6 +390,7 @@ export class Connection<T = unknown> {
     public readonly id = nextId++;
     public readonly ws: ws;
     public userClosed: boolean = false;
+    protocol: string;
     client: T;
 
     constructor(ws: ws) {
@@ -408,8 +405,23 @@ export class Connection<T = unknown> {
         this.ws.send(JSON.stringify(json));
     }
 
-    isClientConnected() {
-        return this.client != null && ((this.client instanceof ftp.Client && !this.client.closed) || this.client instanceof SftpClient);
+    isClientConnected(): boolean {
+        if (this.client == null) {
+            return false;
+        }
+        const packetHandlers = protocols.get(this.protocol);
+        const isConnected = packetHandlers?.map.get(ServerPackets.IsConnected);
+        if (typeof isConnected === "function") {
+            const result = isConnected(ServerPackets.IsConnected, {}, this);
+            if (result instanceof Promise) {
+                console.warn(`[${this.id}] isConnected returned a promise, this is not supported.`);
+                return false;
+            }
+            if (typeof result === "object" && typeof result.isConnected === "boolean") {
+                return result.isConnected;
+            }
+        }
+        return false;
     }
 }
 
@@ -425,9 +437,25 @@ export function newPacketHandlersMap<T>() {
     }
 }
 
+type PacketHandler = ReturnType<typeof newPacketHandlersMap>;
+
 const genericPacketHandlers = newPacketHandlersMap();
 
 const handler = genericPacketHandlers.push;
+
+handler(Packets.Connect, async (packet, data, connection) => {
+    connection.protocol = data.protocol;
+    connection.log("Set protocol to " + data.protocol);
+    const packetHandlers = protocols.get(data.protocol);
+    if (!packetHandlers) {
+        throw new Error("Unsupported protocol: " + data.protocol);
+    }
+    const handler = packetHandlers.map.get(Packets.Connect);
+    if (!handler) {
+        throw new Error("No handler for Connect packet for protocol " + data.protocol);
+    }
+    return await handler(Packets.Connect, data, connection);
+});
 
 handler(Packets.ChunkedUpload, async (packet, data, connection) => {
     type Status = ChunkedUploadStatus;

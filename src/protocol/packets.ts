@@ -15,6 +15,15 @@ export interface ConnectSftpData {
     password: string;
 }
 
+export type ConnectData = {
+    protocol: string;
+    [key: string]: any;
+}
+
+export type ConnectReply = {
+    readOnly: boolean;
+}
+
 export interface ErrorReply {
     action: "error";
     type: "Error" | "FTPError" | "SFTPError";
@@ -136,7 +145,9 @@ export class Packet<Data, Response> {
 
 export namespace Packets {
     export const Ping = new Packet<{}, PingReply>("ping");
+    /** @deprecated */
     export const ConnectFtp = new Packet<ConnectFtpData, void>("connect_ftp");
+    /** @deprecated */
     export const ConnectSftp = new Packet<ConnectSftpData, void>("connect_sftp");
     export const List = new Packet<ListData, ListReply>("list");
     export const Download = new Packet<DownloadData, DownloadReply>("download");
@@ -147,4 +158,5 @@ export namespace Packets {
     export const ChunkedUploadStart = new Packet<ChunkedUploadStartData, ChunkedUploadStartResponse>("chunked_upload_start");
     export const ChunkedUpload = new Packet<ChunkedUploadData, ChunkedUploadResponse>("chunked_upload");
     export const ChunkedUploadStop = new Packet<ChunkedUploadStopData, void>("chunked_upload_stop");
+    export const Connect = new Packet<ConnectData, ConnectReply>("connect");
 }

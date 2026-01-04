@@ -1,5 +1,5 @@
 import * as React from "react";
-import { FTPProfile, Profile, SFTPProfile } from "../ftp/profile";
+import { Profile } from "../ftp/profile";
 import FTPSession from "../ftp/FTPSession";
 import { State } from "./App";
 import { isHostAllowed } from "../config/config";
@@ -43,9 +43,9 @@ export default class ConnectForm extends React.Component<ConnectFormProps, {}> {
 
         let profile: Profile;
         if (protocol === "ftp") {
-            profile = new FTPProfile(host, port, username, password, secure);
+            profile = { protocol, host, port, username, password, secure };
         } else if (protocol === "sftp") {
-            profile = new SFTPProfile(host, port, username, password);
+            profile = { protocol, host, port, username, password };
         }
         if (!isHostAllowed(host)) {
             this.props.onProgress(State.FAILED_TO_CONNECT_TO_FTP);

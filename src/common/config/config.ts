@@ -4,6 +4,19 @@ import { useNewUiStore } from "../ui2/store/newUiStore";
 
 export type Config = typeof defaultConfig;
 
+export type ProtocolConfig = {
+    enabled: boolean;
+    name: string;
+    fields: {
+        name: string;
+        type: "string" | "number" | "boolean";
+        label: string;
+        default?: string | number | boolean;
+        placeholder?: string | number;
+        optional?: boolean; // defaults to false
+    }[];
+};
+
 let config: Config | null = null;
 let emitter = new EventEmitter();
 

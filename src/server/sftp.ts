@@ -1,8 +1,8 @@
 import { FileType } from "basic-ftp";
-import { ChunkedUpload, chunkedUploads, largeDownloads, newPacketHandlersMap } from ".";
+import { ChunkedUpload, chunkedUploads, CORS_HEADERS, largeDownloads, newPacketHandlersMap, ServerPackets } from ".";
 import { ListReply, Packets } from "../protocol/packets";
 import SftpClient from "ssh2-sftp-client";
-import { ReadableMemoryStream, WritableMemoryStream } from "./memoryStreams";
+import { WritableMemoryStream } from "./memoryStreams";
 import { PassThrough } from "stream";
 
 type WriteStream = ReturnType<SftpClient["createWriteStream"]>;
@@ -36,6 +36,22 @@ handler(Packets.Ping, async (packet, data, connection) => {
     }
 });
 
+handler(ServerPackets.IsConnected, (packet, data, connection) => {
+    return {
+        // Unfortunately there is no property on SftpClient to check connection status.
+        // Do not bother checking with stat like with the Ping packet, because this is
+        // used frequently.
+        isConnected: connection.client !== null
+    }
+});
+
+handler(ServerPackets.Disconnect, async (packet, data, connection) => {
+    if (connection.client) {
+        await connection.client.end();
+        connection.client = null;
+    }
+});
+
 handler(Packets.ConnectSftp, async (packet, data, connection) => {
     connection.client = new SftpClient();
 
@@ -45,6 +61,22 @@ handler(Packets.ConnectSftp, async (packet, data, connection) => {
         username: data.username,
         password: data.password
     });
+});
+
+handler(Packets.Connect, async (packet, data, connection) => {
+    connection.client = new SftpClient();
+
+    connection.log("Connecting sftp...")
+    await connection.client.connect({
+        host: data.host,
+        port: data.port,
+        username: data.username,
+        password: data.password
+    });
+    connection.log("Connecting sftp... done.")
+    return {
+        readOnly: false
+    };
 });
 
 handler(Packets.List, async (packet, data, connection) => {
@@ -85,6 +117,25 @@ handler(Packets.Download, async (packet, data, connection) => {
             data: stream.getBuffer().toString("base64")
         };
     }
+});
+
+handler(ServerPackets.LargeDownload, async (packet, data, connection) => {
+    const { largeDownload, response } = data;
+    const stat = await connection.client.stat(largeDownload.path);
+    const size = stat.size;
+    const downloadHeaders = {
+        ...CORS_HEADERS,
+        "Content-Length": size
+    };
+    response.writeHead(200, downloadHeaders);
+
+    // Handle response stream errors to prevent crash
+    response.on("error", (err) => {
+        connection.log("Response stream error: " + err.message);
+    });
+
+    await connection.client.get(largeDownload.path, response);
+    response.end();
 });
 
 handler(Packets.Upload, async (packet, data, connection) => {

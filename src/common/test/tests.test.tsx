@@ -4,7 +4,6 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import { getApp, App, DeviceSize } from "../ui/App";
 import FTPSession from "../ftp/FTPSession";
-import { FTPProfile } from "../ftp/profile";
 import TestFTPConnection from "./TestFTPConnection";
 import FolderEntry, { FolderEntryType } from "../folder/FolderEntry";
 import * as downloadModule from "../download";
@@ -21,7 +20,14 @@ describe("ftp-client tests", () => {
     let connection: TestFTPConnection;
 
     beforeEach(() => {
-        const profile = new FTPProfile("", 21, "", "", false);
+        const profile = {
+            protocol: "ftp",
+            host: "",
+            port: 21,
+            username: "",
+            password: "",
+            secure: false,
+        }
         session = new FTPSession(profile);
         connection = new TestFTPConnection();
         session.setConnection(connection);

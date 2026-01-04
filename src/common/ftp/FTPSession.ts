@@ -66,19 +66,10 @@ export default class FTPSession extends EventEmitter {
         if (!success) return;
         
         onProgress(State.CONNECTING_TO_FTP);
-        if (this.profile.protocol === "ftp") {
-            const { host, port, username, password, secure } = this.profile;
-            await connection.connectToFtp(host, port, username, password, secure).catch(err => {
-                onProgress(State.FAILED_TO_CONNECT_TO_FTP);
-                throw err;
-            });
-        } else if (this.profile.protocol === "sftp") {
-            const { host, port, username, password } = this.profile;
-            await connection.connectToSftp(host, port, username, password).catch(err => {
-                onProgress(State.FAILED_TO_CONNECT_TO_FTP);
-                throw err;
-            });
-        }
+        await connection.connect(this.profile).catch(err => {
+            onProgress(State.FAILED_TO_CONNECT_TO_FTP);
+            throw err;
+        });
         onProgress(State.CONNECTED);
     }
 
@@ -133,13 +124,7 @@ export default class FTPSession extends EventEmitter {
                 if (!isConnected) {
                     console.log("Reconnecting to ftp.");
                     // Reconnect
-                    if (this.profile.protocol === "ftp") {
-                        const { host, port, username, password, secure } = this.profile;
-                        await websocketFTPConnection.connectToFtp(host, port, username, password, secure);
-                    } else if (this.profile.protocol === "sftp") {
-                        const { host, port, username, password } = this.profile;
-                        await websocketFTPConnection.connectToSftp(host, port, username, password);
-                    }
+                    await websocketFTPConnection.connect(this.profile);
                     console.log("Reconnected to ftp.");
                 }
                 addMessage({
@@ -159,7 +144,7 @@ export default class FTPSession extends EventEmitter {
             return this.connection;
         } else {
             console.log("Failed to get connection after 5 attempts, lastError =", lastError);
-            throw new Error("Failed to connect to ftp-server WebSocket after 5 attempts.", { cause: lastError});
+            throw new Error("Failed to connect to backend WebSocket after 5 attempts.", { cause: lastError});
         }
     }
 
