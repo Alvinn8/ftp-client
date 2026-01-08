@@ -9,8 +9,9 @@ const EXPERIMENTS = [
     { name: "Holiday Creator Features", key: "data_driven_items" },
     { name: "Custom biomes", key: "data_driven_biomes" },
     { name: "Upcoming Creator Features", key: "upcoming_creator_features" },
+    { name: "Experimental Creator Camera Features", key: "experimental_creator_cameras" },
     { name: "Vibrant Visuals", key: "experimental_graphics" },
-    { name: "2025 drop 2", key: "y_2025_drop_2" },
+    { name: "Data-Driven Jigsaw Structures", key: "jigsaw_structures" },
 ];
 
 type BedrockExperimentsProps = {
