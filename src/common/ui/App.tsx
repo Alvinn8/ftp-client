@@ -244,6 +244,7 @@ export class App extends React.Component<AppProps, AppState> {
         }
 
         const goToNewUi = () => {
+            this.state.session.donateConnectionToPool();
             useSession.getState().setSession(this.state.session);
             useNewUiStore.getState().toggleUseNewUi();
         };

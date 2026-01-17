@@ -14,9 +14,10 @@ const usePath = create<PathState>((set) => ({
         if (!p.endsWith("/")) {
             p += "/";
         }
-        set({ path: p });
         // Clear selection when changing path
+        console.log("Clearing selection due to path change.");
         useSelection.getState().clear();
+        set({ path: p });
     },
 }));
 

@@ -149,6 +149,20 @@ export class ConnectionPool extends EventEmitter {
         }
     }
 
+    /**
+     * Donate an existing connection to the pool. The connection must not be
+     * used elsewhere.
+     * 
+     * @param connection The connection.
+     */
+    donateConnection(connection: FTPConnection) {
+        if (!(connection instanceof WebsocketFTPConnection)) {
+            return;
+        }
+        this.connections.push({ connection: connection, locked: false });
+        this.emit("connectionAvailable");
+    }
+
     closeAllConnections() {
         if (this.connections.length > this.targetConnectionCount) {
             for (let i = this.connections.length - 1; i >= this.targetConnectionCount; i--) {

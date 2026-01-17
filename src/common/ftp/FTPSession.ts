@@ -153,6 +153,16 @@ export default class FTPSession extends EventEmitter {
         this.connection = connection;
     }
 
+    donateConnectionToPool() {
+        if (!(this.connection instanceof WebsocketFTPConnection)) {
+            return;
+        }
+        if (this.connection.websocket.readyState !== WebSocket.OPEN) {
+            return;
+        }
+        this.connectionPool.donateConnection(this.connection);
+    }
+
     disconnect() {
         console.log("Disconnecting");
         this.connection.close();

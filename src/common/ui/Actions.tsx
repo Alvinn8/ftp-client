@@ -20,7 +20,9 @@ export default class Actions extends React.Component<ActionsProps, {}> {
     render() {
         
         const goToNewUi = () => {
-            useSession.getState().setSession(getSession());
+            const session = getSession();
+            session.donateConnectionToPool();
+            useSession.getState().setSession(session);
             useNewUiStore.getState().toggleUseNewUi();
         };
         
