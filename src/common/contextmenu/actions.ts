@@ -415,8 +415,30 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
 }
 
 export async function downloadAsZip(entries: FolderEntry[]) {
+    const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
     if (typeof window.showSaveFilePicker === "function") {
-        return await downloadAsZipStreaming(entries);
+        const opts: SaveFilePickerOptions = {
+            suggestedName: fileName,
+            types: [{
+                description: "ZIP Archive",
+                accept: { "application/zip": [".zip"] },
+            }],
+        }
+        let fileHandle: FileSystemFileHandle;
+        try {
+            fileHandle = await window.showSaveFilePicker(opts)
+        } catch (err) {
+            if (err.name === "AbortError") {
+                return;
+            } else if (err.name === "NotAllowedError") {
+                fileHandle = null;
+            } else {
+                throw err;
+            }
+        }
+        if (fileHandle) {
+            return await downloadAsZipStreaming(entries, fileHandle);
+        }
     }
     let fileTree: FileTree;
     let countingTask: TreeTask | null = null;
@@ -430,7 +452,6 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     }
     const zip = new JSZip();
     const rootPath = getDirectoryPath(entries);
-    const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
     const session = getSession();
     const task = new TreeTask(session, fileTree, {
         title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
@@ -460,25 +481,7 @@ declare global {
     }
 }
 
-export async function downloadAsZipStreaming(entries: FolderEntry[]) {
-    const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
-    const opts: SaveFilePickerOptions = {
-        suggestedName: fileName,
-        types: [{
-            description: "ZIP Archive",
-            accept: { "application/zip": [".zip"] },
-        }],
-    }
-    let fileHandle: FileSystemFileHandle;
-    try {
-        fileHandle = await window.showSaveFilePicker(opts)
-    } catch (err) {
-        if (err.name === "AbortError") {
-            return;
-        }
-        throw err;
-    }
-
+export async function downloadAsZipStreaming(entries: FolderEntry[], fileHandle: FileSystemFileHandle) {
     let fileTree: FileTree;
     let countingTask: TreeTask | null = null;
     try {
@@ -493,7 +496,7 @@ export async function downloadAsZipStreaming(entries: FolderEntry[]) {
         throw err;
     }
 
-    const writable = await fileHandle.createWritable();
+    const writable = await fileHandle.createWritable(); // TODO this can throw (mostly on Linux?) fallback to non-streaming download
     const zipWriter = new ZipWriter({ writable });
 
     const rootPath = trailingSlash(getDirectoryPath(entries));
