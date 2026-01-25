@@ -531,6 +531,13 @@ const genericPacketHandlers = newPacketHandlersMap();
 
 const handler = genericPacketHandlers.push;
 
+handler(Packets.Ping, (packet, data, connection) => {
+    // This handler responds when the client has not connected to a protocol yet.
+    return {
+        isConnected: false,
+    };
+});
+
 handler(Packets.Connect, async (packet, data, connection) => {
     connection.protocol = data.protocol;
     connection.log("Set protocol to " + data.protocol);
