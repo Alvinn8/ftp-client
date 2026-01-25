@@ -11,6 +11,7 @@ interface Props {
     root: boolean;
     parent: ParentData;
     bedrockLevelDat?: boolean;
+    children?: React.ReactNode;
 }
 
 export default class UiNbtTag extends React.Component<Props, {}> {

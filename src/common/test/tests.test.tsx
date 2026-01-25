@@ -1,5 +1,5 @@
 import * as React from "react";
-import { afterEach, beforeEach, vi, expect, it } from "vitest";
+import { describe, afterEach, beforeEach, vi, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { getApp, App, DeviceSize } from "../ui/App";

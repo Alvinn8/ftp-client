@@ -4,6 +4,7 @@ import ContextMenuPopulator from "../../../contextmenu/ContextMenuPopulator";
 interface Props {
     label: React.ReactNode | null;
     populator?: ContextMenuPopulator;
+    children: React.ReactNode;
 }
 
 interface State {

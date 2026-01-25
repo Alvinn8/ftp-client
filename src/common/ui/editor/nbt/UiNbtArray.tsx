@@ -3,6 +3,7 @@ import { ArrayNbtTag, NbtByteArray, NbtIntArray, NbtLongArray } from "../../../n
 
 interface UiNbtArrayProps {
     tag: ArrayNbtTag;
+    children?: React.ReactNode;
 }
 
 export default class UiNbtArray extends React.Component<UiNbtArrayProps, {}> {

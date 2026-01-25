@@ -464,10 +464,10 @@ async function confirmOpenGzip(folderEntry: FolderEntry): Promise<boolean> {
  * Ungzip the file.
  * 
  * @param blob The gzipped input blob.
- * @returns The ungizpped output blob.
+ * @returns The ungzipped output blob.
  */
 async function ungzip(blob: Blob): Promise<Blob> {
     const input = await blob.arrayBuffer();
-    const output: Uint8Array = pakoUngzip(input);
-    return new Blob([output]);
+    const output = pakoUngzip(input);
+    return new Blob([new Uint8Array(output)]);
 }

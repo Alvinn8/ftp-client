@@ -10,6 +10,7 @@ interface UiNbtCompoundtProps {
     root: boolean;
     parent: ParentData;
     bedrockLevelDat?: boolean;
+    children?: React.ReactNode;
 }
 
 interface UiNbtCompoundtState {
@@ -18,7 +19,7 @@ interface UiNbtCompoundtState {
 }
 
 export default class UiNbtCompound extends React.Component<UiNbtCompoundtProps, UiNbtCompoundtState> {
-    constructor(props) {
+    constructor(props: UiNbtCompoundtProps) {
         super(props);
         this.state = {
             open: props.root,

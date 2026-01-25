@@ -5,7 +5,7 @@ import NbtWriter from "./NbtWriter";
 import { inflate, gzip, ungzip, deflate } from "pako";
 
 export async function readNbt(blob: Blob): Promise<NbtData> {
-    let data = new Uint8Array(await blob.arrayBuffer());
+    let data: Uint8Array = new Uint8Array(await blob.arrayBuffer());
 
     let compression: Compression = null;
     let editionData: EditionData;
@@ -184,7 +184,7 @@ export function writeNbt(nbt: NbtData): Blob {
         }
     }
 
-    return new Blob([data]);
+    return new Blob([new Uint8Array(data)]);
 }
 
 /**

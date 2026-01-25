@@ -7,6 +7,7 @@ import { contextMenuForList, ParentData } from "./nbtContextMenu";
 interface UiNbtListProps {
     tag: NbtList;
     parent: ParentData;
+    children?: React.ReactNode;
 }
 
 interface UiNbtListState {
