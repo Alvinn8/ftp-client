@@ -7,6 +7,12 @@ on:
         tags:
             - "v*.*.*"
     workflow_dispatch:
+    workflow_run:
+        workflows: ["Test & Lint"]
+        types:
+            - completed
+        branches:
+            - main
 
 env:
     REGISTRY: ghcr.io
@@ -21,6 +27,12 @@ jobs:
             packages: write
 
         steps:
+            - name: Check test workflow success
+              if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success'
+              run: |
+                  echo "Test workflow failed or was cancelled"
+                  exit 1
+
             - name: Checkout repository
               uses: actions/checkout@v4
 
