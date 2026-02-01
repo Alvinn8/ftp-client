@@ -10,6 +10,7 @@ import Actions from "../components/main/Actions";
 import FolderExplorer from "../components/main/FolderExplorer";
 import Ad from "../components/elements/Ad";
 import { getConfig } from "../../config/config";
+import VERSION from "../../../protocol/version";
 
 const MainView: React.FC = () => {
     const session = useSession((state) => state.session);
@@ -51,6 +52,12 @@ const MainView: React.FC = () => {
             <div className="content flex-grow-1 overflow-y-auto m-2 rounded">
                 <FolderContent />
             </div>
+            <small
+                id="version"
+                className="text-secondary position-absolute bottom-0 end-0 p-2"
+            >
+                <span>{`Version: ${VERSION}`}</span>
+            </small>
             {adConfig.enabled && adConfig.slots.rightAd && (
                 <div className="right-content align-items-center">
                     <Ad
