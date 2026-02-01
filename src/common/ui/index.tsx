@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
+import "./googleTranslateFix";
 import { App } from "./App";
 import Ui2App from "../ui2/App";
 import { useNewUiStore } from "../ui2/store/newUiStore";

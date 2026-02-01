@@ -33,6 +33,30 @@ export function assertUnreachable(x: never): never {
     throw new Error("unreachable, unexpected: " + String(x));
 }
 
+export function getDomPath(element: Node | null): string {
+    const path: string[] = [];
+    let el: Node | null = element;
+    while (el) {
+        let name = el.nodeName.toLowerCase();
+        if (el instanceof HTMLElement && el.id) {
+            name += `#${el.id}`;
+            path.unshift(name);
+            break;
+        } else if (el.parentNode) {
+            const siblings = Array.from(el.parentNode.childNodes).filter(
+                (child) => child.nodeName === el!.nodeName,
+            );
+            if (siblings.length > 1) {
+                const index = siblings.indexOf(el as ChildNode);
+                name += `:nth-of-type(${index + 1})`;
+            }
+        }
+        path.unshift(name);
+        el = el.parentNode;
+    }
+    return path.join(" > ");
+}
+
 export class ReportedError extends Error {
     constructor(message: string, opts: { cause: unknown }) {
         super(message, opts);
