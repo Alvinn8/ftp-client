@@ -108,6 +108,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
     count: CountObject;
     progress: ProgressObject;
     constructorError: Error; // Used to print stack traces for where the task was created.
+    createdAt: Date = new Date();
 
     constructor(session: FTPSession, fileTree: FileTree<T>, options: TreeTaskOptions, handler: TreeTaskHandler<T>) {
         super();
@@ -156,6 +157,20 @@ export class TreeTask<T = unknown> extends EventEmitter {
      */
     setNextTask(task: TreeTask) {
         this.emit("nextTask", task);
+    }
+
+    printInfoMessage() {
+        let message = `TreeTask - Status: ${this.status}`;
+        message += `, Title: ${this.title}`;
+        if (this.options.subTitle) {
+            message += `, SubTitle: ${this.options.subTitle(this)}`;
+        }
+        message += `, Created At: ${this.createdAt.toISOString()}`;
+        message += `, Progress: ${this.progress.value}/${this.progress.max}`;
+        message += `, Active Tasks: ${this.activeTasks.length}`;
+        message += `, Error Tasks: ${this.errorTasks.length}`;
+        console.log(message);
+        console.log("Creation Stack Trace:", this.constructorError.stack)
     }
 
     get paused(): boolean {

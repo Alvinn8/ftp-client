@@ -11,7 +11,7 @@ export enum Status {
     CANCELLED = "CANCELLED"
 }
 
-const ERRORS_TO_NOT_REPORT = ["NotReadableError", "NotFoundError", "ConnectionClosedError"];
+const ERRORS_TO_NOT_REPORT = ["ConnectionClosedError"]; // "NotReadableError", "NotFoundError" used to be here
 
 export class FileTree<T = unknown> extends EventEmitter {
     readonly path: string;
@@ -103,6 +103,7 @@ export class FileTree<T = unknown> extends EventEmitter {
         if (newStatus === Status.ERROR) {
             const formattedError = formatError(this.error);
             if (!ERRORS_TO_NOT_REPORT.some(text => formattedError.includes(text))) {
+                this.task?.printInfoMessage();
                 reportError(this.error, "Error after " + this.attempt + " attempts for file tree");
             }
         } else {
@@ -192,6 +193,7 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
             this.setStatus(Status.ERROR);
             const formattedError = formatError(this.error);
             if (!ERRORS_TO_NOT_REPORT.some(text => formattedError.includes(text))) {
+                this.task?.printInfoMessage();
                 reportError(this.error, "Error after " + this.attempt + " attempts for file tree file");
             }
         } else {
