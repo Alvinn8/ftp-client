@@ -15,20 +15,6 @@ const App: React.FC = () => {
     return (
         <div className="d-flex flex-column overflow-hidden">
             <div
-                style={{
-                    backgroundColor: "hsl(350, 80%, 15%)",
-                    color: "white",
-                    padding: "8px",
-                    textAlign: "center",
-                }}
-            >
-                <strong>Note: </strong>
-                <span>
-                    The new design is still experimental. Please report all
-                    bugs!
-                </span>
-            </div>
-            <div
                 className="flex-grow-1 d-flex flex-column overflow-hidden"
                 style={{ minHeight: 0 }}
             >
