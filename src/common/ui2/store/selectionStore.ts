@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import FolderEntry from "../../folder/FolderEntry";
 import { parentdir } from "../../utils";
+import { reportError } from "../../error";
 
 interface SelectionState {
     selectedEntries: FolderEntry[];
@@ -96,9 +97,11 @@ function validateSelection(entries: FolderEntry[]): FolderEntry[] {
                 "Invalid selection:",
                 entries.map((e) => e.path),
             );
-            throw new Error(
+            const err = new Error(
                 `All selected entries must be in the same directory`,
             );
+            reportError(err, err.message);
+            return [];
         }
     }
     return entries;
