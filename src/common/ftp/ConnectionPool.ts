@@ -2,6 +2,7 @@ import { EventEmitter } from "eventemitter3";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import FTPConnection from "./FTPConnection";
 import { Profile } from "./profile";
+import { FTPError, LoginError } from "../error";
 
 export type ConnectionPoolEntry = {
     connection: WebsocketFTPConnection;
@@ -130,7 +131,16 @@ export class ConnectionPool extends EventEmitter {
     private async createConnection(): Promise<WebsocketFTPConnection> {
         const connection = new WebsocketFTPConnection();
         await connection.connectToWebsocket();
-        await connection.connect(this.profile);
+        try {
+            await connection.connect(this.profile);
+        } catch (err) {
+            if (err instanceof FTPError && [430, 530].includes(err.code)) {
+                // Credentials are likely wrong, or the user lacks permission.
+                // No point in retrying.
+                throw new LoginError(err.message, { cause: err });
+            }
+            throw err;
+        }
         return connection;
     }
 

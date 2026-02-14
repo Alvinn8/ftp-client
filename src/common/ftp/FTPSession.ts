@@ -7,7 +7,7 @@ import FTPRequest from "./FTPRequest";
 import { sleep } from "../utils";
 import { ConnectionPool } from "./ConnectionPool";
 import { EventEmitter } from "eventemitter3";
-import { unexpectedErrorHandler } from "../error";
+import { FTPError, LoginError, unexpectedErrorHandler } from "../error";
 import taskManager, { TaskManager } from "../task/TaskManager";
 import { State } from "../ui/App";
 import { FolderCache } from "./FolderCache";
@@ -143,6 +143,10 @@ export default class FTPSession extends EventEmitter {
         if (success) {
             return this.connection;
         } else {
+            if (lastError instanceof FTPError && [430, 530].includes(lastError.code)) {
+                // Credentials are likely wrong, or the the user lacks permission.
+                throw new LoginError(lastError.message, { cause: lastError });
+            }
             console.log("Failed to get connection after 5 attempts, lastError =", lastError);
             throw new Error("Failed to connect to backend WebSocket after 5 attempts.", { cause: lastError});
         }
@@ -277,8 +281,9 @@ export default class FTPSession extends EventEmitter {
         }, err => {
             // If we reach this point we failed to reconnect and we will not attempt to
             // reconnect again. We therefore need to fail all requests in the queue.
+            const rejectError = err instanceof LoginError ? err : new Error("Failed to connect.", { cause: err });
             for (const request of this.queue) {
-                request.reject(new Error("Failed to connect.", { cause: err }));
+                request.reject(rejectError);
             }
         });
     }

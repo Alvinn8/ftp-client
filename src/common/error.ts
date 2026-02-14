@@ -83,6 +83,18 @@ export class CancellationError extends Error {
     }
 }
 
+/**
+ * An error indicating that the client failed to connect to the server due to
+ * invalid credentials or lack of permissions. Do not retry connection attempts
+ * if this error is encountered.
+ */
+export class LoginError extends Error {
+    constructor(message: string, opts: { cause: unknown }) {
+        super(message, opts);
+        this.name = "LoginError";
+    }
+}
+
 export class FTPError extends Error {
     code: number;
 
