@@ -6,8 +6,18 @@ import { Profile } from "../../ftp/profile";
 import { useSession } from "../store/sessionStore";
 import FTPSession from "../../ftp/FTPSession";
 import "./loginView.css";
-import { formatError, unexpectedErrorHandler } from "../../error";
+import { formatError, LoginError, unexpectedErrorHandler } from "../../error";
 import { getConfig, isHostAllowed, ProtocolConfig } from "../../config/config";
+import ConnectingScreen from "../../ui/ConnectingScreen";
+import ErrorScreen from "../../ui/ErrorScreen";
+import { performWithRetry } from "../../task/taskActions";
+
+enum ConnectionState {
+    LOADING,
+    IDLE,
+    CONNECTING,
+    ERROR,
+}
 
 const LoginView: React.FC = () => {
     const setSession = useSession((state) => state.setSession);
@@ -29,7 +39,9 @@ const LoginView: React.FC = () => {
     );
 
     const [formData, setFormData] = useState<Record<string, any>>({});
-    const [loading, setLoading] = useState(false);
+    const [connectionState, setConnectionState] = useState<ConnectionState>(
+        ConnectionState.LOADING,
+    );
     const [error, setError] = useState<string | null>(null);
 
     const currentProtocolConfig = config.protocols[protocol];
@@ -58,6 +70,7 @@ const LoginView: React.FC = () => {
         const url = new URL(location.href);
         const urlProtocol = url.searchParams.get("protocol") || "ftp";
         if (!urlProtocol) {
+            setConnectionState(ConnectionState.IDLE);
             return;
         }
 
@@ -67,11 +80,12 @@ const LoginView: React.FC = () => {
             if (url.searchParams.has("protocol")) {
                 setError(`Protocol "${urlProtocol}" is not supported.`);
             }
+            setConnectionState(ConnectionState.ERROR);
             return;
         }
-        console.log(2, protocolConfig);
         if (!protocolConfig.enabled) {
             setError(`Protocol "${urlProtocol}" is not enabled.`);
+            setConnectionState(ConnectionState.ERROR);
             return;
         }
         setProtocol(urlProtocol);
@@ -101,6 +115,7 @@ const LoginView: React.FC = () => {
             );
 
         if (hasAllRequired) {
+            setFormData((prev) => ({ ...prev, ...urlData }));
             performLogin(urlProtocol, urlData).catch(
                 unexpectedErrorHandler("Auto Login Error"),
             );
@@ -110,12 +125,13 @@ const LoginView: React.FC = () => {
         } else if (Object.keys(urlData).length > 0) {
             // Set partial data from URL
             setFormData((prev) => ({ ...prev, ...urlData }));
+            setConnectionState(ConnectionState.IDLE);
         }
     }, []);
 
     async function performLogin(protocol: string, data: Record<string, any>) {
         setError(null);
-        setLoading(true);
+        setConnectionState(ConnectionState.CONNECTING);
 
         try {
             const protocolConfig = config.protocols[protocol];
@@ -146,10 +162,20 @@ const LoginView: React.FC = () => {
 
             const session = new FTPSession(profile);
             await session.getConnectionPool().createInitialConnection();
+            const list = await performWithRetry(
+                session,
+                "/",
+                async (connection) => await connection.list("/"),
+            );
+            session.folderCache.set("/", list);
             setSession(session);
         } catch (err) {
-            setError(formatError(err));
-            setLoading(false);
+            if (err instanceof LoginError) {
+                setError(err.message);
+            } else {
+                setError(formatError(err));
+            }
+            setConnectionState(ConnectionState.ERROR);
         }
     }
 
@@ -176,7 +202,9 @@ const LoginView: React.FC = () => {
                             onChange={(checked) =>
                                 updateField(field.name, checked)
                             }
-                            disabled={loading}
+                            disabled={
+                                connectionState === ConnectionState.CONNECTING
+                            }
                         />
                         <label
                             className="form-group-label"
@@ -213,7 +241,7 @@ const LoginView: React.FC = () => {
                 }
                 placeholder={field.placeholder?.toString() || ""}
                 required={!field.optional}
-                disabled={loading}
+                disabled={connectionState === ConnectionState.CONNECTING}
             />
         );
     }
@@ -250,6 +278,54 @@ const LoginView: React.FC = () => {
         return elements;
     }
 
+    // Prevent flash of login form when loading
+    if (connectionState === ConnectionState.LOADING) {
+        return null;
+    }
+
+    // Show connecting screen
+    if (connectionState === ConnectionState.CONNECTING) {
+        return (
+            <ConnectingScreen
+                title="Connecting"
+                body="Connecting to your files..."
+            />
+        );
+    }
+
+    // Show error screen
+    if (connectionState === ConnectionState.ERROR) {
+        let errorAction: { label: string; onClick: () => void } | null = null;
+
+        // Check if we should offer "Continue without encryption"
+        if (
+            error &&
+            error.includes("SSL error") &&
+            protocol === "ftp" &&
+            formData.secure === true
+        ) {
+            errorAction = {
+                label: "Continue without encryption",
+                onClick: () => {
+                    const newData = { ...formData, secure: false };
+                    setFormData(newData);
+                    performLogin(protocol, newData).catch(
+                        unexpectedErrorHandler("Retry Login Error"),
+                    );
+                },
+            };
+        }
+
+        return (
+            <ErrorScreen
+                title="Failed to connect"
+                body={error || "An unexpected error occurred."}
+                action={errorAction}
+            />
+        );
+    }
+
+    // Show login form
     return (
         <div className="login-view">
             <div className="login-container">
@@ -259,8 +335,6 @@ const LoginView: React.FC = () => {
                         Sign in to your FTP or SFTP server
                     </p>
                 </div>
-
-                {error && <div className="login-error">{error}</div>}
 
                 <form
                     className="login-form"
@@ -276,7 +350,6 @@ const LoginView: React.FC = () => {
                                 className="protocol-select"
                                 value={protocol}
                                 onChange={(e) => setProtocol(e.target.value)}
-                                disabled={loading}
                             >
                                 {enabledProtocols.map(({ key, config }) => (
                                     <option key={key} value={key}>
@@ -294,8 +367,6 @@ const LoginView: React.FC = () => {
                             label="Sign In"
                             severity="primary"
                             onClick={handleLogin}
-                            loading={loading}
-                            disabled={loading}
                         />
                     </div>
                 </form>
