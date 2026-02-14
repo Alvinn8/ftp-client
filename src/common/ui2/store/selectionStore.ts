@@ -92,6 +92,10 @@ function validateSelection(entries: FolderEntry[]): FolderEntry[] {
         }
         names.add(entry.name);
         if (parentdir(entry.path) !== parentPath) {
+            console.log(
+                "Invalid selection:",
+                entries.map((e) => e.path),
+            );
             throw new Error(
                 `All selected entries must be in the same directory`,
             );
