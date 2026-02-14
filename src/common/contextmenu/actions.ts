@@ -349,6 +349,7 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
                             ? directory.getEntries().filter(e => e instanceof FileTree).find(e => e.path === entry.path)
                             : directory.getEntries().filter(e => e instanceof FileTreeFile).find(e => e.name === entry.name);
                         if (node) {
+                            node.setError(new Error("This file was added while deleting. It will be retried."));
                             node.retry();
                         } else if (entry.isFile()) {
                             directory.addEntry(new FileTreeFile(entry.name, null, entry.size, directory));

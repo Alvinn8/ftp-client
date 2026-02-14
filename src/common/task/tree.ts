@@ -89,7 +89,9 @@ export class FileTree<T = unknown> extends EventEmitter {
     }
 
     /**
-     * Retry the task.
+     * Retry the task. It is important that an error is set on the task before calling
+     * this method, as the error will be reported to the user if the max attempts is
+     * exceeded.
      *
      * @param force If true, will retry even if max attempts have been reached.
      */
@@ -183,6 +185,13 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
         this.emit("attemptChange", attempt);
     }
 
+    /**
+     * Retry this file. It is important that an error is set on the file before calling
+     * this method, as the error will be reported to the user if the max attempts is
+     * exceeded.
+     * 
+     * @param force True to retry despite max attempts being reached.
+     */
     retry(force: boolean = false) {
         if (force && (!this.task || this.getAttempt() >= this.task.maxAttempts)) {
             this.setAttempt(1);

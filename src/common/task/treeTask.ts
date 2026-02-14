@@ -447,6 +447,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
                             this.count.completedDirectories++;
                             this.updateProgress();
                         } else {
+                            subTask.node.setError(new Error("Not all entries in this folder were processed successfully. Please try again."));
                             subTask.node.retry();
                         }
                     }

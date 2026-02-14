@@ -168,7 +168,9 @@ function uploadUsingTreeTask(uploads: Directory) {
                         continue;
                     }
                     allGood = false;
-                    console.log(`File ${joinPath(node.path, entry.name)} was not uploaded properly. Expected size ${entry.data.file.size} but found ${fileInfo ? fileInfo.size : "nothing"}`);
+                    const error = new Error(`File ${joinPath(node.path, entry.name)} was not uploaded properly. Expected size ${entry.data.file.size} but found ${fileInfo ? fileInfo.size : "nothing"}`);
+                    console.log(error.message);
+                    entry.setError(error);
                     entry.retry();
                 }
             }
