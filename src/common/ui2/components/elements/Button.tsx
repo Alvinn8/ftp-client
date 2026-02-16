@@ -55,7 +55,7 @@ const Button: React.FC<ButtonProps> = ({
                     </div>
                 </div>
             )}
-            <span>{label}</span>
+            {label && <span>{label}</span>}
         </button>
     );
 
