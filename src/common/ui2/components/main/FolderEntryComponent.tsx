@@ -29,8 +29,10 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
     entry,
     onSelect,
 }) => {
-    const selectedEntries = useSelection((state) => state.selectedEntries);
+    const selectionStore = useSelection((state) => state);
+    const selectedEntries = selectionStore.selectedEntries;
     const setPath = usePath((state) => state.setPath);
+    const ref = useRef<HTMLTableRowElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const [contextMenuOpen, setContextMenuOpen] = useContextMenu();
     const [menuPosition, setMenuPosition] = useState<{
@@ -48,6 +50,15 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
         entry.isDirectory(),
     );
     const [calculatingSize, setCalculatingSize] = useState(false);
+
+    selectionStore.focusEmitter.on("focus", (focusedEntry: FolderEntry) => {
+        if (focusedEntry.path === entry.path && ref.current) {
+            ref.current.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+        }
+    });
 
     function onDoubleClick(e: React.MouseEvent) {
         if (renaming) return;
@@ -159,6 +170,7 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
     return (
         <tr
             key={entry.name}
+            ref={ref}
             className={`folder-entry-component ${selected ? "selected text-white" : ""}`}
             onClick={(e) =>
                 !renaming &&

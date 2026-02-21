@@ -2,9 +2,11 @@ import { create } from "zustand";
 import FolderEntry from "../../folder/FolderEntry";
 import { parentdir } from "../../utils";
 import { reportError } from "../../error";
+import { EventEmitter } from "eventemitter3";
 
 interface SelectionState {
     selectedEntries: FolderEntry[];
+    focusEmitter: any; // EventEmitter
     toggle: (entry: FolderEntry) => void;
     clear: () => void;
     setSelection(entries: FolderEntry[]): void;
@@ -14,10 +16,12 @@ interface SelectionState {
         e: React.MouseEvent,
         multiSelect: boolean,
     ): void;
+    focus(entry: FolderEntry): void;
 }
 
 const useSelection = create<SelectionState>((set, get) => ({
     selectedEntries: [],
+    focusEmitter: new EventEmitter(),
     toggle(entry) {
         const selectedEntries = get().selectedEntries;
         const exists = selectedEntries.some((e) => e.path === entry.path);
@@ -78,6 +82,9 @@ const useSelection = create<SelectionState>((set, get) => ({
     },
     setSelection(entries) {
         set({ selectedEntries: validateSelection(entries) });
+    },
+    focus(entry: FolderEntry) {
+        get().focusEmitter.emit("focus", entry);
     },
 }));
 

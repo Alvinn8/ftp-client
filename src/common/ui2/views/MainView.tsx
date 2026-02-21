@@ -11,6 +11,7 @@ import FolderExplorer from "../components/main/FolderExplorer";
 import Ad from "../components/elements/Ad";
 import { getConfig } from "../../config/config";
 import VERSION from "../../../protocol/version";
+import BonusActions from "../components/bonus/BonusActions";
 
 const MainView: React.FC = () => {
     const session = useSession((state) => state.session);
@@ -50,6 +51,7 @@ const MainView: React.FC = () => {
                 </div>
             </div>
             <div className="content flex-grow-1 overflow-y-auto m-2 rounded">
+                <BonusActions />
                 <FolderContent />
             </div>
             <small
