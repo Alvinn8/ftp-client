@@ -526,13 +526,18 @@ export async function downloadAsZipStreaming(entries: FolderEntry[], fileHandle:
         },
         done: async (fileTree, connection) => {
             await zipWriter.close();
+            await writable.close();
         },
         cancelled: async (fileTree, connection) => {
             try {
                 await zipWriter.close();
             } catch {}
             try {
-                await writable.close();
+                if (typeof writable.abort === "function") {
+                    await writable.abort();
+                } else {
+                    await writable.close();
+                }
             } catch {}
             try {
                 await fileHandle.remove();
