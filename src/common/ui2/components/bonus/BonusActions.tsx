@@ -15,7 +15,8 @@ const BonusActions: React.FC = () => {
     const path = usePath().path;
     const files = useFolderContent(session, path);
 
-    const uuidLookupActive = files && onlyUuidFileNames(files);
+    const uuidLookupActive =
+        files && files.length > 0 && onlyUuidFileNames(files);
     const [uuidLookupEntries, setUuidLookupEntries] = useState<
         UserCacheEntry[] | null
     >(null);
