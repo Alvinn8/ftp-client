@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useSession } from "../store/sessionStore";
 import FolderContent from "../components/main/FolderContent";
 import Path from "../components/main/Path";
@@ -12,6 +12,9 @@ import Ad from "../components/elements/Ad";
 import { getConfig } from "../../config/config";
 import VERSION from "../../../protocol/version";
 import BonusActions from "../components/bonus/BonusActions";
+import { handleOnDrop } from "../../upload/upload";
+import { useDragAndDrop } from "../../ui/DropZone";
+import { unexpectedErrorHandler } from "../../error";
 
 const MainView: React.FC = () => {
     const session = useSession((state) => state.session);
@@ -19,6 +22,11 @@ const MainView: React.FC = () => {
     const setPath = usePath((state) => state.setPath);
 
     const adConfig = getConfig().ads;
+
+    const dropZone = useRef<HTMLTableSectionElement>(null);
+    const dropZoneElement = useDragAndDrop(dropZone, (e) => {
+        handleOnDrop(e).catch(unexpectedErrorHandler("Failed to upload"));
+    });
 
     return (
         <main className="main-view">
@@ -50,9 +58,13 @@ const MainView: React.FC = () => {
                     <Path />
                 </div>
             </div>
-            <div className="content flex-grow-1 overflow-y-auto m-2 rounded">
+            <div
+                ref={dropZone}
+                className="content flex-grow-1 overflow-y-auto m-2 rounded"
+            >
                 <BonusActions />
                 <FolderContent />
+                {dropZoneElement}
             </div>
             <small
                 id="version"

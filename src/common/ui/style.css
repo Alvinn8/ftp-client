@@ -225,6 +225,7 @@ body, html, #root, #root > div, #grid {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     transition: var(--transition);
+    z-index: 4;
 }
 
 .cursor-pointer {

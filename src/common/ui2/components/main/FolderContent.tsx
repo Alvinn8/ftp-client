@@ -6,19 +6,12 @@ import { useFolderContent } from "../../../ftp/FolderCache";
 import { randomBetween, range } from "../../../utils";
 import FolderEntryComponent from "./FolderEntryComponent";
 import { useSelection } from "../../store/selectionStore";
-import { useDragAndDrop } from "../../../ui/DropZone";
-import { handleOnDrop } from "../../../upload/upload";
-import { unexpectedErrorHandler } from "../../../error";
 import { useRenameStore } from "../../store/renameStore";
 
 const FolderContent: React.FC = () => {
     const session = useSession((state) => state.getSession());
     const path = usePath((state) => state.path);
     const handleSelectionClick = useSelection((state) => state.handleClick);
-    const dropZone = useRef<HTMLTableSectionElement>(null);
-    const dropZoneElement = useDragAndDrop(dropZone, (e) => {
-        handleOnDrop(e).catch(unexpectedErrorHandler("Failed to upload"));
-    });
     const renaming = useRenameStore((state) => state.renaming);
 
     const entries = useFolderContent(session, path);
@@ -49,7 +42,7 @@ const FolderContent: React.FC = () => {
                         <th></th>
                     </tr>
                 </thead>
-                <tbody ref={dropZone}>
+                <tbody>
                     {!entries &&
                         range(randomBetween(2, 8)).map((key) => (
                             <tr key={key}>
@@ -128,7 +121,6 @@ const FolderContent: React.FC = () => {
                         ))}
                 </tbody>
             </table>
-            {dropZoneElement}
         </div>
     );
 };
