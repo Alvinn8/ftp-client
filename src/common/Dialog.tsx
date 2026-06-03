@@ -1,6 +1,6 @@
 import { Modal } from "bootstrap";
 import * as React from "react";
-import * as ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 
 /**
  * Utilities for creating modal windows for displaying text or asking the user
@@ -37,7 +37,7 @@ namespace Dialog {
         const container = document.createElement("div");
         document.body.appendChild(container);
 
-        ReactDOM.render(modalElement, container);
+        createRoot(container).render(modalElement);
 
         const modal = new Modal(modalRef.current, {
             backdrop: true,
@@ -102,7 +102,7 @@ namespace Dialog {
         const container = document.createElement("div");
         document.body.appendChild(container);
 
-        ReactDOM.render(modalElement, container);
+        createRoot(container).render(modalElement);
 
         inputRef.current.value = defaultValue;
 
@@ -185,7 +185,7 @@ namespace Dialog {
             const container = document.createElement("div");
             document.body.appendChild(container);
 
-            ReactDOM.render(modalElement, container);
+            createRoot(container).render(modalElement);
 
             const modal = new Modal(ref.current, {
                 backdrop: allowCancel ? true : "static",
@@ -236,7 +236,7 @@ namespace Dialog {
             const container = document.createElement("div");
             document.body.appendChild(container);
 
-            ReactDOM.render(modalElement, container);
+            createRoot(container).render(modalElement);
 
             const modal = new Modal(ref.current, {
                 backdrop: true,

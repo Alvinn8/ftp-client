@@ -255,7 +255,7 @@ const LoginView: React.FC = () => {
             (f) => f.name !== "host" && f.name !== "port",
         );
 
-        const elements: JSX.Element[] = [];
+        const elements: React.JSX.Element[] = [];
 
         // Render host and port together if both exist
         if (hostField && portField) {

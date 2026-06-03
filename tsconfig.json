@@ -3,10 +3,17 @@
         "module": "ES2020",
         "target": "ES2022",
         "noEmit": true,
-        "jsx": "react",
-        "moduleResolution": "node",
+        "jsx": "react-jsx",
+        "moduleResolution": "bundler",
         "allowSyntheticDefaultImports": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "strict": false,
+        "types": [
+            "vite/client",
+            "react",
+            "react-dom",
+            "@types/wicg-file-system-access"
+        ]
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
     "exclude": ["node_modules", "vendor", "types"]

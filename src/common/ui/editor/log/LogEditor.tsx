@@ -44,7 +44,7 @@ const LogEditor: React.FC = () => {
 type LogLevel = "error" | "error-stacktrace" | "warning";
 
 interface Line {
-    text: JSX.Element;
+    text: React.JSX.Element;
     level?: LogLevel;
 }
 
@@ -142,7 +142,7 @@ const ANSI_REMOVE_FORMATTING = {
 };
 const ANSI_RESET = 0;
 
-function formatLine(text: string): JSX.Element {
+function formatLine(text: string): React.JSX.Element {
     if (!text.includes(SECTION_COLOR) && !ANSI_COLOR_REGEX.exec(text) && !text.includes(UNKNOWN_COLOR)) {
         return <>{ text }</>;
     }

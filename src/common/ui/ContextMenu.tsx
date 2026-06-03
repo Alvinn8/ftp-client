@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import ContextMenuPopulator from "../contextmenu/ContextMenuPopulator";
 
 /**
@@ -29,7 +29,7 @@ export function createContextMenu(populator: ContextMenuPopulator, x: number, y:
     element.style.top = y + "px";
     document.body.appendChild(element);
 
-    ReactDOM.render(<ContextMenu populator={ populator } />, element);
+    createRoot(element).render(<ContextMenu populator={ populator } />);
     setContextMenu({
         container: element
     });

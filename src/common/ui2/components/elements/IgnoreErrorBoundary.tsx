@@ -3,8 +3,8 @@ import { ErrorInfo } from "react";
 import { formatError } from "../../../error";
 
 export type Props = {
-    fallback: JSX.Element;
-    children: JSX.Element;
+    fallback: React.JSX.Element;
+    children: React.JSX.Element;
 };
 type State = {
     hasError: boolean;

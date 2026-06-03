@@ -9,7 +9,7 @@ interface ButtonProps {
     variant?: "solid" | "outline" | "ghost";
     size?: "small" | "medium" | "large";
     icon?: string;
-    label?: string | JSX.Element;
+    label?: string | React.JSX.Element;
     loading?: boolean;
     disabled?: boolean;
     buttonRef?: React.Ref<HTMLButtonElement>;
