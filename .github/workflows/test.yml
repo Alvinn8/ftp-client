@@ -23,7 +23,7 @@ jobs:
       - name: Install
         run: pnpm install
       - name: Audit
-        run: pnpm run audit --audit-level=high
+        run: pnpm audit --audit-level=high
       - name: Build
         run: pnpm run build
       - name: Test
