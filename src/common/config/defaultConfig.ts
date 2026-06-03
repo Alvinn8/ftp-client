@@ -105,7 +105,7 @@ export const defaultConfig = {
     } as Record<string, ProtocolConfig>,
 };
 
-// Distrubution-specific config defaults
+// Distribution-specific config defaults
 type DeepPartial<T> = T extends object
     ? {
           [P in keyof T]?: DeepPartial<T[P]>;
