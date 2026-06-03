@@ -9,10 +9,10 @@
         "build+start": "npm run build && npm start"
     },
     "dependencies": {
-        "ssh2-sftp-client": "^12.0.1",
-        "ws": "^8.18.3"
+        "ssh2-sftp-client": "^12.1.1",
+        "ws": "^8.21.0"
     },
     "devDependencies": {
-        "esbuild": "^0.27.2"
+        "esbuild": "^0.28.0"
     }
 }
