@@ -209,6 +209,9 @@ export function formatErrorMessage(error: any): string | null {
     if (error.code === "CERT_HAS_EXPIRED") {
         return "SSL error. Please try again or contact support. (CERT_HAS_EXPIRED)";
     }
+    if (error.code === "UNABLE_TO_GET_ISSUER_CERT_LOCALLY") {
+        return "SSL error. Please try again or contact support. (UNABLE_TO_GET_ISSUER_CERT_LOCALLY)";
+    }
     if (error.code === "ENOTFOUND") {
         return "Please try again. (" + error + ")";
     }

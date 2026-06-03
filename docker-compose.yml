@@ -1,21 +1,21 @@
-version: '3'
+version: "3"
 services:
-  web:
-    image: node:16.15-alpine3.14
-    working_dir: /app
-    ports:
-      - "3000:3000"   # dev
-      - "4173:4173"   # preview
-      - "51204:51204" # vitest ui
-    volumes:
-      - .:/app
-    command: [ "npm", "run", "dev" ]
-    tty: true
-  server:
-    image: node:16.15-alpine3.14
-    working_dir: /app/server
-    ports:
-      - "8081:8081"
-    volumes:
-      - .:/app
-    command: [ "npm", "run", "build+start" ]
+    web:
+        image: node:24-alpine
+        working_dir: /app
+        ports:
+            - "3000:3000" # dev
+            - "4173:4173" # preview
+            - "51204:51204" # vitest ui
+        volumes:
+            - .:/app
+        command: ["npm", "run", "dev"]
+        tty: true
+    server:
+        image: node:24-alpine
+        working_dir: /app/server
+        ports:
+            - "8081:8081"
+        volumes:
+            - .:/app
+        command: ["npm", "run", "build+start"]

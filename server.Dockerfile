@@ -11,6 +11,11 @@ RUN pnpm run build
 FROM node:24-alpine
 
 WORKDIR /app/server
+RUN apk add --no-cache ca-certificates curl \
+	&& curl -fsSL https://letsencrypt.org/certs/gen-y/root-yr.pem \
+		-o /usr/local/share/ca-certificates/letsencrypt-root-yr.pem \
+	&& update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/letsencrypt-root-yr.pem
 RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
 COPY server/package.json ./
