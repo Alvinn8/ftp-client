@@ -4,10 +4,10 @@
 
 import JSZip from "jszip";
 import * as React from "react";
-import Dialog from "../Dialog";
+import Dialog from "@common/Dialog";
 import Directory from "./Directory";
 import { upload } from "./uploadToServer";
-import { formatError, unexpectedErrorHandler } from "../util/error";
+import { formatError, unexpectedErrorHandler } from "@common/util/error";
 
 export namespace UploadSupport {
     /**

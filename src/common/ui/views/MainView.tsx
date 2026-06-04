@@ -1,20 +1,20 @@
 import React, { useRef } from "react";
-import { useSession } from "../store/sessionStore";
-import FolderContent from "../components/main/FolderContent";
-import Path from "../components/main/Path";
+import { useSession } from "@common/ui/store/sessionStore";
+import FolderContent from "@common/ui/components/main/FolderContent";
+import Path from "@common/ui/components/main/Path";
 import "./mainView.css";
-import Button from "../components/elements/Button";
-import { usePath } from "../store/pathStore";
-import { parentdir } from "../../util/utils";
-import Actions from "../components/main/Actions";
-import FolderExplorer from "../components/main/FolderExplorer";
-import Ad from "../components/elements/Ad";
-import { getConfig } from "../../config/config";
-import VERSION from "../../../protocol/version";
-import BonusActions from "../components/bonus/BonusActions";
-import { handleOnDrop } from "../../upload/upload";
-import { useDragAndDrop } from "../../ui/DropZone";
-import { unexpectedErrorHandler } from "../../util/error";
+import Button from "@common/ui/components/elements/Button";
+import { usePath } from "@common/ui/store/pathStore";
+import { parentdir } from "@common/util/utils";
+import Actions from "@common/ui/components/main/Actions";
+import FolderExplorer from "@common/ui/components/main/FolderExplorer";
+import Ad from "@common/ui/components/elements/Ad";
+import { getConfig } from "@common/config/config";
+import VERSION from "@protocol/version";
+import BonusActions from "@common/ui/components/bonus/BonusActions";
+import { handleOnDrop } from "@common/upload/upload";
+import { useDragAndDrop } from "@common/ui/DropZone";
+import { unexpectedErrorHandler } from "@common/util/error";
 
 const MainView: React.FC = () => {
     const session = useSession((state) => state.session);

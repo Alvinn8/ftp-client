@@ -1,6 +1,6 @@
 import { EventEmitter } from "eventemitter3";
 import { HandlerAction, TaskStatus, TreeTask } from "./treeTask";
-import { formatError, reportError } from "../util/error";
+import { formatError, reportError } from "@common/util/error";
 
 export enum Status {
     PENDING = "PENDING",

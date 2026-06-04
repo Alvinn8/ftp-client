@@ -4,7 +4,7 @@ import {
     NbtByteArray,
     NbtIntArray,
     NbtLongArray,
-} from "../../../nbt/nbtTags";
+} from "@common/nbt/nbtTags";
 
 interface UiNbtArrayProps {
     tag: ArrayNbtTag;

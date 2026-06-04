@@ -1,5 +1,5 @@
 import * as React from "react";
-import { NbtList, NbtString, NumberNbtTag } from "../../../nbt/nbtTags";
+import { NbtList, NbtString, NumberNbtTag } from "@common/nbt/nbtTags";
 import { UiNbtIndex } from "./nbtParts";
 import NbtTagContainer from "./NbtTagContainer";
 import UiNbtTag from "./UiNbtTag";

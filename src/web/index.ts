@@ -1,3 +1,3 @@
 // Entry point for the website
 
-import "../common/ui/index";
+import "@common/ui/index";

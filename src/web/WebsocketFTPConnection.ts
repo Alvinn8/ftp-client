@@ -1,12 +1,12 @@
-import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
-import FTPConnection from "../common/ftp/FTPConnection";
-import { addMessage } from "../common/ui/messages";
+import FolderEntry, { FolderEntryType } from "@common/folder/FolderEntry";
+import FTPConnection from "@common/ftp/FTPConnection";
+import { addMessage } from "@common/ui/messages";
 import {
     blobToBase64,
     ensureAbsolute,
     filename,
     sleep,
-} from "../common/util/utils";
+} from "@common/util/utils";
 import {
     ChunkedUploadResponse,
     ConnectData,
@@ -14,21 +14,21 @@ import {
     ErrorReply,
     Packet,
     Packets,
-} from "../protocol/packets";
+} from "@protocol/packets";
 import {
     LargeFileOperationInterface,
     largeFileOperationStore,
-} from "../common/ui/LargeFileOperation";
-import Dialog from "../common/Dialog";
+} from "@common/ui/LargeFileOperation";
+import Dialog from "@common/Dialog";
 import {
     assertUnreachable,
     CancellationError,
     ConnectionClosedError,
     FTPError,
     SFTPError,
-} from "../common/util/error";
-import { getConfig } from "../common/config/config";
-import { useSession } from "../common/ui/store/sessionStore";
+} from "@common/util/error";
+import { getConfig } from "@common/config/config";
+import { useSession } from "@common/ui/store/sessionStore";
 
 interface PendingReply {
     requestId: string;

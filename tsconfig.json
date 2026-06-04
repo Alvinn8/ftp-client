@@ -13,7 +13,13 @@
             "react",
             "react-dom",
             "@types/wicg-file-system-access"
-        ]
+        ],
+        "paths": {
+            "@common/*": ["./src/common/*"],
+            "@protocol/*": ["./src/protocol/*"],
+            "@web/*": ["./src/web/*"],
+            "@server/*": ["./src/server/*"]
+        }
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
     "exclude": ["node_modules", "vendor", "types"]

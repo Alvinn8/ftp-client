@@ -7,7 +7,7 @@ import {
     newPacketHandlersMap,
     ServerPackets,
 } from ".";
-import { ListReply, Packets } from "../protocol/packets";
+import { ListReply, Packets } from "@protocol/packets";
 import SftpClient from "ssh2-sftp-client";
 import { WritableMemoryStream } from "./memoryStreams";
 import { PassThrough } from "stream";

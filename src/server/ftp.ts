@@ -7,7 +7,7 @@ import {
     newPacketHandlersMap,
     ServerPackets,
 } from ".";
-import { Packets, ListReply } from "../protocol/packets";
+import { Packets, ListReply } from "@protocol/packets";
 import { WritableMemoryStream, ReadableMemoryStream } from "./memoryStreams";
 import { PassThrough } from "stream";
 

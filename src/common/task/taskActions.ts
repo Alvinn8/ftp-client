@@ -1,6 +1,6 @@
-import { CancellationError } from "../util/error";
-import FTPConnection from "../ftp/FTPConnection";
-import FTPSession from "../ftp/FTPSession";
+import { CancellationError } from "@common/util/error";
+import FTPConnection from "@common/ftp/FTPConnection";
+import FTPSession from "@common/ftp/FTPSession";
 import { FileTree } from "./tree";
 import { TreeTask } from "./treeTask";
 

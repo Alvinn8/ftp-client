@@ -1,7 +1,7 @@
 import React, { useCallback, useRef } from "react";
 import ReactCodeMirror from "@uiw/react-codemirror";
 import { TextEditorData } from "./TextEditor";
-import { isDarkTheme } from "../../theme";
+import { isDarkTheme } from "@common/ui/theme";
 
 const CodeMirrorEditor: React.FC<TextEditorData> = ({
     text,

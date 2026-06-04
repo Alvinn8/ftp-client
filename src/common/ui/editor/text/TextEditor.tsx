@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import EditorControls from "../EditorControls";
+import EditorControls from "@common/ui/editor/EditorControls";
 import "./TextEditor.css";
 
 interface TextEditorProps {

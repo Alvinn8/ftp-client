@@ -1,4 +1,4 @@
-import Dialog from "../Dialog";
+import Dialog from "@common/Dialog";
 
 export function unexpectedErrorHandler(title: string) {
     return (err: unknown) => {

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { editorWindowsStore } from "./editor";
-import { isDarkTheme } from "../theme";
+import { isDarkTheme } from "@common/ui/theme";
 
 const OpenEditors = () => {
     const [editorWindows, setEditorWindows] = useState<Window[]>([]);

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import FolderEntry, { FolderEntryType } from "../../../folder/FolderEntry";
-import Button from "../elements/Button";
-import { useFolderContent } from "../../../ftp/FolderCache";
-import { useSession } from "../../store/sessionStore";
-import { usePath } from "../../store/pathStore";
+import FolderEntry, { FolderEntryType } from "@common/folder/FolderEntry";
+import Button from "@common/ui/components/elements/Button";
+import { useFolderContent } from "@common/ftp/FolderCache";
+import { useSession } from "@common/ui/store/sessionStore";
+import { usePath } from "@common/ui/store/pathStore";
 
 const ROOT = new FolderEntry("/", "/", 0, FolderEntryType.Directory, "");
 

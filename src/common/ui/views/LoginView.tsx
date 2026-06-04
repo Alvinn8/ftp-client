@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useMemo } from "react";
-import Button from "../components/elements/Button";
-import TextInput from "../components/elements/TextInput";
-import Checkbox from "../components/elements/Checkbox";
-import { Profile } from "../../ftp/profile";
-import { useSession } from "../store/sessionStore";
-import FTPSession from "../../ftp/FTPSession";
+import Button from "@common/ui/components/elements/Button";
+import TextInput from "@common/ui/components/elements/TextInput";
+import Checkbox from "@common/ui/components/elements/Checkbox";
+import { Profile } from "@common/ftp/profile";
+import { useSession } from "@common/ui/store/sessionStore";
+import FTPSession from "@common/ftp/FTPSession";
 import "./loginView.css";
 import {
     formatError,
     LoginError,
     unexpectedErrorHandler,
-} from "../../util/error";
-import { getConfig, isHostAllowed, ProtocolConfig } from "../../config/config";
-import ConnectingScreen from "../../ui/ConnectingScreen";
-import ErrorScreen from "../../ui/ErrorScreen";
-import { performWithRetry } from "../../task/taskActions";
+} from "@common/util/error";
+import { getConfig, isHostAllowed, ProtocolConfig } from "@common/config/config";
+import ConnectingScreen from "@common/ui/ConnectingScreen";
+import ErrorScreen from "@common/ui/ErrorScreen";
+import { performWithRetry } from "@common/task/taskActions";
 
 enum ConnectionState {
     LOADING,

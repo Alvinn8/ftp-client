@@ -1,8 +1,8 @@
 import * as React from "react";
-import { TreeTask } from "../../task/treeTask";
+import { TreeTask } from "@common/task/treeTask";
 import TreeTaskComponent from "./TreeTaskComponent";
 import TreeTaskDetails from "./TreeTaskDetails";
-import { useSession } from "../store/sessionStore";
+import { useSession } from "@common/ui/store/sessionStore";
 
 /**
  * Displays the running task.

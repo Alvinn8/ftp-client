@@ -1,4 +1,4 @@
-import { reportError, getDomPath } from "../util/error";
+import { reportError, getDomPath } from "@common/util/error";
 
 // Google Translate modified the DOM in a way that mismatches with React's
 // virtual DOM. Use this workaround from the GitHub issue.

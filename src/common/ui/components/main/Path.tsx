@@ -1,6 +1,6 @@
 import React from "react";
-import { usePath } from "../../store/pathStore";
-import Button from "../elements/Button";
+import { usePath } from "@common/ui/store/pathStore";
+import Button from "@common/ui/components/elements/Button";
 
 const Path: React.FC = () => {
     const path = usePath((state) => state.path);

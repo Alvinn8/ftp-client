@@ -1,10 +1,9 @@
 import { EventEmitter } from "eventemitter3";
-import { addMessage } from "../ui/messages";
 import { TaskStatus, TreeTask } from "./treeTask";
-import FTPSession from "../ftp/FTPSession";
+import FTPSession from "@common/ftp/FTPSession";
 import { Status } from "./tree";
-import { unexpectedErrorHandler } from "../util/error";
-import { useSession } from "../ui/store/sessionStore";
+import { unexpectedErrorHandler } from "@common/util/error";
+import { useSession } from "@common/ui/store/sessionStore";
 
 export class TaskManager extends EventEmitter {
     private session: FTPSession;

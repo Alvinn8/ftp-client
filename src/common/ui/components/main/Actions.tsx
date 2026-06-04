@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { useSelection } from "../../store/selectionStore";
-import OverflowToMenu, { OverflowAction } from "../elements/OverflowToMenu";
+import { useSelection } from "@common/ui/store/selectionStore";
+import OverflowToMenu, { OverflowAction } from "@common/ui/components/elements/OverflowToMenu";
 import UploadDialog from "./UploadDialog";
-import { getActions } from "../../../contextmenu/actions";
-import { useRenameStore } from "../../store/renameStore";
-import { getSession } from "../../store/sessionStore";
-import { usePath } from "../../store/pathStore";
-import FolderEntry, { FolderEntryType } from "../../../folder/FolderEntry";
-import { joinPath } from "../../../util/utils";
+import { getActions } from "@common/contextmenu/actions";
+import { useRenameStore } from "@common/ui/store/renameStore";
+import { getSession } from "@common/ui/store/sessionStore";
+import { usePath } from "@common/ui/store/pathStore";
+import FolderEntry, { FolderEntryType } from "@common/folder/FolderEntry";
+import { joinPath } from "@common/util/utils";
 
 const Actions: React.FC = () => {
     const selectedEntries = useSelection((state) => state.selectedEntries);

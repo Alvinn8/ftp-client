@@ -1,10 +1,10 @@
 import { EventEmitter } from "eventemitter3";
-import FTPConnection from "../ftp/FTPConnection";
+import FTPConnection from "@common/ftp/FTPConnection";
 import { FileTree, FileTreeFile, Status } from "./tree";
-import FTPSession from "../ftp/FTPSession";
-import Priority from "../ftp/Priority";
-import { unexpectedErrorHandler } from "../util/error";
-import { sleep } from "../util/utils";
+import FTPSession from "@common/ftp/FTPSession";
+import Priority from "@common/ftp/Priority";
+import { unexpectedErrorHandler } from "@common/util/error";
+import { sleep } from "@common/util/utils";
 
 type MaybePromise<T> = Promise<T> | T;
 

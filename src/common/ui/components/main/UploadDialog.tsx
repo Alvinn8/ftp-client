@@ -1,16 +1,16 @@
 import { Modal } from "bootstrap";
 import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { usePath } from "../../store/pathStore";
-import Button from "../elements/Button";
-import { useDragAndDrop } from "../../DropZone";
+import { usePath } from "@common/ui/store/pathStore";
+import Button from "@common/ui/components/elements/Button";
+import { useDragAndDrop } from "@common/ui/DropZone";
 import {
     directoryUpload,
     fileUpload,
     handleOnDrop,
     setZipUploadMode,
-} from "../../../upload/upload";
-import { unexpectedErrorHandler } from "../../../util/error";
+} from "@common/upload/upload";
+import { unexpectedErrorHandler } from "@common/util/error";
 
 interface UploadDialogProps {
     onClose: () => void;

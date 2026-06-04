@@ -1,8 +1,8 @@
 import { editor as monacoEditor, Uri } from "monaco-editor";
 import React, { useEffect, useRef } from "react";
-import { isDarkTheme } from "../../theme";
+import { isDarkTheme } from "@common/ui/theme";
 import { TextEditorData } from "./TextEditor";
-import { unexpectedErrorHandler } from "../../../util/error";
+import { unexpectedErrorHandler } from "@common/util/error";
 
 const MonacoEditor: React.FC<TextEditorData> = ({
     text,

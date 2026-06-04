@@ -3,8 +3,8 @@ import { Profile } from "./profile";
 import FTPRequest from "./FTPRequest";
 import { ConnectionPool } from "./ConnectionPool";
 import { EventEmitter } from "eventemitter3";
-import { unexpectedErrorHandler } from "../util/error";
-import { TaskManager } from "../task/TaskManager";
+import { unexpectedErrorHandler } from "@common/util/error";
+import { TaskManager } from "@common/task/TaskManager";
 import { FolderCache } from "./FolderCache";
 
 /**

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import FolderEntry from "../../folder/FolderEntry";
+import FolderEntry from "@common/folder/FolderEntry";
 import { useEffect, useState } from "react";
 
 interface RenameStore {

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { ProgressObject, TaskStatus, TreeTask } from "../../task/treeTask";
+import { ProgressObject, TaskStatus, TreeTask } from "@common/task/treeTask";
 import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
-import { FileTree, FileTreeFile, Status } from "../../task/tree";
-import Tabs from "../components/elements/Tabs";
-import { formatByteSize, joinPath } from "../../util/utils";
-import Button from "../components/elements/Button";
+import { FileTree, FileTreeFile } from "@common/task/tree";
+import Tabs from "@common/ui/components/elements/Tabs";
+import { formatByteSize, joinPath } from "@common/util/utils";
+import Button from "@common/ui/components/elements/Button";
 import { FileTreeComponent, FileTreeFileComponent } from "./FileTreeComponent";
-import PlusMinusInput from "../components/elements/PlusMinusInput";
-import StableHeightContainer from "../components/elements/StableHeightContainer";
-import { getSession } from "../store/sessionStore";
+import PlusMinusInput from "@common/ui/components/elements/PlusMinusInput";
+import StableHeightContainer from "@common/ui/components/elements/StableHeightContainer";
+import { getSession } from "@common/ui/store/sessionStore";
 
 interface TreeTaskDetailsProps {
     treeTask: TreeTask;

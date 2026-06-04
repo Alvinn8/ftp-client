@@ -1,4 +1,4 @@
-import FTPSession from "../../ftp/FTPSession";
+import FTPSession from "@common/ftp/FTPSession";
 import { create } from "zustand";
 
 interface SessionState {

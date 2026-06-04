@@ -6,7 +6,7 @@ import {
     NbtString,
     NbtTag,
     NumberNbtTag,
-} from "../../../nbt/nbtTags";
+} from "@common/nbt/nbtTags";
 import UiNbtArray from "./UiNbtArray";
 import UiNbtCompound from "./UiNbtCompound";
 import UiNbtList from "./UiNbtList";

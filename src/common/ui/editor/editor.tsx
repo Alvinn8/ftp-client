@@ -1,15 +1,15 @@
 import { ungzip as pakoUngzip } from "pako";
-import Dialog from "../../Dialog";
-import FolderEntry from "../../folder/FolderEntry";
-import { readNbt, validateNbtParsing } from "../../nbt/nbt";
-import NbtData from "../../nbt/NbtData";
-import { FileType, getFileType } from "../../util/FileFormats";
-import { addMessage } from "../messages";
+import Dialog from "@common/Dialog";
+import FolderEntry from "@common/folder/FolderEntry";
+import { readNbt, validateNbtParsing } from "@common/nbt/nbt";
+import NbtData from "@common/nbt/NbtData";
+import { FileType, getFileType } from "@common/util/FileFormats";
+import { addMessage } from "@common/ui/messages";
 import { EventEmitter } from "eventemitter3";
-import { CancellationError, formatError } from "../../util/error";
-import { sha256 } from "../../util/utils";
-import { performWithRetry } from "../../task/taskActions";
-import { useSession } from "../store/sessionStore";
+import { CancellationError, formatError } from "@common/util/error";
+import { sha256 } from "@common/util/utils";
+import { performWithRetry } from "@common/task/taskActions";
+import { useSession } from "@common/ui/store/sessionStore";
 
 interface EditorWindow {
     window: Window;

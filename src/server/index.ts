@@ -15,8 +15,8 @@ import {
     packetMap,
     packetNameMap,
     Packets,
-} from "../protocol/packets";
-import VERSION from "../protocol/version";
+} from "@protocol/packets";
+import VERSION from "@protocol/version";
 import { ReadableMemoryStream, WritableMemoryStream } from "./memoryStreams";
 
 // Prevent uncaught promise rejections from crashing the application

@@ -1,13 +1,13 @@
 import React from "react";
-import FolderEntry from "../../../folder/FolderEntry";
-import FTPSession from "../../../ftp/FTPSession";
-import { performWithRetry } from "../../../task/taskActions";
-import { parentdir } from "../../../util/utils";
-import TextInput from "../elements/TextInput";
-import Button from "../elements/Button";
-import { usePath } from "../../store/pathStore";
-import { useSession } from "../../store/sessionStore";
-import { useSelection } from "../../store/selectionStore";
+import FolderEntry from "@common/folder/FolderEntry";
+import FTPSession from "@common/ftp/FTPSession";
+import { performWithRetry } from "@common/task/taskActions";
+import { parentdir } from "@common/util/utils";
+import TextInput from "@common/ui/components/elements/TextInput";
+import Button from "@common/ui/components/elements/Button";
+import { usePath } from "@common/ui/store/pathStore";
+import { useSession } from "@common/ui/store/sessionStore";
+import { useSelection } from "@common/ui/store/selectionStore";
 
 export type UserCacheEntry = {
     name: string;

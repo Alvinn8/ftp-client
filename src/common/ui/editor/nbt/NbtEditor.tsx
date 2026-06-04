@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
-import NbtData, { BedrockEdition, BedrockLevelDat } from "../../../nbt/NbtData";
-import EditorControls from "../EditorControls";
+import { useEffect, useState } from "react";
+import NbtData, { BedrockEdition, BedrockLevelDat } from "@common/nbt/NbtData";
+import EditorControls from "@common/ui/editor/EditorControls";
 import UiNbtTag from "./UiNbtTag";
 import "./NbtEditor.css";
-import { readNbt, sanityCheckNbt, writeNbt } from "../../../nbt/nbt";
-import Dialog from "../../../Dialog";
-import { formatError, unexpectedErrorHandler } from "../../../util/error";
+import { readNbt, sanityCheckNbt, writeNbt } from "@common/nbt/nbt";
+import Dialog from "@common/Dialog";
+import { formatError, unexpectedErrorHandler } from "@common/util/error";
 
 const NbtEditor = () => {
     const [nbt, setNbt] = useState<NbtData>(null);

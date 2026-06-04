@@ -1,12 +1,12 @@
 import "./folderContent.css";
-import React, { useRef } from "react";
-import { usePath } from "../../store/pathStore";
-import { useSession } from "../../store/sessionStore";
-import { useFolderContent } from "../../../ftp/FolderCache";
-import { randomBetween, range } from "../../../util/utils";
+import React from "react";
+import { usePath } from "@common/ui/store/pathStore";
+import { useSession } from "@common/ui/store/sessionStore";
+import { useFolderContent } from "@common/ftp/FolderCache";
+import { randomBetween, range } from "@common/util/utils";
 import FolderEntryComponent from "./FolderEntryComponent";
-import { useSelection } from "../../store/selectionStore";
-import { useRenameStore } from "../../store/renameStore";
+import { useSelection } from "@common/ui/store/selectionStore";
+import { useRenameStore } from "@common/ui/store/renameStore";
 
 const FolderContent: React.FC = () => {
     const session = useSession((state) => state.getSession());

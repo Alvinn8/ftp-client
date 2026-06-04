@@ -1,4 +1,3 @@
-import React from "react";
 import "./tabs.css";
 
 type Tab<T> = {

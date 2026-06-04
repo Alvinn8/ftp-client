@@ -1,7 +1,7 @@
 import { Modal } from "bootstrap";
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { NbtByte, NbtCompound } from "../../../nbt/nbtTags";
+import { NbtByte, NbtCompound } from "@common/nbt/nbtTags";
 
 const EXPERIMENTS = [
     { name: "Beta APIs", key: "gametest" },

@@ -1,5 +1,5 @@
-import { ChunkedUploadResponse } from "../../protocol/packets";
-import FolderEntry from "../folder/FolderEntry";
+import { ChunkedUploadResponse } from "@protocol/packets";
+import FolderEntry from "@common/folder/FolderEntry";
 
 /**
  * A connection to the FTP server. An FTPConnection is used for communicating with

@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import FTPConnection from "../ftp/FTPConnection";
+import FTPConnection from "@common/ftp/FTPConnection";
 
 export default class TestFTPConnection implements FTPConnection {
     connectToFtp = vi.fn();

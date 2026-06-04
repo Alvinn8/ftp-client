@@ -1,4 +1,4 @@
-import { unexpectedErrorHandler } from "../util/error";
+import { unexpectedErrorHandler } from "@common/util/error";
 
 export function ensureAbsolute(path: string) {
     if (!path || !path.startsWith("/")) {

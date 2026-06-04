@@ -1,21 +1,21 @@
 import JSZip from "jszip";
-import Dialog from "../Dialog";
-import download from "../util/download";
-import FolderEntry, { FolderEntryType } from "../folder/FolderEntry";
+import Dialog from "@common/Dialog";
+import download from "@common/util/download";
+import FolderEntry, { FolderEntryType } from "@common/folder/FolderEntry";
 import {
     formatByteSize,
     joinPath,
     parentdir,
     trailingSlash,
-} from "../util/utils";
-import { CancellationError, unexpectedErrorHandler } from "../util/error";
-import { FileTree, FileTreeFile } from "../task/tree";
-import { TreeTask } from "../task/treeTask";
-import { usePath } from "../ui/store/pathStore";
-import { openChosenEditor, openEditor } from "../ui/editor/editor";
-import { getSession } from "../ui/store/sessionStore";
-import { performWithRetry } from "../task/taskActions";
-import { useRenameStore } from "../ui/store/renameStore";
+} from "@common/util/utils";
+import { CancellationError, unexpectedErrorHandler } from "@common/util/error";
+import { FileTree, FileTreeFile } from "@common/task/tree";
+import { TreeTask } from "@common/task/treeTask";
+import { usePath } from "@common/ui/store/pathStore";
+import { openChosenEditor, openEditor } from "@common/ui/editor/editor";
+import { getSession } from "@common/ui/store/sessionStore";
+import { performWithRetry } from "@common/task/taskActions";
+import { useRenameStore } from "@common/ui/store/renameStore";
 import { BlobReader, ZipWriter } from "@zip.js/zip.js";
 
 interface Action {

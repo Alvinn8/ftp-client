@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { FileTree, FileTreeFile, Status } from "../../task/tree";
-import { getIconFor } from "../../util/FileFormats";
-import { filename, formatByteSize } from "../../util/utils";
-import { formatError } from "../../util/error";
-import Button from "../components/elements/Button";
+import { FileTree, FileTreeFile, Status } from "@common/task/tree";
+import { getIconFor } from "@common/util/FileFormats";
+import { filename, formatByteSize } from "@common/util/utils";
+import { formatError } from "@common/util/error";
+import Button from "@common/ui/components/elements/Button";
 
 function statusIcon(status: string) {
     switch (status) {
