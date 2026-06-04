@@ -11,7 +11,8 @@ import { useSession } from "../store/sessionStore";
  */
 const Tasks: React.FC = () => {
     const [treeTasks, setTreeTasks] = React.useState<TreeTask[]>([]);
-    const [treeTaskDetails, setTreeTaskDetails] = React.useState<TreeTask | null>(null);
+    const [treeTaskDetails, setTreeTaskDetails] =
+        React.useState<TreeTask | null>(null);
     const { session } = useSession();
 
     React.useEffect(() => {
@@ -45,10 +46,17 @@ const Tasks: React.FC = () => {
     return (
         <div className="d-flex flex-column gap-2">
             {treeTasks.map((treeTask, index) => (
-                <TreeTaskComponent key={index} treeTask={treeTask} onShowDetails={() => setTreeTaskDetails(treeTask)} />
+                <TreeTaskComponent
+                    key={index}
+                    treeTask={treeTask}
+                    onShowDetails={() => setTreeTaskDetails(treeTask)}
+                />
             ))}
             {treeTaskDetails && (
-                <TreeTaskDetails treeTask={treeTaskDetails} onClose={() => setTreeTaskDetails(null)} />
+                <TreeTaskDetails
+                    treeTask={treeTaskDetails}
+                    onClose={() => setTreeTaskDetails(null)}
+                />
             )}
         </div>
     );

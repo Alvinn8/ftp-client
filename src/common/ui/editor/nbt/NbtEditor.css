@@ -3,8 +3,9 @@
     /* Desktop */
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 100px;
-    grid-template-areas: "nbt-editor"
-                         "controls";
+    grid-template-areas:
+        "nbt-editor"
+        "controls";
 }
 
 .mobile-actions {
@@ -49,7 +50,8 @@
     cursor: default;
 }
 
-.tag-container:hover, .tag-container.selected {
+.tag-container:hover,
+.tag-container.selected {
     background-color: #49e3e360;
 }
 

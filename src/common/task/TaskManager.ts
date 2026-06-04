@@ -26,7 +26,9 @@ export class TaskManager extends EventEmitter {
         // Increase target connection count if there are many files.
         const pool = this.session.getConnectionPool();
         const current = pool.getTargetConnectionCount();
-        const desired = this.suggestedParallelConnections(treeTask.count.totalFiles);
+        const desired = this.suggestedParallelConnections(
+            treeTask.count.totalFiles,
+        );
         if (desired > current) {
             pool.setTargetConnectionCount(desired);
         }
@@ -34,7 +36,7 @@ export class TaskManager extends EventEmitter {
         this.emit("change");
         this.session.tryExecutePoolRequest();
         const remove = () => {
-            this.treeTasks = this.treeTasks.filter(t => t !== treeTask);
+            this.treeTasks = this.treeTasks.filter((t) => t !== treeTask);
             this.emit("change");
         };
         treeTask.on("done", remove);
@@ -84,7 +86,14 @@ export class TaskManager extends EventEmitter {
             this.session.getConnectionPool().closeAllConnections();
             return;
         }
-        this.session.getConnectionPool().refreshConnections().catch(unexpectedErrorHandler("Error refreshing connections in TaskManager"));
+        this.session
+            .getConnectionPool()
+            .refreshConnections()
+            .catch(
+                unexpectedErrorHandler(
+                    "Error refreshing connections in TaskManager",
+                ),
+            );
         this.tickTreeTasks();
         this.session.tryExecutePoolRequest();
     }

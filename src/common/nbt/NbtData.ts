@@ -1,6 +1,5 @@
 import { NbtTag } from "./nbtTags";
 
-
 export default interface NbtData {
     tag: NbtTag;
     editionData: EditionData;

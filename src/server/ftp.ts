@@ -1,5 +1,12 @@
 import * as ftp from "basic-ftp";
-import { ChunkedUpload, chunkedUploads, CORS_HEADERS, largeDownloads, newPacketHandlersMap, ServerPackets } from ".";
+import {
+    ChunkedUpload,
+    chunkedUploads,
+    CORS_HEADERS,
+    largeDownloads,
+    newPacketHandlersMap,
+    ServerPackets,
+} from ".";
 import { Packets, ListReply } from "../protocol/packets";
 import { WritableMemoryStream, ReadableMemoryStream } from "./memoryStreams";
 import { PassThrough } from "stream";
@@ -10,13 +17,15 @@ const handler = ftpPacketHandlers.push;
 
 handler(Packets.Ping, (packet, data, connection) => {
     return {
-        isConnected: connection.client == null ? false : !connection.client.closed
+        isConnected:
+            connection.client == null ? false : !connection.client.closed,
     };
 });
 
 handler(ServerPackets.IsConnected, (packet, data, connection) => {
     return {
-        isConnected: connection.client == null ? false : !connection.client.closed
+        isConnected:
+            connection.client == null ? false : !connection.client.closed,
     };
 });
 
@@ -35,7 +44,7 @@ handler(Packets.ConnectFtp, async (packet, data, connection) => {
         port: data.port,
         user: data.username,
         password: data.password,
-        secure: data.secure
+        secure: data.secure,
     });
 });
 
@@ -47,24 +56,24 @@ handler(Packets.Connect, async (packet, data, connection) => {
         port: data.port,
         user: data.username,
         password: data.password,
-        secure: data.secure
+        secure: data.secure,
     });
     return {
-        readOnly: false
+        readOnly: false,
     };
 });
 
 handler(Packets.List, async (packet, data, connection) => {
     const files = await connection.client.list(data.path);
     let response: ListReply = {
-        files: []
+        files: [],
     };
     for (const file of files) {
         response.files.push({
             name: file.name,
             size: file.size,
             type: file.type,
-            rawModifiedAt: file.rawModifiedAt
+            rawModifiedAt: file.rawModifiedAt,
         });
     }
     return response;
@@ -76,17 +85,17 @@ handler(Packets.Download, async (packet, data, connection) => {
         largeDownloads.push({
             id: downloadId,
             path: data.path,
-            connection
+            connection,
         });
         return {
-            downloadId
+            downloadId,
         };
     } else {
         const stream = new WritableMemoryStream();
         await connection.client.downloadTo(stream, data.path);
         // By this point the stream has finished as we awaited the download method.
         return {
-            data: stream.getBuffer().toString("base64")
+            data: stream.getBuffer().toString("base64"),
         };
     }
 });
@@ -96,7 +105,7 @@ handler(ServerPackets.LargeDownload, async (packet, data, connection) => {
     const size = await connection.client.size(largeDownload.path);
     const downloadHeaders = {
         ...CORS_HEADERS,
-        "Content-Length": size
+        "Content-Length": size,
     };
     response.writeHead(200, downloadHeaders);
 
@@ -130,15 +139,17 @@ handler(Packets.ChunkedUploadStart, (packet, data, connection) => {
         offset: data.startOffset !== null ? data.startOffset : 0,
         pendingChunks: 0,
         maxPendingChunks: 2,
-        error: null
+        error: null,
     } satisfies Partial<ChunkedUpload>;
 
-    const uploadPromise = (data.startOffset !== null
-        ? connection.client.appendFrom(stream, data.path)
-        : connection.client.uploadFrom(stream, data.path)).catch(err => {
-            chunkedUpload.error = err;
-        });
-    
+    const uploadPromise = (
+        data.startOffset !== null
+            ? connection.client.appendFrom(stream, data.path)
+            : connection.client.uploadFrom(stream, data.path)
+    ).catch((err) => {
+        chunkedUpload.error = err;
+    });
+
     chunkedUpload.uploadPromise = uploadPromise;
 
     chunkedUploads.push(chunkedUpload);

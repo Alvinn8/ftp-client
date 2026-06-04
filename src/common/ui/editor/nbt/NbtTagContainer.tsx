@@ -7,20 +7,23 @@ interface Props {
     children: React.ReactNode;
 }
 
-interface State {
-}
+interface State {}
 
 export default class NbtTagContainer extends React.Component<Props, State> {
     state = {
-        selected: false
-    }
+        selected: false,
+    };
 
     render() {
         const handleClick = (e: React.MouseEvent) => {
             e.preventDefault();
             e.stopPropagation();
             removeContextMenu();
-            createContextMenu(this.props.populator || { getEntries: () => [] }, e.clientX, e.clientY);
+            createContextMenu(
+                this.props.populator || { getEntries: () => [] },
+                e.clientX,
+                e.clientY,
+            );
         };
 
         return (
@@ -29,9 +32,7 @@ export default class NbtTagContainer extends React.Component<Props, State> {
                 onClick={handleClick}
                 onContextMenu={handleClick}
             >
-                {this.props.label != null && (
-                    <span>{this.props.label}: </span>
-                )}
+                {this.props.label != null && <span>{this.props.label}: </span>}
                 {this.props.children}
             </div>
         );

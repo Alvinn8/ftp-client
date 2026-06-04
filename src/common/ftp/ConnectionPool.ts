@@ -23,23 +23,33 @@ export class ConnectionPool extends EventEmitter {
     }
 
     hasAvailableConnection(): boolean {
-        return this.connections.some(entry => !entry.locked && entry.connection.websocket.readyState === WebSocket.OPEN);
+        return this.connections.some(
+            (entry) =>
+                !entry.locked &&
+                entry.connection.websocket.readyState === WebSocket.OPEN,
+        );
     }
 
     /**
      * Get a connection from the pool, and lock it for use.
-     * 
+     *
      * @returns An un-locked FTPConnection or null if no available connections.
      */
     getConnectionAndLock(): FTPConnection | null {
         let freeConnectionCount = 0;
         for (const entry of this.connections) {
-            if (!entry.locked && entry.connection.websocket.readyState === WebSocket.OPEN) {
+            if (
+                !entry.locked &&
+                entry.connection.websocket.readyState === WebSocket.OPEN
+            ) {
                 freeConnectionCount++;
                 if (this.connections.length > this.targetConnectionCount) {
                     // If we have more connections than the target, we leave
                     // some free to be closed later.
-                    if (freeConnectionCount <= this.connections.length - this.targetConnectionCount) {
+                    if (
+                        freeConnectionCount <=
+                        this.connections.length - this.targetConnectionCount
+                    ) {
                         continue;
                     }
                 }
@@ -53,7 +63,7 @@ export class ConnectionPool extends EventEmitter {
 
     /**
      * Unlock a connection back to the pool.
-     * 
+     *
      * @param connection The FTPConnection to unlock.
      */
     unlockConnection(connection: FTPConnection): void {
@@ -64,7 +74,9 @@ export class ConnectionPool extends EventEmitter {
                 return;
             }
         }
-        console.warn("Attempted to release a connection that is not in the pool.");
+        console.warn(
+            "Attempted to release a connection that is not in the pool.",
+        );
     }
 
     /**
@@ -73,22 +85,32 @@ export class ConnectionPool extends EventEmitter {
     async refreshConnections() {
         // Remove free connection when there are too many connections.
         if (this.connections.length > this.targetConnectionCount) {
-            for (let i = this.connections.length - 1; i >= this.targetConnectionCount; i--) {
+            for (
+                let i = this.connections.length - 1;
+                i >= this.targetConnectionCount;
+                i--
+            ) {
                 const entry = this.connections[i];
                 if (!entry.locked) {
                     entry.connection.close();
                     this.connections.splice(i, 1);
-                    console.log("Removed connection from pool due to excess count.");
+                    console.log(
+                        "Removed connection from pool due to excess count.",
+                    );
                 }
             }
         }
         // Remove closed connections. Keep connections that are still connecting.
-        this.connections = this.connections.filter(entry => entry.connection.websocket.readyState !== WebSocket.CLOSED);
+        this.connections = this.connections.filter(
+            (entry) =>
+                entry.connection.websocket.readyState !== WebSocket.CLOSED,
+        );
 
         // Create one new connection if we have fewer than the target count.
         if (this.connections.length < this.targetConnectionCount) {
             const now = Date.now();
-            const timeSinceLastAttempt = now - this.lastConnectionCreationAttempt;
+            const timeSinceLastAttempt =
+                now - this.lastConnectionCreationAttempt;
 
             if (this.amountOfConnectionAttempts >= 5) {
                 this.emit("connectionFailed");
@@ -100,10 +122,13 @@ export class ConnectionPool extends EventEmitter {
             // 2. Enough time has passed since the last attempt (to prevent rapid retries)
             // 3. If more than 15 seconds have passed, assume timeout and try again.
             // 4. The maximum amount of connection attempts has not been reached (handled above).
-            if ((!this.isCreatingConnection && timeSinceLastAttempt >= 1000) || timeSinceLastAttempt >= 15_000) {
+            if (
+                (!this.isCreatingConnection && timeSinceLastAttempt >= 1000) ||
+                timeSinceLastAttempt >= 15_000
+            ) {
                 this.isCreatingConnection = true;
                 this.lastConnectionCreationAttempt = now;
-                
+
                 try {
                     const connection = await this.createConnection();
                     if (await connection.isConnected()) {
@@ -120,7 +145,10 @@ export class ConnectionPool extends EventEmitter {
                     // Increment attempt counter and update last attempt time on error.
                     this.amountOfConnectionAttempts++;
                     this.lastConnectionCreationAttempt = Date.now();
-                    console.error("Failed to create new connection for pool:", error);
+                    console.error(
+                        "Failed to create new connection for pool:",
+                        error,
+                    );
                 } finally {
                     this.isCreatingConnection = false;
                 }
@@ -162,7 +190,7 @@ export class ConnectionPool extends EventEmitter {
     /**
      * Donate an existing connection to the pool. The connection must not be
      * used elsewhere.
-     * 
+     *
      * @param connection The connection.
      */
     donateConnection(connection: FTPConnection) {
@@ -175,7 +203,11 @@ export class ConnectionPool extends EventEmitter {
 
     closeAllConnections() {
         if (this.connections.length > this.targetConnectionCount) {
-            for (let i = this.connections.length - 1; i >= this.targetConnectionCount; i--) {
+            for (
+                let i = this.connections.length - 1;
+                i >= this.targetConnectionCount;
+                i--
+            ) {
                 console.log("Closing pool connection.");
                 const entry = this.connections[i];
                 entry.connection.close();

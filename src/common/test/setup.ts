@@ -9,4 +9,4 @@ document.oninput = null; // prevent react-dom from thinking we are an old intern
     OPEN: 1,
     CLOSING: 2,
     CLOSED: 3,
-}
+};

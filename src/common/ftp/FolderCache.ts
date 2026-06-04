@@ -21,7 +21,7 @@ export class FolderCache {
     }
 
     get(path: string): FolderEntry[] | null {
-        window["folderCache"] = this
+        window["folderCache"] = this;
         return this.cache.get(this.normalizePath(path)) || null;
     }
 
@@ -166,7 +166,11 @@ export class FolderCache {
     }
 }
 
-export function useFolderContent(session: FTPSession, path: string, active: boolean = true): FolderEntry[] | null {
+export function useFolderContent(
+    session: FTPSession,
+    path: string,
+    active: boolean = true,
+): FolderEntry[] | null {
     const [entries, setEntries] = useState(() => session.folderCache.get(path));
     useEffect(() => {
         if (!active) {
@@ -191,8 +195,14 @@ export function useFolderContent(session: FTPSession, path: string, active: bool
     return entries;
 }
 
-export function useFolderCacheSize(session: FTPSession, path: string, active: boolean): number | null {
-    const [size, setSize] = useState(() => session.folderCache.getCachedFolderSize(path));
+export function useFolderCacheSize(
+    session: FTPSession,
+    path: string,
+    active: boolean,
+): number | null {
+    const [size, setSize] = useState(() =>
+        session.folderCache.getCachedFolderSize(path),
+    );
     useEffect(() => {
         if (!active) {
             return;

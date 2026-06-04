@@ -1,5 +1,10 @@
 import * as React from "react";
-import { ArrayNbtTag, NbtByteArray, NbtIntArray, NbtLongArray } from "../../../nbt/nbtTags";
+import {
+    ArrayNbtTag,
+    NbtByteArray,
+    NbtIntArray,
+    NbtLongArray,
+} from "../../../nbt/nbtTags";
 
 interface UiNbtArrayProps {
     tag: ArrayNbtTag;
@@ -10,14 +15,22 @@ export default class UiNbtArray extends React.Component<UiNbtArrayProps, {}> {
     render() {
         const length = this.props.tag.length();
         const type = getType(this.props.tag);
-        return <>
-            {this.props.children != null && (
-                <span>
-                    {this.props.children}
-                    <span>{": array of " + length + " " + type + (length == 1 ? "" : "s")}</span>
-                </span>
-            )}
-        </>
+        return (
+            <>
+                {this.props.children != null && (
+                    <span>
+                        {this.props.children}
+                        <span>
+                            {": array of " +
+                                length +
+                                " " +
+                                type +
+                                (length == 1 ? "" : "s")}
+                        </span>
+                    </span>
+                )}
+            </>
+        );
     }
 }
 

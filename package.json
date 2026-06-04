@@ -12,7 +12,8 @@
         "test": "vitest",
         "test:ui": "vitest --ui",
         "lint": "eslint",
-        "check": "tsc"
+        "check": "tsc",
+        "format": "prettier --write ."
     },
     "dependencies": {
         "@sayari/eslint-plugin": "0.0.1-rc.4",

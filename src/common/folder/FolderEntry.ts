@@ -2,8 +2,8 @@ export enum FolderEntryType {
     Unknown = 0,
     File,
     Directory,
-    SymbolicLink
-};
+    SymbolicLink,
+}
 
 /**
  * A file or folder inside a folder.
@@ -15,7 +15,13 @@ export default class FolderEntry {
     public readonly type: FolderEntryType;
     public readonly modifiedAt: string;
 
-    constructor(path: string, name: string, size: number, type: FolderEntryType, modifiedAt: string) {
+    constructor(
+        path: string,
+        name: string,
+        size: number,
+        type: FolderEntryType,
+        modifiedAt: string,
+    ) {
         this.path = path;
         this.name = name;
         this.size = size;

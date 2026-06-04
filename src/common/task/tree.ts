@@ -8,7 +8,7 @@ export enum Status {
     DONE = "DONE",
     /** An error that requires user action to resolve. */
     ERROR = "ERROR",
-    CANCELLED = "CANCELLED"
+    CANCELLED = "CANCELLED",
 }
 
 const ERRORS_TO_NOT_REPORT = ["ConnectionClosedError"]; // "NotReadableError", "NotFoundError" used to be here
@@ -37,7 +37,7 @@ export class FileTree<T = unknown> extends EventEmitter {
     getBeforeStatus(): Status {
         return this.beforeStatus;
     }
-    
+
     getAfterStatus(): Status {
         return this.afterStatus;
     }
@@ -74,7 +74,7 @@ export class FileTree<T = unknown> extends EventEmitter {
     }
 
     removeEntry(entry: FileTree<T> | FileTreeFile<T>) {
-        this.entries = this.entries.filter(e => e !== entry);
+        this.entries = this.entries.filter((e) => e !== entry);
         this.emit("entriesChange", this.entries);
     }
 
@@ -96,17 +96,30 @@ export class FileTree<T = unknown> extends EventEmitter {
      * @param force If true, will retry even if max attempts have been reached.
      */
     retry(force: boolean = false) {
-        if (force && (!this.task || this.getAttempt() >= this.task.maxAttempts)) {
+        if (
+            force &&
+            (!this.task || this.getAttempt() >= this.task.maxAttempts)
+        ) {
             this.setAttempt(1);
         } else {
             this.setAttempt(this.attempt + 1);
         }
-        const newStatus = this.attempt > this.task?.maxAttempts ? Status.ERROR : Status.PENDING;
+        const newStatus =
+            this.attempt > this.task?.maxAttempts
+                ? Status.ERROR
+                : Status.PENDING;
         if (newStatus === Status.ERROR) {
             const formattedError = formatError(this.error);
-            if (!ERRORS_TO_NOT_REPORT.some(text => formattedError.includes(text))) {
+            if (
+                !ERRORS_TO_NOT_REPORT.some((text) =>
+                    formattedError.includes(text),
+                )
+            ) {
                 this.task?.printInfoMessage();
-                reportError(this.error, "Error after " + this.attempt + " attempts for file tree");
+                reportError(
+                    this.error,
+                    "Error after " + this.attempt + " attempts for file tree",
+                );
             }
         } else {
             this.setError(null);
@@ -130,14 +143,14 @@ export class FileTree<T = unknown> extends EventEmitter {
     /**
      * A handler action used when the sub task cannot continue until the user
      * has chosen to retry or skip the sub task.
-     * 
+     *
      * @param message The message to display to the user.
      * @returns The action to return from the handler function.
      */
     errorWithUserAction(message: string): HandlerAction {
         this.setError(new Error(message));
         return {
-            type: "error"
+            type: "error",
         };
     }
 }
@@ -147,14 +160,19 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
     data: T;
     size: number | null;
     readonly parent: FileTree<T>;
-    task?: TreeTask<T>
+    task?: TreeTask<T>;
     private status: Status = Status.PENDING;
     private attempt: number = 1;
     private error?: unknown;
     lastAttempt: Date | null = null;
     currentProgress: { value: number; max: number } | null = null;
 
-    constructor(name: string, data: T, size: number | null, parent: FileTree<T>) {
+    constructor(
+        name: string,
+        data: T,
+        size: number | null,
+        parent: FileTree<T>,
+    ) {
         super();
         this.name = name;
         this.data = data;
@@ -189,11 +207,14 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
      * Retry this file. It is important that an error is set on the file before calling
      * this method, as the error will be reported to the user if the max attempts is
      * exceeded.
-     * 
+     *
      * @param force True to retry despite max attempts being reached.
      */
     retry(force: boolean = false) {
-        if (force && (!this.task || this.getAttempt() >= this.task.maxAttempts)) {
+        if (
+            force &&
+            (!this.task || this.getAttempt() >= this.task.maxAttempts)
+        ) {
             this.setAttempt(1);
         } else {
             this.setAttempt(this.attempt + 1);
@@ -201,9 +222,18 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
         if (this.attempt > this.task?.maxAttempts) {
             this.setStatus(Status.ERROR);
             const formattedError = formatError(this.error);
-            if (!ERRORS_TO_NOT_REPORT.some(text => formattedError.includes(text))) {
+            if (
+                !ERRORS_TO_NOT_REPORT.some((text) =>
+                    formattedError.includes(text),
+                )
+            ) {
                 this.task?.printInfoMessage();
-                reportError(this.error, "Error after " + this.attempt + " attempts for file tree file");
+                reportError(
+                    this.error,
+                    "Error after " +
+                        this.attempt +
+                        " attempts for file tree file",
+                );
             }
         } else {
             this.setStatus(Status.PENDING);
@@ -228,7 +258,11 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
     progress(value: number, max: number) {
         this.currentProgress = { value, max };
         this.emit("progress", this.currentProgress);
-        if (this.task && this.task.count.totalFiles === 1 && this.task.count.totalDirectories === 0) {
+        if (
+            this.task &&
+            this.task.count.totalFiles === 1 &&
+            this.task.count.totalDirectories === 0
+        ) {
             // This is the only file in the task.
             // The task will use this file's progress as the task's progress.
             this.task.updateProgress();
@@ -256,26 +290,26 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
 
     /**
      * Pause the task to resume later.
-     * 
+     *
      * @returns The action to return from the handler function.
      */
     pauseToResume(): HandlerAction {
         return {
-            type: "pause_to_resume"
-        }
+            type: "pause_to_resume",
+        };
     }
 
     /**
      * A handler action used when the sub task cannot continue until the user
      * has chosen to retry or skip the sub task.
-     * 
+     *
      * @param message The message to display to the user.
      * @returns The action to return from the handler function.
      */
     errorWithUserAction(message: string): HandlerAction {
         this.setError(new Error(message));
         return {
-            type: "error"
+            type: "error",
         };
     }
 }

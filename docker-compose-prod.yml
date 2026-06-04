@@ -1,16 +1,16 @@
-version: '3'
+version: "3"
 services:
-  web_prod:
-    build:
-      context: ./
-      dockerfile: web.Dockerfile
-    ports:
-      - "80:80"
-    volumes:
-      - ./public/config.json:/usr/share/nginx/html/config.json
-  server_prod:
-    build:
-      context: ./
-      dockerfile: server.Dockerfile
-    ports:
-      - "8081:8081"
+    web_prod:
+        build:
+            context: ./
+            dockerfile: web.Dockerfile
+        ports:
+            - "80:80"
+        volumes:
+            - ./public/config.json:/usr/share/nginx/html/config.json
+    server_prod:
+        build:
+            context: ./
+            dockerfile: server.Dockerfile
+        ports:
+            - "8081:8081"

@@ -11,7 +11,7 @@ export interface TextEditorData {
     absolutePath: string;
     valueProvider: {
         getValue(): string;
-    }
+    };
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({ EditorComponent }) => {
@@ -28,9 +28,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ EditorComponent }) => {
             absolutePath: data.absolutePath,
             valueProvider: {
                 getValue() {
-                    throw new Error("No valueProvider registered")
-                }
-            }
+                    throw new Error("No valueProvider registered");
+                },
+            },
         });
         setAllowSaving(data.allowSaving);
         document.title = data.title;
@@ -46,15 +46,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ EditorComponent }) => {
     return (
         <div className="text-editor-container">
             <>
-                <EditorControls
-                    allowSaving={allowSaving}
-                    onSave={handleSave}
-                />
+                <EditorControls allowSaving={allowSaving} onSave={handleSave} />
                 <EditorComponent {...data} />
-                <EditorControls
-                    allowSaving={allowSaving}
-                    onSave={handleSave}
-                />
+                <EditorControls allowSaving={allowSaving} onSave={handleSave} />
             </>
         </div>
     );

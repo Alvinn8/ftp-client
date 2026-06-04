@@ -16,6 +16,6 @@ export default class TestFTPConnection implements FTPConnection {
     stopChunkedUpload = vi.fn();
     close = vi.fn();
     websocket = {
-        readyState: WebSocket.OPEN
+        readyState: WebSocket.OPEN,
     };
 }

@@ -5,14 +5,16 @@ import "./ImageEditor.css";
 const ImageEditor: React.FC = () => {
     const ref = useRef<HTMLImageElement>(null);
     const [dimensions, setDimensions] = useState("");
-    
+
     const url = window["imageEditorData"].url;
 
     useEffect(() => {
         if (!ref.current) return;
 
         ref.current.addEventListener("load", () => {
-            setDimensions(ref.current.naturalWidth + "x" + ref.current.naturalHeight);
+            setDimensions(
+                ref.current.naturalWidth + "x" + ref.current.naturalHeight,
+            );
         });
     }, [ref.current]);
 

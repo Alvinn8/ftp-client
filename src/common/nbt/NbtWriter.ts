@@ -1,9 +1,9 @@
 /**
  * A writer for reading binary data of different data types to a Uint8Array.
- * 
+ *
  * Used for writing nbt.
  */
- export default class NbtWriter {
+export default class NbtWriter {
     private data: DataView;
     bytes: Uint8Array;
     littleEndian: boolean;
@@ -18,7 +18,7 @@
 
     /**
      * Get the current index and then increment it by inc.
-     * 
+     *
      * @param inc The value to increment by.
      * @returns The index before adding.
      */
@@ -30,10 +30,10 @@
 
     /**
      * Ensure the writer buffer fits the specified additional bytes.
-     * 
+     *
      * @param size The additional bytes.
      */
-    private ensureSize(size: number)  {
+    private ensureSize(size: number) {
         const requiredLength = this.index + size;
         if (this.bytes.buffer.byteLength < requiredLength) {
             const oldLength = this.bytes.byteLength;
@@ -42,8 +42,8 @@
                 if (newLength < 100) {
                     newLength = 100;
                 }
-				newLength *= 2;
-			}
+                newLength *= 2;
+            }
             // console.log("Expanding buffer " + oldLength + " --> " + newLength);
             const newBytes = new Uint8Array(newLength);
             // Write old data to new

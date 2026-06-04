@@ -18,7 +18,7 @@ export function addMessage(message: Message) {
     const messageArray = messages.state.messages;
     messageArray.push(message);
     messages.setState({
-        messages: messageArray
+        messages: messageArray,
     });
     if (message.stayForMillis) {
         setTimeout(() => {
@@ -27,7 +27,7 @@ export function addMessage(message: Message) {
             if (index >= 0) {
                 messageArray.splice(index, 1);
                 messages.setState({
-                    messages: messageArray
+                    messages: messageArray,
                 });
             }
         }, message.stayForMillis);
@@ -48,7 +48,7 @@ export default class Messages extends React.Component<{}, MessagesState> {
         super(props);
         messages = this;
         this.state = {
-            messages: []
+            messages: [],
         };
     }
 
@@ -60,7 +60,7 @@ export default class Messages extends React.Component<{}, MessagesState> {
             const messages = this.state.messages.slice();
             messages.splice(index, 1);
             this.setState({
-                messages
+                messages,
             });
         }
     }
@@ -71,8 +71,14 @@ export default class Messages extends React.Component<{}, MessagesState> {
                 <div className="container">
                     {this.state.messages.map((value, index) => {
                         return (
-                            <div key={index} className={ "alert alert-dismissible alert-" + value.color }>
-                                <span>{ value.message }</span>
+                            <div
+                                key={index}
+                                className={
+                                    "alert alert-dismissible alert-" +
+                                    value.color
+                                }
+                            >
+                                <span>{value.message}</span>
                                 <button
                                     type="button"
                                     className="btn-close"

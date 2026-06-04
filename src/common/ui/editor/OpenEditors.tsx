@@ -6,10 +6,16 @@ const OpenEditors = () => {
     const [editorWindows, setEditorWindows] = useState<Window[]>([]);
 
     editorWindowsStore.on("change", (editorWindows) => {
-        setEditorWindows(editorWindows.map(editorWindow => editorWindow.window));
+        setEditorWindows(
+            editorWindows.map((editorWindow) => editorWindow.window),
+        );
     });
 
-    function accessWindowVariable<T>(window: Window, varName: string, defaultValue: T): T | undefined {
+    function accessWindowVariable<T>(
+        window: Window,
+        varName: string,
+        defaultValue: T,
+    ): T | undefined {
         try {
             const value = (window as any)[varName];
             return value as T;
@@ -18,7 +24,9 @@ const OpenEditors = () => {
         }
     }
 
-    const openWindows = [...editorWindows].filter(wind => !accessWindowVariable(wind, "closed", true));
+    const openWindows = [...editorWindows].filter(
+        (wind) => !accessWindowVariable(wind, "closed", true),
+    );
 
     if (openWindows.length === 0) {
         return null;
@@ -33,8 +41,18 @@ const OpenEditors = () => {
             </div>
             <ul className="list-group list-group-flush">
                 {openWindows.map((editorWindow, index) => (
-                    <li key={index} onClick={() => editorWindow.focus()} className={"list-group-item cursor-pointer" + darkThemeClasses}>
-                        { accessWindowVariable(editorWindow, "name", "Unnamed Window") }
+                    <li
+                        key={index}
+                        onClick={() => editorWindow.focus()}
+                        className={
+                            "list-group-item cursor-pointer" + darkThemeClasses
+                        }
+                    >
+                        {accessWindowVariable(
+                            editorWindow,
+                            "name",
+                            "Unnamed Window",
+                        )}
                     </li>
                 ))}
             </ul>

@@ -1,6 +1,26 @@
 import NbtReader from "./NbtReader";
-import NbtData, { BedrockEdition, BedrockLevelDat, Compression, EditionData } from "./NbtData";
-import { NbtByte, NbtByteArray, NbtCompound, NbtDouble, NbtEnd, NbtFloat, NbtInt, NbtIntArray, NbtList, NbtLong, NbtLongArray, NbtShort, NbtString, NbtTag } from "./nbtTags";
+import NbtData, {
+    BedrockEdition,
+    BedrockLevelDat,
+    Compression,
+    EditionData,
+} from "./NbtData";
+import {
+    NbtByte,
+    NbtByteArray,
+    NbtCompound,
+    NbtDouble,
+    NbtEnd,
+    NbtFloat,
+    NbtInt,
+    NbtIntArray,
+    NbtList,
+    NbtLong,
+    NbtLongArray,
+    NbtShort,
+    NbtString,
+    NbtTag,
+} from "./nbtTags";
 import NbtWriter from "./NbtWriter";
 import { inflate, gzip, ungzip, deflate } from "pako";
 
@@ -11,16 +31,15 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     let editionData: EditionData;
     let tag: NbtTag;
 
-    if (data[0] == 0x1F && data[1] == 0x8B) {
+    if (data[0] == 0x1f && data[1] == 0x8b) {
         // gzip magic number 1F 8B
         compression = {
             type: "gzip",
-            headerOperatingSystem: data[9]
+            headerOperatingSystem: data[9],
         };
         console.log("OS in gzip header is:", compression.headerOperatingSystem);
         data = ungzip(data);
-    }
-    else if (data[0] == 0x78) {
+    } else if (data[0] == 0x78) {
         // zlib magic number 0x78
         compression = { type: "zlib" };
         data = inflate(data);
@@ -39,7 +58,7 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
                 edition: "bedrock",
                 littleEndian: true,
                 isLevelDat: true,
-                headerVersion
+                headerVersion,
             } as BedrockLevelDat;
             tag = attemptReadNbtTag(reader);
             if (reader.isAtEnd()) {
@@ -51,7 +70,7 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     // Java edition?
     editionData = {
         edition: "java",
-        littleEndian: false
+        littleEndian: false,
     };
     reader.littleEndian = false;
     reader.index = 0;
@@ -63,7 +82,7 @@ export async function readNbt(blob: Blob): Promise<NbtData> {
     // Bedrock edition?
     editionData = {
         edition: "bedrock",
-        littleEndian: true
+        littleEndian: true,
     };
     reader.littleEndian = true;
     reader.index = 0;
@@ -89,44 +108,60 @@ function attemptReadNbtTag(reader: NbtReader) {
 
 export function getTagFromId(id: number): NbtTag {
     switch (id) {
-        case 0: return NbtEnd;
-        case 1: return new NbtByte();
-        case 2: return new NbtShort();
-        case 3: return new NbtInt();
-        case 4: return new NbtLong();
-        case 5: return new NbtFloat();
-        case 6: return new NbtDouble();
-        case 7: return new NbtByteArray();
-        case 8: return new NbtString();
-        case 9: return new NbtList();
-        case 10: return new NbtCompound();
-        case 11: return new NbtIntArray();
-        case 12: return new NbtLongArray();
-    
+        case 0:
+            return NbtEnd;
+        case 1:
+            return new NbtByte();
+        case 2:
+            return new NbtShort();
+        case 3:
+            return new NbtInt();
+        case 4:
+            return new NbtLong();
+        case 5:
+            return new NbtFloat();
+        case 6:
+            return new NbtDouble();
+        case 7:
+            return new NbtByteArray();
+        case 8:
+            return new NbtString();
+        case 9:
+            return new NbtList();
+        case 10:
+            return new NbtCompound();
+        case 11:
+            return new NbtIntArray();
+        case 12:
+            return new NbtLongArray();
+
         default:
             throw new Error("Unknown tag type: " + id);
     }
 }
 
 export function getIdFromTag(tag: NbtTag) {
-    if (tag == NbtEnd)                  return 0;
-    if (tag instanceof NbtByte)         return 1;
-    if (tag instanceof NbtShort)        return 2;
-    if (tag instanceof NbtInt)          return 3;
-    if (tag instanceof NbtLong)         return 4;
-    if (tag instanceof NbtFloat)        return 5;
-    if (tag instanceof NbtDouble)       return 6;
-    if (tag instanceof NbtByteArray)    return 7;
-    if (tag instanceof NbtString)       return 8;
-    if (tag instanceof NbtList)         return 9;
-    if (tag instanceof NbtCompound)     return 10;
-    if (tag instanceof NbtIntArray)     return 11;
-    if (tag instanceof NbtLongArray)    return 12;
+    if (tag == NbtEnd) return 0;
+    if (tag instanceof NbtByte) return 1;
+    if (tag instanceof NbtShort) return 2;
+    if (tag instanceof NbtInt) return 3;
+    if (tag instanceof NbtLong) return 4;
+    if (tag instanceof NbtFloat) return 5;
+    if (tag instanceof NbtDouble) return 6;
+    if (tag instanceof NbtByteArray) return 7;
+    if (tag instanceof NbtString) return 8;
+    if (tag instanceof NbtList) return 9;
+    if (tag instanceof NbtCompound) return 10;
+    if (tag instanceof NbtIntArray) return 11;
+    if (tag instanceof NbtLongArray) return 12;
     throw new Error("Unknown tag: " + tag);
 }
 
 export function writeNbt(nbt: NbtData): Blob {
-    const writer = new NbtWriter(new Uint8Array(100), nbt.editionData.littleEndian);
+    const writer = new NbtWriter(
+        new Uint8Array(100),
+        nbt.editionData.littleEndian,
+    );
 
     // Write extra data for bedrock edition level.dat
     let bedrockLevelData: BedrockLevelDat;
@@ -191,7 +226,11 @@ export function writeNbt(nbt: NbtData): Blob {
  * Validate that the nbt was parsed correctly and that it can be serialized
  * correctly back to the same bytes that were originally read.
  */
-export async function validateNbtParsing(originalBlob: Blob, nbt: NbtData, strict: boolean = false): Promise<boolean> {
+export async function validateNbtParsing(
+    originalBlob: Blob,
+    nbt: NbtData,
+    strict: boolean = false,
+): Promise<boolean> {
     const serializedNbt = writeNbt(nbt);
     const originalBytes = new Uint8Array(await originalBlob.arrayBuffer());
     const serializedBytes = new Uint8Array(await serializedNbt.arrayBuffer());
@@ -206,12 +245,23 @@ export async function validateNbtParsing(originalBlob: Blob, nbt: NbtData, stric
             // Let's try inflating the file and see if they are equal when inflated.
             const inflatedOriginalBytes = inflate(originalBytes);
             const inflatedSerializedBytes = inflate(serializedBytes);
-            if (arrayBuffersEqual(inflatedOriginalBytes, inflatedSerializedBytes)) {
-                console.log("Passed test after inflating with compression " + compressionName);
+            if (
+                arrayBuffersEqual(
+                    inflatedOriginalBytes,
+                    inflatedSerializedBytes,
+                )
+            ) {
+                console.log(
+                    "Passed test after inflating with compression " +
+                        compressionName,
+                );
                 return true;
             }
         } catch (err) {
-            console.log("Failed to inflate with compression " + compressionName + ": ", err);
+            console.log(
+                "Failed to inflate with compression " + compressionName + ": ",
+                err,
+            );
         }
     }
     console.log("Failed test with compression " + compressionName);
@@ -219,7 +269,10 @@ export async function validateNbtParsing(originalBlob: Blob, nbt: NbtData, stric
 }
 
 function arrayBuffersEqual(array1: Uint8Array, array2: Uint8Array): boolean {
-    return array1.byteLength == array2.byteLength && array1.every((value, index) => value == array2[index]);
+    return (
+        array1.byteLength == array2.byteLength &&
+        array1.every((value, index) => value == array2[index])
+    );
 }
 
 /**
@@ -233,7 +286,9 @@ export async function sanityCheckNbt(blob: Blob, nbt: NbtData): Promise<void> {
     try {
         parsedNbt = await readNbt(blob);
     } catch (err) {
-        throw new Error("The serialized NBT file is not valid NBT.", { cause: err });
+        throw new Error("The serialized NBT file is not valid NBT.", {
+            cause: err,
+        });
     }
 
     // We do not have a way to compare the two nbt objects, so we just check that

@@ -1,11 +1,14 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 
 interface TextEditorControlsProps {
     allowSaving: boolean;
     onSave?: () => void;
 }
 
-const EditorControls: React.FC<TextEditorControlsProps> = ({ allowSaving, onSave }) => {
+const EditorControls: React.FC<TextEditorControlsProps> = ({
+    allowSaving,
+    onSave,
+}) => {
     const close = () => {
         if (window.opener) {
             // When the editor is created using a window, it can simply be closed using
@@ -38,13 +41,20 @@ const EditorControls: React.FC<TextEditorControlsProps> = ({ allowSaving, onSave
 
     return (
         <div className="p-3">
-            <button className="btn btn-secondary" onClick={close}>Close</button>
+            <button className="btn btn-secondary" onClick={close}>
+                Close
+            </button>
             {allowSaving && (
                 <button
                     className="btn btn-primary float-end"
                     onClick={save}
-                    disabled={saving}>
-                    {saving ? <div className="spinner-border" role="status" /> : <span>Save</span>}
+                    disabled={saving}
+                >
+                    {saving ? (
+                        <div className="spinner-border" role="status" />
+                    ) : (
+                        <span>Save</span>
+                    )}
                 </button>
             )}
         </div>

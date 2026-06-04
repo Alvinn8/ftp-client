@@ -4,7 +4,11 @@ import { isDarkTheme } from "../../theme";
 import { TextEditorData } from "./TextEditor";
 import { unexpectedErrorHandler } from "../../../error";
 
-const MonacoEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvider }) => {
+const MonacoEditor: React.FC<TextEditorData> = ({
+    text,
+    absolutePath,
+    valueProvider,
+}) => {
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -13,12 +17,12 @@ const MonacoEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvi
             const model = monacoEditor.createModel(
                 text,
                 null, // auto detect language from uri (file extention)
-                uri
+                uri,
             );
 
             const editor = monacoEditor.create(ref.current, {
                 model: model,
-                theme: isDarkTheme() ? "vs-dark" : "vs"
+                theme: isDarkTheme() ? "vs-dark" : "vs",
             });
 
             valueProvider.getValue = () => editor.getValue();
@@ -27,20 +31,47 @@ const MonacoEditor: React.FC<TextEditorData> = ({ text, absolutePath, valueProvi
             window.addEventListener("resize", onResize);
 
             if (absolutePath.endsWith(".sk")) {
-                import("./syntax/skript-syntax").then(({ registerSkriptLanguage }) => {
-                    registerSkriptLanguage(editor)
-                        .catch(unexpectedErrorHandler("Failed to Register skript syntax highlighting"));
-                }).catch(unexpectedErrorHandler("Failed to Load skript syntax highlighting"));
+                import("./syntax/skript-syntax")
+                    .then(({ registerSkriptLanguage }) => {
+                        registerSkriptLanguage(editor).catch(
+                            unexpectedErrorHandler(
+                                "Failed to Register skript syntax highlighting",
+                            ),
+                        );
+                    })
+                    .catch(
+                        unexpectedErrorHandler(
+                            "Failed to Load skript syntax highlighting",
+                        ),
+                    );
             } else if (absolutePath.endsWith(".mcfunction")) {
-                import("./syntax/mcfunction-syntax").then(({ registerMcfunctionLanguage }) => {
-                    registerMcfunctionLanguage(editor)
-                        .catch(unexpectedErrorHandler("Failed to Register mcfunction syntax highlighting"));
-                }).catch(unexpectedErrorHandler("Failed to Load mcfunction syntax highlighting"));
+                import("./syntax/mcfunction-syntax")
+                    .then(({ registerMcfunctionLanguage }) => {
+                        registerMcfunctionLanguage(editor).catch(
+                            unexpectedErrorHandler(
+                                "Failed to Register mcfunction syntax highlighting",
+                            ),
+                        );
+                    })
+                    .catch(
+                        unexpectedErrorHandler(
+                            "Failed to Load mcfunction syntax highlighting",
+                        ),
+                    );
             } else if (absolutePath.endsWith(".toml")) {
-                import("./syntax/toml-syntax").then(({ registerTomlLanguage }) => {
-                    registerTomlLanguage(editor)
-                        .catch(unexpectedErrorHandler("Failed to Register toml syntax highlighting"));
-                }).catch(unexpectedErrorHandler("Failed to Load toml syntax highlighting"));
+                import("./syntax/toml-syntax")
+                    .then(({ registerTomlLanguage }) => {
+                        registerTomlLanguage(editor).catch(
+                            unexpectedErrorHandler(
+                                "Failed to Register toml syntax highlighting",
+                            ),
+                        );
+                    })
+                    .catch(
+                        unexpectedErrorHandler(
+                            "Failed to Load toml syntax highlighting",
+                        ),
+                    );
             }
 
             return () => {

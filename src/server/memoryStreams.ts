@@ -4,7 +4,9 @@ export class WritableMemoryStream extends Writable {
     private buffer: Buffer = Buffer.from("");
 
     _write(chunk: any, encoding: BufferEncoding, callback: Function) {
-        const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding);
+        const buffer = Buffer.isBuffer(chunk)
+            ? chunk
+            : Buffer.from(chunk, encoding);
         this.buffer = Buffer.concat([this.buffer, buffer]);
         callback();
     }

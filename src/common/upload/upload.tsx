@@ -14,21 +14,21 @@ export namespace UploadSupport {
      * Whether folders can be uploaded from file inputs.
      */
     export const inputFolderUpload =
-    ("webkitdirectory" in HTMLInputElement.prototype
-    || "mozdirectory" in HTMLInputElement.prototype
-    || "directory" in HTMLInputElement.prototype)
-    && ("webkitRelativePath" in File.prototype
-    || "relativePath" in File.prototype);
+        ("webkitdirectory" in HTMLInputElement.prototype ||
+            "mozdirectory" in HTMLInputElement.prototype ||
+            "directory" in HTMLInputElement.prototype) &&
+        ("webkitRelativePath" in File.prototype ||
+            "relativePath" in File.prototype);
 
     /**
      * Whether folders can be drag and drop'ed with the drop event.
      */
     export const dropFolderUpload =
-        "DataTransfer" in window
-    && "items" in DataTransfer.prototype
-    && "DataTransferItemList" in window
-    && "DataTransferItem" in window
-    && "webkitGetAsEntry" in DataTransferItem.prototype;
+        "DataTransfer" in window &&
+        "items" in DataTransfer.prototype &&
+        "DataTransferItemList" in window &&
+        "DataTransferItem" in window &&
+        "webkitGetAsEntry" in DataTransferItem.prototype;
 }
 
 // Drag and drop
@@ -44,20 +44,33 @@ function isZipFile(fileName: string) {
  *
  * @param event The drag and drop event.
  */
-export async function handleOnDrop(event: React.DragEvent<HTMLDivElement> | DragEvent) {
+export async function handleOnDrop(
+    event: React.DragEvent<HTMLDivElement> | DragEvent,
+) {
     event.preventDefault();
     console.log("Drag and drop");
-    
+
     // We have to get the uploads sync, otherwise they disappear.
     const uploads = await getDropEventFiles(event);
 
     // Check if the user uploaded a zip file
-    if (Object.keys(uploads.directories).length == 0 && uploads.files.length == 1 && isZipFile(uploads.files[0].name)) {
+    if (
+        Object.keys(uploads.directories).length == 0 &&
+        uploads.files.length == 1 &&
+        isZipFile(uploads.files[0].name)
+    ) {
         // The user has uploaded a zip file
         const file = uploads.files[0];
-        const extractAndUpload = await Dialog.confirm("Extract and upload?", "Do you want to extract the contents of " + file.name + " and upload the contents, or do you want to upload the zip file?", "Upload zip file", "Extract and upload contents");
+        const extractAndUpload = await Dialog.confirm(
+            "Extract and upload?",
+            "Do you want to extract the contents of " +
+                file.name +
+                " and upload the contents, or do you want to upload the zip file?",
+            "Upload zip file",
+            "Extract and upload contents",
+        );
         if (extractAndUpload) {
-            console.log("Zip upload via drag and drop.")
+            console.log("Zip upload via drag and drop.");
             await handleZip(file);
             return;
         }
@@ -69,11 +82,13 @@ export async function handleOnDrop(event: React.DragEvent<HTMLDivElement> | Drag
 
 /**
  * Get the uploads from a drop event.
- * 
+ *
  * @param event The drop event.
  * @returns The uploads.
  */
-async function getDropEventFiles(event: React.DragEvent | DragEvent): Promise<Directory> {
+async function getDropEventFiles(
+    event: React.DragEvent | DragEvent,
+): Promise<Directory> {
     const root = new Directory();
     const promises: Promise<void>[] = [];
     // Uploads from the drag and drop event have to be used exactly when the event
@@ -101,23 +116,26 @@ async function getDropEventFiles(event: React.DragEvent | DragEvent): Promise<Di
  * Handle an uploaded FileSystemEntry and extract the files to the {@link Directory}.
  * Will also handle subdirectories and add them to the directory and handle their
  * files and folders recursively.
- * 
+ *
  * @param item The item to handle.
  * @param directory The directory to extract the upload to.
  */
 async function handleItem(item: FileSystemEntry, directory: Directory) {
     if (item.isFile) {
-        const file = await (new Promise<File>(function(resolve, reject) {
+        const file = await new Promise<File>(function (resolve, reject) {
             (item as FileSystemFileEntry).file(resolve, reject);
-        }));
+        });
         directory.files.push(file);
     } else if (item.isDirectory) {
         const reader = (item as FileSystemDirectoryEntry).createReader();
         const entries: FileSystemEntry[] = [];
         while (true) {
-            const readEntries = await (new Promise<FileSystemEntry[]>(function(resolve, reject) {
+            const readEntries = await new Promise<FileSystemEntry[]>(function (
+                resolve,
+                reject,
+            ) {
                 reader.readEntries(resolve, reject);
-            }));
+            });
             if (readEntries.length > 0) {
                 entries.push(...readEntries);
             } else {
@@ -166,7 +184,9 @@ export function handleInputUpload(event: InputEvent) {
     if (zipUploadMode) {
         const file = event.target.files[0];
         if (file != null) {
-            handleZip(file).catch(unexpectedErrorHandler("Failed to upload zip file"));
+            handleZip(file).catch(
+                unexpectedErrorHandler("Failed to upload zip file"),
+            );
         }
         return;
     }
@@ -184,19 +204,20 @@ export function handleInputUpload(event: InputEvent) {
                 Dialog.message(
                     "Unsupported browser",
                     "Your web browser does not properly support uploading multiple files. " +
-                    "Either upload files one by one or choose to upload and extract a zip file. " +
-                    "Alternatively, try a different web browser or upload from a computer."
+                        "Either upload files one by one or choose to upload and extract a zip file. " +
+                        "Alternatively, try a different web browser or upload from a computer.",
                 );
                 return;
             }
         }
         const parts = path.split("/");
         let directory = root;
-        
+
         let i = 0;
         let part = parts[i];
         while (part) {
-            if (!directory.directories.has(part)) directory.directories.set(part, new Directory());
+            if (!directory.directories.has(part))
+                directory.directories.set(part, new Directory());
             directory = directory.directories.get(part)!;
 
             i++;
@@ -222,7 +243,7 @@ export const fileUpload = document.createElement("input");
  */
 export const directoryUpload = document.createElement("input");
 
-(function() {
+(function () {
     fileUpload.type = "file";
     fileUpload.multiple = true;
     fileUpload.style.display = "none";
@@ -244,7 +265,7 @@ export const directoryUpload = document.createElement("input");
 
 /**
  * Get the uploads from a zip file.
- * 
+ *
  * @param zip The JSZip object.
  * @returns The uploads.
  */
@@ -264,10 +285,13 @@ async function getUploadsFromZip(zip: JSZip): Promise<Directory> {
             let part = parts[i];
             // For directories we wanna loop trough all parts and create the directories.
             // For files we don't want to loop trough the last part as that is the file name.
-            const stopPoint = zipObject.dir ? parts.length - 1 : parts.length - 2;
+            const stopPoint = zipObject.dir
+                ? parts.length - 1
+                : parts.length - 2;
 
             while (part != null) {
-                if (!directory.directories.has(part)) directory.directories.set(part, new Directory());
+                if (!directory.directories.has(part))
+                    directory.directories.set(part, new Directory());
                 directory = directory.directories.get(part)!;
 
                 i++;
@@ -306,7 +330,8 @@ async function handleZip(file: File) {
         Dialog.message(
             "Failed to load zip file",
             "Are you sure the zip file is a zip file? If it another type of archive " +
-            "(such as a .rar file) you cannot just rename it and change it to .zip. The error is: " + formatError(err)
+                "(such as a .rar file) you cannot just rename it and change it to .zip. The error is: " +
+                formatError(err),
         );
         return;
     }

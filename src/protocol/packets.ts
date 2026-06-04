@@ -18,11 +18,11 @@ export interface ConnectSftpData {
 export type ConnectData = {
     protocol: string;
     [key: string]: any;
-}
+};
 
 export type ConnectReply = {
     readOnly: boolean;
-}
+};
 
 export interface ErrorReply {
     action: "error";
@@ -33,7 +33,7 @@ export interface ErrorReply {
 
 export interface PingReply {
     isConnected: boolean;
-};
+}
 
 export interface CdData {
     path: string;
@@ -51,7 +51,7 @@ export interface ListData {
 }
 
 export interface ListReply {
-    files: FileInfo[]
+    files: FileInfo[];
 }
 
 export interface PathData {
@@ -112,7 +112,14 @@ export interface ChunkedUploadData {
  * hijack: The upload was started by a different connection than this one.
  * error: A previous chunk failed to upload to the server.
  */
-export type ChunkedUploadStatus = "success" | "end" | "desync" | "404" | "malsized" | "hijack" | "error";
+export type ChunkedUploadStatus =
+    | "success"
+    | "end"
+    | "desync"
+    | "404"
+    | "malsized"
+    | "hijack"
+    | "error";
 export interface ChunkedUploadResponse {
     status: ChunkedUploadStatus;
     error?: string;
@@ -148,15 +155,25 @@ export namespace Packets {
     /** @deprecated */
     export const ConnectFtp = new Packet<ConnectFtpData, void>("connect_ftp");
     /** @deprecated */
-    export const ConnectSftp = new Packet<ConnectSftpData, void>("connect_sftp");
+    export const ConnectSftp = new Packet<ConnectSftpData, void>(
+        "connect_sftp",
+    );
     export const List = new Packet<ListData, ListReply>("list");
     export const Download = new Packet<DownloadData, DownloadReply>("download");
     export const Upload = new Packet<UploadData, void>("upload");
     export const Mkdir = new Packet<PathData, void>("mkdir");
     export const Rename = new Packet<RenameData, void>("rename");
     export const Delete = new Packet<PathData, void>("delete");
-    export const ChunkedUploadStart = new Packet<ChunkedUploadStartData, ChunkedUploadStartResponse>("chunked_upload_start");
-    export const ChunkedUpload = new Packet<ChunkedUploadData, ChunkedUploadResponse>("chunked_upload");
-    export const ChunkedUploadStop = new Packet<ChunkedUploadStopData, void>("chunked_upload_stop");
+    export const ChunkedUploadStart = new Packet<
+        ChunkedUploadStartData,
+        ChunkedUploadStartResponse
+    >("chunked_upload_start");
+    export const ChunkedUpload = new Packet<
+        ChunkedUploadData,
+        ChunkedUploadResponse
+    >("chunked_upload");
+    export const ChunkedUploadStop = new Packet<ChunkedUploadStopData, void>(
+        "chunked_upload_stop",
+    );
     export const Connect = new Packet<ConnectData, ConnectReply>("connect");
 }

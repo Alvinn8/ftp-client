@@ -47,14 +47,16 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
                     unexpectedErrorHandler("Failed to open"),
                 );
             },
-            alternatives: [{
-                label: "Open as",
-                onClick: () => {
-                    openChosenEditor(selectedEntries[0]).catch(
-                        unexpectedErrorHandler("Failed to open"),
-                    );
-                }
-            }]
+            alternatives: [
+                {
+                    label: "Open as",
+                    onClick: () => {
+                        openChosenEditor(selectedEntries[0]).catch(
+                            unexpectedErrorHandler("Failed to open"),
+                        );
+                    },
+                },
+            ],
         });
     }
     if (oneFile) {
@@ -62,7 +64,7 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
             icon: "download",
             label: "Download",
             onClick: () => {
-                downloadFolderEntry(selectedEntries[0])
+                downloadFolderEntry(selectedEntries[0]);
             },
         });
     } else {
@@ -71,9 +73,9 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
             label: "Download",
             onClick: () => {
                 downloadAsZip(selectedEntries).catch(
-                    unexpectedErrorHandler("Failed to download")
-                )
-            }
+                    unexpectedErrorHandler("Failed to download"),
+                );
+            },
         });
     }
     if (one) {
@@ -90,19 +92,23 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
         label: "Delete",
         onClick: () => {
             deleteFolderEntries(selectedEntries).catch(
-                unexpectedErrorHandler("Failed to delete")
+                unexpectedErrorHandler("Failed to delete"),
             );
-        }
+        },
     });
     return actions;
 }
 
 export function downloadFolderEntry(entry: FolderEntry) {
     console.log("Download one folder entry");
-    performWithRetry(getSession(), parentdir(entry.path), async (connection) => {
-        const blob = await connection.download(entry);
-        download(blob, entry.name);
-    }).catch((err) => {
+    performWithRetry(
+        getSession(),
+        parentdir(entry.path),
+        async (connection) => {
+            const blob = await connection.download(entry);
+            download(blob, entry.name);
+        },
+    ).catch((err) => {
         if (err instanceof CancellationError) {
             return;
         }
@@ -114,19 +120,27 @@ export function downloadFolderEntry(entry: FolderEntry) {
  * Get the directory that the list of entries are in.
  *
  * The entries must be in the same directory.
- * 
+ *
  * @param entries The entries.
  * @returns The directory path.
  */
 function getDirectoryPath(entries: FolderEntry[]) {
     let dir: string | null = null;
     for (const entry of entries) {
-        const dir0 = entry.path.substring(0, entry.path.length - entry.name.length - 1);
+        const dir0 = entry.path.substring(
+            0,
+            entry.path.length - entry.name.length - 1,
+        );
         if (dir == null) {
             dir = dir0;
         }
         if (dir != dir0) {
-            throw new Error("Multiple entries were from different directories. dir: " + dir + ", dir0: " + dir0);
+            throw new Error(
+                "Multiple entries were from different directories. dir: " +
+                    dir +
+                    ", dir0: " +
+                    dir0,
+            );
         }
     }
     if (dir == null) {
@@ -135,17 +149,28 @@ function getDirectoryPath(entries: FolderEntry[]) {
     return dir;
 }
 
-async function countEntriesToFileTree(entries: FolderEntry[], title: string, subTitle?: (treeTask: TreeTask) => string): Promise<[FileTree, TreeTask]> {
+async function countEntriesToFileTree(
+    entries: FolderEntry[],
+    title: string,
+    subTitle?: (treeTask: TreeTask) => string,
+): Promise<[FileTree, TreeTask]> {
     let commonParent = parentdir(entries[0].path);
     // Create a shallow file tree
     const rootFileTree = new FileTree(commonParent);
     for (const entry of entries) {
         const parent = parentdir(entry.path);
         if (parent !== commonParent) {
-            throw new Error("Entries are not in the same directory. Common parent: " + commonParent + ", entry parent: " + parent);
+            throw new Error(
+                "Entries are not in the same directory. Common parent: " +
+                    commonParent +
+                    ", entry parent: " +
+                    parent,
+            );
         }
-       if (entry.isFile()) {
-            rootFileTree.addEntry(new FileTreeFile(entry.name, null, entry.size, rootFileTree));
+        if (entry.isFile()) {
+            rootFileTree.addEntry(
+                new FileTreeFile(entry.name, null, entry.size, rootFileTree),
+            );
         } else if (entry.isDirectory()) {
             rootFileTree.addEntry(new FileTree(entry.path));
         }
@@ -153,73 +178,107 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string, sub
     // Start a tree task that will add to the file tree
     return await new Promise<[FileTree, TreeTask]>((resolve, reject) => {
         const session = getSession();
-        let countUntilMoreConnections = 5 * session.getConnectionPool().getTargetConnectionCount();
-        const task = new TreeTask(session, rootFileTree, {
-            processRootDirectory: false,
-            progress: false,
-            title: () => title,
-            subTitle: subTitle ?? ((treeTask) => (`Found ${treeTask.count.completedFiles} file` +
-                (treeTask.count.completedFiles === 1 ? "" : "s") +
-                ` in ${treeTask.count.completedDirectories} folder` +
-                (treeTask.count.completedDirectories === 1 ? "" : "s"))),
-        }, {
-            beforeDirectory: async (directory, connection) => {
-                // Check cache first
-                let entries = session.folderCache.get(directory.path);
-                if (!entries) {
-                    // Fetch if not in cache
-                    try {
-                        entries = await connection.list(directory.path);
-                    } catch (err) {
-                        if (String(err).includes("ENOENT")) {
-                            // Oops, this directory does not exist. Invalidate cache
-                            // and retry parent directory.
-                            session.folderCache.remove(directory.path);
-                            session.folderCache.remove(parentdir(directory.path));
-                            directory.parent?.retry();
-                            return;
-                        }
-                        throw err;
-                    }
-                    session.folderCache.set(directory.path, entries);
-                    countUntilMoreConnections--;
-                    if (countUntilMoreConnections <= 0) {
-                        // Seems like we have quite a lot of nested directories.
-                        // Time to increase the amount of parallel connections.
-                        const connectionPool = session.getConnectionPool();
-                        const currentCount = connectionPool.getTargetConnectionCount();
-                        connectionPool.setTargetConnectionCount(
-                            Math.min(10, currentCount + 1)
-                        );
-                        countUntilMoreConnections = 5 * connectionPool.getTargetConnectionCount();
-                    }
-                }
-                // Add files and nested directories to the file tree.
-                const existingEntries = directory.getEntries();
-                for (const entry of entries) {
-                    if (entry.isFile()) {
-                        if (existingEntries.find(e => e instanceof FileTreeFile && e.name === entry.name)) {
-                            continue;
-                        }
-                        directory.addEntry(new FileTreeFile(entry.name, null, entry.size, directory));
-                    } else if (entry.isDirectory()) {
-                        if (existingEntries.find(e => e instanceof FileTree && e.path === entry.path)) {
-                            continue;
-                        }
-                        directory.addEntry(new FileTree(entry.path));
-                    }
-                }
+        let countUntilMoreConnections =
+            5 * session.getConnectionPool().getTargetConnectionCount();
+        const task = new TreeTask(
+            session,
+            rootFileTree,
+            {
+                processRootDirectory: false,
+                progress: false,
+                title: () => title,
+                subTitle:
+                    subTitle ??
+                    ((treeTask) =>
+                        `Found ${treeTask.count.completedFiles} file` +
+                        (treeTask.count.completedFiles === 1 ? "" : "s") +
+                        ` in ${treeTask.count.completedDirectories} folder` +
+                        (treeTask.count.completedDirectories === 1 ? "" : "s")),
             },
-            afterDirectory: async (_directory, _connection) => {},
-            file: async (_file, _connection) => {},
-            done(_fileTree, _connection) {
-                // The file tree will now have status DONE. Copy it.
-                resolve([copyFileTree(rootFileTree), task]);
+            {
+                beforeDirectory: async (directory, connection) => {
+                    // Check cache first
+                    let entries = session.folderCache.get(directory.path);
+                    if (!entries) {
+                        // Fetch if not in cache
+                        try {
+                            entries = await connection.list(directory.path);
+                        } catch (err) {
+                            if (String(err).includes("ENOENT")) {
+                                // Oops, this directory does not exist. Invalidate cache
+                                // and retry parent directory.
+                                session.folderCache.remove(directory.path);
+                                session.folderCache.remove(
+                                    parentdir(directory.path),
+                                );
+                                directory.parent?.retry();
+                                return;
+                            }
+                            throw err;
+                        }
+                        session.folderCache.set(directory.path, entries);
+                        countUntilMoreConnections--;
+                        if (countUntilMoreConnections <= 0) {
+                            // Seems like we have quite a lot of nested directories.
+                            // Time to increase the amount of parallel connections.
+                            const connectionPool = session.getConnectionPool();
+                            const currentCount =
+                                connectionPool.getTargetConnectionCount();
+                            connectionPool.setTargetConnectionCount(
+                                Math.min(10, currentCount + 1),
+                            );
+                            countUntilMoreConnections =
+                                5 * connectionPool.getTargetConnectionCount();
+                        }
+                    }
+                    // Add files and nested directories to the file tree.
+                    const existingEntries = directory.getEntries();
+                    for (const entry of entries) {
+                        if (entry.isFile()) {
+                            if (
+                                existingEntries.find(
+                                    (e) =>
+                                        e instanceof FileTreeFile &&
+                                        e.name === entry.name,
+                                )
+                            ) {
+                                continue;
+                            }
+                            directory.addEntry(
+                                new FileTreeFile(
+                                    entry.name,
+                                    null,
+                                    entry.size,
+                                    directory,
+                                ),
+                            );
+                        } else if (entry.isDirectory()) {
+                            if (
+                                existingEntries.find(
+                                    (e) =>
+                                        e instanceof FileTree &&
+                                        e.path === entry.path,
+                                )
+                            ) {
+                                continue;
+                            }
+                            directory.addEntry(new FileTree(entry.path));
+                        }
+                    }
+                },
+                afterDirectory: async (_directory, _connection) => {},
+                file: async (_file, _connection) => {},
+                done(_fileTree, _connection) {
+                    // The file tree will now have status DONE. Copy it.
+                    resolve([copyFileTree(rootFileTree), task]);
+                },
+                cancelled(_fileTree, _connection) {
+                    reject(
+                        new CancellationError("Counting task was cancelled"),
+                    );
+                },
             },
-            cancelled(_fileTree, _connection) {
-                reject(new CancellationError("Counting task was cancelled"));
-            },
-        });
+        );
         session.taskManager.addTreeTask(task);
     });
 }
@@ -227,18 +286,20 @@ async function countEntriesToFileTree(entries: FolderEntry[], title: string, sub
 /**
  * Find size of a directory by scanning it. The size will be stored in the
  * folder cache.
- * 
+ *
  * @param entry The directory entry. Must be a directory.
  */
 export async function findDirectorySize(entry: FolderEntry): Promise<void> {
     if (!entry.isDirectory()) {
-        throw new Error("findDirectorySize can only be used for directories, not files.");
+        throw new Error(
+            "findDirectorySize can only be used for directories, not files.",
+        );
     }
     try {
         await countEntriesToFileTree(
             [entry],
             "Calculating folder size",
-            (treeTask) => formatByteSize(treeTask.count.completedFileSize, 2)
+            (treeTask) => formatByteSize(treeTask.count.completedFileSize, 2),
         );
     } catch (err) {
         if (err instanceof CancellationError) {
@@ -252,7 +313,12 @@ function copyFileTree(fileTree: FileTree): FileTree {
     const newTree = new FileTree(fileTree.path);
     for (const entry of fileTree.getEntries()) {
         if (entry instanceof FileTreeFile) {
-            const newFile = new FileTreeFile(entry.name, null, entry.size, newTree);
+            const newFile = new FileTreeFile(
+                entry.name,
+                null,
+                entry.size,
+                newTree,
+            );
             newTree.addEntry(newFile);
         } else if (entry instanceof FileTree) {
             const newSubTree = copyFileTree(entry);
@@ -267,78 +333,118 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
     let rootFileTree: FileTree;
     let countingTask: TreeTask | null = null;
     try {
-        [rootFileTree, countingTask] = await countEntriesToFileTree(entries, "Counting files to delete");
+        [rootFileTree, countingTask] = await countEntriesToFileTree(
+            entries,
+            "Counting files to delete",
+        );
     } catch (err) {
         if (err instanceof CancellationError) {
             return;
         }
         throw err;
     }
-    const task = new TreeTask(session, rootFileTree, {
-        title: (treeTask) => "Deleting " + treeTask.count.totalFiles + " file" + (treeTask.count.totalFiles == 1 ? "" : "s"),
-        // It is important that we do not process the root directory,
-        // as it is the container for the files we want to delete.
-        // We do not want to delete the container itself.
-        processRootDirectory: false
-    }, {
-        beforeDirectory(directory, connection) {},
-        async afterDirectory(directory, connection) {
-            try {
-                await connection.delete(directory.path);
-            } catch (err) {
-                if (String(err).includes("ENOTEMPTY")) {
-                    // Files were likely added while deleting, we must refresh.
-                    const list = await connection.list(directory.path);
-                    for (const entry of list) {
-                        const node = entry.isDirectory()
-                            ? directory.getEntries().filter(e => e instanceof FileTree).find(e => e.path === entry.path)
-                            : directory.getEntries().filter(e => e instanceof FileTreeFile).find(e => e.name === entry.name);
-                        if (node) {
-                            node.setError(new Error("This file was added while deleting. It will be retried."));
-                            node.retry();
-                        } else if (entry.isFile()) {
-                            directory.addEntry(new FileTreeFile(entry.name, null, entry.size, directory));
-                        } else if (entry.isDirectory()) {
-                            // We just add the sub directory, but not its contents.
-                            // If it has contents, it will also throw ENOTEMPTY and
-                            // this code will run again for that directory.
-                            directory.addEntry(new FileTree(entry.path));
+    const task = new TreeTask(
+        session,
+        rootFileTree,
+        {
+            title: (treeTask) =>
+                "Deleting " +
+                treeTask.count.totalFiles +
+                " file" +
+                (treeTask.count.totalFiles == 1 ? "" : "s"),
+            // It is important that we do not process the root directory,
+            // as it is the container for the files we want to delete.
+            // We do not want to delete the container itself.
+            processRootDirectory: false,
+        },
+        {
+            beforeDirectory(directory, connection) {},
+            async afterDirectory(directory, connection) {
+                try {
+                    await connection.delete(directory.path);
+                } catch (err) {
+                    if (String(err).includes("ENOTEMPTY")) {
+                        // Files were likely added while deleting, we must refresh.
+                        const list = await connection.list(directory.path);
+                        for (const entry of list) {
+                            const node = entry.isDirectory()
+                                ? directory
+                                      .getEntries()
+                                      .filter((e) => e instanceof FileTree)
+                                      .find((e) => e.path === entry.path)
+                                : directory
+                                      .getEntries()
+                                      .filter((e) => e instanceof FileTreeFile)
+                                      .find((e) => e.name === entry.name);
+                            if (node) {
+                                node.setError(
+                                    new Error(
+                                        "This file was added while deleting. It will be retried.",
+                                    ),
+                                );
+                                node.retry();
+                            } else if (entry.isFile()) {
+                                directory.addEntry(
+                                    new FileTreeFile(
+                                        entry.name,
+                                        null,
+                                        entry.size,
+                                        directory,
+                                    ),
+                                );
+                            } else if (entry.isDirectory()) {
+                                // We just add the sub directory, but not its contents.
+                                // If it has contents, it will also throw ENOTEMPTY and
+                                // this code will run again for that directory.
+                                directory.addEntry(new FileTree(entry.path));
+                            }
                         }
+                    } else if (!String(err).includes("ENOENT")) {
+                        // Ignore ENOENT, it means the directory was already deleted.
+                        // Otherwise throw unexpected errors.
+                        throw err;
                     }
-                } else if (!String(err).includes("ENOENT")) {
-                    // Ignore ENOENT, it means the directory was already deleted.
-                    // Otherwise throw unexpected errors.
-                    throw err;
                 }
-            }
-            getSession().folderCache.remove(directory.path);
-            
-        },
-        async file(file, connection) {
-            try {
-                await connection.delete(joinPath(file.parent.path, file.name));
-            } catch (err) {
-                // Ignore if it looks like this file has already been deleted.
-                if (!String(err).includes("ENOENT")) {
-                    throw err;
+                getSession().folderCache.remove(directory.path);
+            },
+            async file(file, connection) {
+                try {
+                    await connection.delete(
+                        joinPath(file.parent.path, file.name),
+                    );
+                } catch (err) {
+                    // Ignore if it looks like this file has already been deleted.
+                    if (!String(err).includes("ENOENT")) {
+                        throw err;
+                    }
                 }
-                
-            }
+            },
+            done(fileTree, connection) {
+                getSession().folderCache.remove(fileTree.path);
+            },
         },
-        done(fileTree, connection) {
-            getSession().folderCache.remove(fileTree.path);
-        },
-    });
-    const description = task.count.totalFiles === 1 && entries[0]
-        ? entries[0].name
-        : task.count.totalFiles + (task.count.totalFiles === 1 ? " file" : " files");
+    );
+    const description =
+        task.count.totalFiles === 1 && entries[0]
+            ? entries[0].name
+            : task.count.totalFiles +
+              (task.count.totalFiles === 1 ? " file" : " files");
 
-    if (!await Dialog.confirm("Delete " + description, "You are about to delete "
-        + task.count.totalFiles +" file" +
-        (task.count.totalFiles === 1 ? "" : "s") + " and "+
-        task.count.totalDirectories +" folder" +
-        (task.count.totalDirectories === 1 ? "" : "s") + ". "+
-        "This can not be undone. Are you sure?")) {
+    if (
+        !(await Dialog.confirm(
+            "Delete " + description,
+            "You are about to delete " +
+                task.count.totalFiles +
+                " file" +
+                (task.count.totalFiles === 1 ? "" : "s") +
+                " and " +
+                task.count.totalDirectories +
+                " folder" +
+                (task.count.totalDirectories === 1 ? "" : "s") +
+                ". " +
+                "This can not be undone. Are you sure?",
+        ))
+    ) {
         return;
     }
     session.taskManager.addTreeTask(task);
@@ -346,18 +452,21 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
 }
 
 export async function downloadAsZip(entries: FolderEntry[]) {
-    const fileName = entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
+    const fileName =
+        entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
     if (typeof window.showSaveFilePicker === "function") {
         const opts: SaveFilePickerOptions = {
             suggestedName: fileName,
-            types: [{
-                description: "ZIP Archive",
-                accept: { "application/zip": [".zip"] },
-            }],
-        }
+            types: [
+                {
+                    description: "ZIP Archive",
+                    accept: { "application/zip": [".zip"] },
+                },
+            ],
+        };
         let fileHandle: FileSystemFileHandle;
         try {
-            fileHandle = await window.showSaveFilePicker(opts)
+            fileHandle = await window.showSaveFilePicker(opts);
         } catch (err) {
             if (err.name === "AbortError") {
                 return;
@@ -374,7 +483,10 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     let fileTree: FileTree;
     let countingTask: TreeTask | null = null;
     try {
-        [fileTree, countingTask] = await countEntriesToFileTree(entries, "Counting files to download");
+        [fileTree, countingTask] = await countEntriesToFileTree(
+            entries,
+            "Counting files to download",
+        );
     } catch (err) {
         if (err instanceof CancellationError) {
             return;
@@ -384,24 +496,39 @@ export async function downloadAsZip(entries: FolderEntry[]) {
     const zip = new JSZip();
     const rootPath = getDirectoryPath(entries);
     const session = getSession();
-    const task = new TreeTask(session, fileTree, {
-        title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
-    }, {
-        beforeDirectory: (directory, connection) => {
-            zip.folder(directory.path);
+    const task = new TreeTask(
+        session,
+        fileTree,
+        {
+            title: (treeTask) =>
+                "Downloading " + treeTask.count.totalFiles + " files",
         },
-        afterDirectory: (directory, connection) => {},
-        file: async (file, connection) => {
-            const path = joinPath(file.parent.path, file.name);
-            const blob = await connection.download(new FolderEntry(path, file.name, file.size, FolderEntryType.File, ""), file.progress.bind(file));
-            zip.file(path, blob);
+        {
+            beforeDirectory: (directory, connection) => {
+                zip.folder(directory.path);
+            },
+            afterDirectory: (directory, connection) => {},
+            file: async (file, connection) => {
+                const path = joinPath(file.parent.path, file.name);
+                const blob = await connection.download(
+                    new FolderEntry(
+                        path,
+                        file.name,
+                        file.size,
+                        FolderEntryType.File,
+                        "",
+                    ),
+                    file.progress.bind(file),
+                );
+                zip.file(path, blob);
+            },
+            done: async (fileTree, connection) => {
+                const rootFolder = zip.folder(rootPath) || zip;
+                const blob = await rootFolder.generateAsync({ type: "blob" });
+                download(blob, fileName);
+            },
         },
-        done: async (fileTree, connection) => {
-            const rootFolder = zip.folder(rootPath) || zip;
-            const blob = await rootFolder.generateAsync({ type: "blob" });
-            download(blob, fileName);
-        }
-    });
+    );
     session.taskManager.addTreeTask(task);
     countingTask.setNextTask(task);
 }
@@ -412,11 +539,17 @@ declare global {
     }
 }
 
-export async function downloadAsZipStreaming(entries: FolderEntry[], fileHandle: FileSystemFileHandle) {
+export async function downloadAsZipStreaming(
+    entries: FolderEntry[],
+    fileHandle: FileSystemFileHandle,
+) {
     let fileTree: FileTree;
     let countingTask: TreeTask | null = null;
     try {
-        [fileTree, countingTask] = await countEntriesToFileTree(entries, "Counting files to download");
+        [fileTree, countingTask] = await countEntriesToFileTree(
+            entries,
+            "Counting files to download",
+        );
     } catch (err) {
         if (err instanceof CancellationError) {
             try {
@@ -435,45 +568,65 @@ export async function downloadAsZipStreaming(entries: FolderEntry[], fileHandle:
         if (fullPath.startsWith(rootPath)) {
             return fullPath.substring(rootPath.length);
         }
-        throw new Error("Path " + fullPath + " is not under root path " + rootPath);
+        throw new Error(
+            "Path " + fullPath + " is not under root path " + rootPath,
+        );
     }
     const session = getSession();
-    const task = new TreeTask(session, fileTree, {
-        title: (treeTask) => "Downloading " + treeTask.count.totalFiles + " files",
-    }, {
-        beforeDirectory: async (directory, connection) => {
-            await zipWriter.add(
-                getRelativePath(trailingSlash(directory.path)),
-                null,
-                { directory: true }
-            );
+    const task = new TreeTask(
+        session,
+        fileTree,
+        {
+            title: (treeTask) =>
+                "Downloading " + treeTask.count.totalFiles + " files",
         },
-        afterDirectory: (directory, connection) => {},
-        file: async (file, connection) => {
-            const path = joinPath(file.parent.path, file.name);
-            const blob = await connection.download(new FolderEntry(path, file.name, file.size, FolderEntryType.File, ""), file.progress.bind(file));
-            await zipWriter.add(getRelativePath(path), new BlobReader(blob));
-        },
-        done: async (fileTree, connection) => {
-            await zipWriter.close();
-            await writable.close();
-        },
-        cancelled: async (fileTree, connection) => {
-            try {
+        {
+            beforeDirectory: async (directory, connection) => {
+                await zipWriter.add(
+                    getRelativePath(trailingSlash(directory.path)),
+                    null,
+                    { directory: true },
+                );
+            },
+            afterDirectory: (directory, connection) => {},
+            file: async (file, connection) => {
+                const path = joinPath(file.parent.path, file.name);
+                const blob = await connection.download(
+                    new FolderEntry(
+                        path,
+                        file.name,
+                        file.size,
+                        FolderEntryType.File,
+                        "",
+                    ),
+                    file.progress.bind(file),
+                );
+                await zipWriter.add(
+                    getRelativePath(path),
+                    new BlobReader(blob),
+                );
+            },
+            done: async (fileTree, connection) => {
                 await zipWriter.close();
-            } catch {}
-            try {
-                if (typeof writable.abort === "function") {
-                    await writable.abort();
-                } else {
-                    await writable.close();
-                }
-            } catch {}
-            try {
-                await fileHandle.remove();
-            } catch {}
+                await writable.close();
+            },
+            cancelled: async (fileTree, connection) => {
+                try {
+                    await zipWriter.close();
+                } catch {}
+                try {
+                    if (typeof writable.abort === "function") {
+                        await writable.abort();
+                    } else {
+                        await writable.close();
+                    }
+                } catch {}
+                try {
+                    await fileHandle.remove();
+                } catch {}
+            },
         },
-    });
+    );
     if (countingTask) {
         countingTask.setNextTask(task);
     }

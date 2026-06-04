@@ -17,14 +17,18 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({ title, body, action }) => {
                 <span className="screen-icon text-danger">
                     <i className="bi bi-exclamation-circle-fill"></i>
                 </span>
-                <h2>{ title }</h2>
-                <p>{ body }</p>
-                { action && (
-                    <Button severity="danger" label={action.label} onClick={action.onClick} />
+                <h2>{title}</h2>
+                <p>{body}</p>
+                {action && (
+                    <Button
+                        severity="danger"
+                        label={action.label}
+                        onClick={action.onClick}
+                    />
                 )}
             </div>
         </div>
-        );
+    );
 };
 
 export default ErrorScreen;

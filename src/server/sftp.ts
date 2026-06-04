@@ -1,5 +1,12 @@
 import { FileType } from "basic-ftp";
-import { ChunkedUpload, chunkedUploads, CORS_HEADERS, largeDownloads, newPacketHandlersMap, ServerPackets } from ".";
+import {
+    ChunkedUpload,
+    chunkedUploads,
+    CORS_HEADERS,
+    largeDownloads,
+    newPacketHandlersMap,
+    ServerPackets,
+} from ".";
 import { ListReply, Packets } from "../protocol/packets";
 import SftpClient from "ssh2-sftp-client";
 import { WritableMemoryStream } from "./memoryStreams";
@@ -7,12 +14,15 @@ import { PassThrough } from "stream";
 
 type WriteStream = ReturnType<SftpClient["createWriteStream"]>;
 
-async function writeToStream(stream: WriteStream, input: NodeJS.ReadableStream) {
+async function writeToStream(
+    stream: WriteStream,
+    input: NodeJS.ReadableStream,
+) {
     return await new Promise<void>((resolve, reject) => {
-        stream.on('error', (err: unknown) => {
+        stream.on("error", (err: unknown) => {
             reject(new Error("Error in writeToStream", { cause: err }));
         });
-        stream.on('close', () => {
+        stream.on("close", () => {
             resolve();
         });
         input.pipe(stream);
@@ -41,8 +51,8 @@ handler(ServerPackets.IsConnected, (packet, data, connection) => {
         // Unfortunately there is no property on SftpClient to check connection status.
         // Do not bother checking with stat like with the Ping packet, because this is
         // used frequently.
-        isConnected: connection.client !== null
-    }
+        isConnected: connection.client !== null,
+    };
 });
 
 handler(ServerPackets.Disconnect, async (packet, data, connection) => {
@@ -59,40 +69,44 @@ handler(Packets.ConnectSftp, async (packet, data, connection) => {
         host: data.host,
         port: data.port,
         username: data.username,
-        password: data.password
+        password: data.password,
     });
 });
 
 handler(Packets.Connect, async (packet, data, connection) => {
     connection.client = new SftpClient();
 
-    connection.log("Connecting sftp...")
+    connection.log("Connecting sftp...");
     await connection.client.connect({
         host: data.host,
         port: data.port,
         username: data.username,
-        password: data.password
+        password: data.password,
     });
-    connection.log("Connecting sftp... done.")
+    connection.log("Connecting sftp... done.");
     return {
-        readOnly: false
+        readOnly: false,
     };
 });
 
 handler(Packets.List, async (packet, data, connection) => {
     const files = await connection.client.list(data.path);
     let response: ListReply = {
-        files: []
+        files: [],
     };
     for (const file of files) {
         response.files.push({
             name: file.name,
             size: file.size,
-            type: file.type === "d" ? FileType.Directory
-            : file.type === "-" ? FileType.File
-            : file.type === "l" ? FileType.SymbolicLink
-            : FileType.Unknown,
-            rawModifiedAt: String(file.modifyTime)
+            type:
+                file.type === "d"
+                    ? FileType.Directory
+                    : file.type === "-"
+                      ? FileType.File
+                      : file.type === "l"
+                        ? FileType.SymbolicLink
+                        : FileType.Unknown,
+            rawModifiedAt: String(file.modifyTime),
         });
     }
     return response;
@@ -104,17 +118,17 @@ handler(Packets.Download, async (packet, data, connection) => {
         largeDownloads.push({
             id: downloadId,
             path: data.path,
-            connection
+            connection,
         });
         return {
-            downloadId
+            downloadId,
         };
     } else {
         const stream = new WritableMemoryStream();
         await connection.client.get(data.path, stream);
         // By this point the stream has finished as we awaited the download method.
         return {
-            data: stream.getBuffer().toString("base64")
+            data: stream.getBuffer().toString("base64"),
         };
     }
 });
@@ -125,7 +139,7 @@ handler(ServerPackets.LargeDownload, async (packet, data, connection) => {
     const size = stat.size;
     const downloadHeaders = {
         ...CORS_HEADERS,
-        "Content-Length": size
+        "Content-Length": size,
     };
     response.writeHead(200, downloadHeaders);
 
@@ -158,16 +172,16 @@ handler(Packets.ChunkedUploadStart, (packet, data, connection) => {
         offset: data.startOffset !== null ? data.startOffset : 0,
         pendingChunks: 0,
         maxPendingChunks: 2,
-        error: null
+        error: null,
     } satisfies Partial<ChunkedUpload>;
 
     const writeStream = connection.client.createWriteStream(data.path, {
         start: data.startOffset !== null ? data.startOffset : undefined,
     });
-    const uploadPromise = writeToStream(writeStream, stream).catch(err => {
+    const uploadPromise = writeToStream(writeStream, stream).catch((err) => {
         chunkedUpload.error = err;
     });
-    
+
     chunkedUpload.uploadPromise = uploadPromise;
 
     chunkedUploads.push(chunkedUpload);

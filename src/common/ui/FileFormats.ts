@@ -1,6 +1,6 @@
 /**
  * Get the bootstrap-icons name for the icon to display for this file.
- * 
+ *
  * @param fileName The full file name.
  * @returns The name of the icon.
  */
@@ -10,7 +10,7 @@ export function getIconFor(fileName: string): string {
     }
     const index = fileName.lastIndexOf(".");
     const extention = fileName.substring(index);
-    switch(extention) {
+    switch (extention) {
         case ".png":
         case ".jpg":
         case ".jpeg":
@@ -66,7 +66,7 @@ export function getIconFor(fileName: string): string {
         case ".rar":
         case ".jar":
             return "file-earmark-zip";
-        
+
         case ".patch":
         case ".diff":
             return "file-earmark-diff";
@@ -78,7 +78,8 @@ export function getIconFor(fileName: string): string {
         case ".mca":
             return "file-earmark-binary";
 
-        default: return "file-earmark";
+        default:
+            return "file-earmark";
     }
 }
 
@@ -113,7 +114,7 @@ export function getFileType(fileName: string): FileType {
         case ".log":
             return "log";
     }
-    
+
     const icon = getIconFor(fileName);
     switch (icon) {
         case "file-earmark-text":

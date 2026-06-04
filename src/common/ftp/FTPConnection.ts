@@ -10,10 +10,22 @@ export default interface FTPConnection {
     close(): void;
 
     list(path: string): Promise<FolderEntry[]>;
-    download(folderEntry: FolderEntry, progress?: (value: number, max: number) => void): Promise<Blob>;
+    download(
+        folderEntry: FolderEntry,
+        progress?: (value: number, max: number) => void,
+    ): Promise<Blob>;
     uploadSmall(blob: Blob, path: string): Promise<void>;
-    startChunkedUpload(path: string, size: number, startOffset: number | null): Promise<string>;
-    uploadChunk(uploadId: string, chunk: Blob, start: number, end: number): Promise<ChunkedUploadResponse>;
+    startChunkedUpload(
+        path: string,
+        size: number,
+        startOffset: number | null,
+    ): Promise<string>;
+    uploadChunk(
+        uploadId: string,
+        chunk: Blob,
+        start: number,
+        end: number,
+    ): Promise<ChunkedUploadResponse>;
     stopChunkedUpload(uploadId: string): Promise<void>;
     mkdir(path: string): Promise<void>;
     rename(from: string, to: string): Promise<void>;

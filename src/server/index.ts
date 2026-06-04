@@ -8,7 +8,14 @@ import { createHash } from "crypto";
 import { pathToFileURL } from "url";
 // @ts-ignore I'm not sure why ws and @types/ws disagree.
 import WebSocket, { WebSocketServer } from "ws";
-import { ChunkedUploadStatus, ErrorReply, Packet, packetMap, packetNameMap, Packets } from "../protocol/packets";
+import {
+    ChunkedUploadStatus,
+    ErrorReply,
+    Packet,
+    packetMap,
+    packetNameMap,
+    Packets,
+} from "../protocol/packets";
 import VERSION from "../protocol/version";
 import { ReadableMemoryStream, WritableMemoryStream } from "./memoryStreams";
 
@@ -30,19 +37,23 @@ const PROTOCOL_VERSION = 1;
 
 export const CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST"
+    "Access-Control-Allow-Methods": "GET,POST",
 };
 
 /**
  * Internal server packets sent by the server to packet handlers.
- * 
+ *
  * These are not exposed to the client.
  */
 export namespace ServerPackets {
     /** This packet may not be handled async. */
-    export const IsConnected = new Packet<{}, { isConnected: boolean }>("is_connected");
+    export const IsConnected = new Packet<{}, { isConnected: boolean }>(
+        "is_connected",
+    );
     export const Disconnect = new Packet<{}, void>("disconnect");
-    export const LargeDownload = new Packet<LargeDownloadData, void>("large_download");
+    export const LargeDownload = new Packet<LargeDownloadData, void>(
+        "large_download",
+    );
 }
 
 export interface LargeDownloadData {
@@ -75,23 +86,34 @@ export const chunkedUploads: ChunkedUpload[] = [];
 
 const protocols = new Map<string, PacketHandler>();
 
-async function registerCustomProtocol(protocolName: string, modulePath: string) {
+async function registerCustomProtocol(
+    protocolName: string,
+    modulePath: string,
+) {
     const moduleUrl = pathToFileURL(modulePath).href;
     let mod: any;
 
     try {
         mod = await import(moduleUrl);
     } catch (err) {
-        console.error(`Error importing custom protocol "${protocolName}" from ${modulePath}:`, err);
+        console.error(
+            `Error importing custom protocol "${protocolName}" from ${modulePath}:`,
+            err,
+        );
         return;
     }
 
-    const setupFn = typeof mod.default === "function"
-        ? mod.default
-        : (typeof mod.setup === "function" ? mod.setup : null);
+    const setupFn =
+        typeof mod.default === "function"
+            ? mod.default
+            : typeof mod.setup === "function"
+              ? mod.setup
+              : null;
 
     if (typeof setupFn !== "function") {
-        console.warn(`Custom protocol "${protocolName}" does not export a default setup function. Skipping.`);
+        console.warn(
+            `Custom protocol "${protocolName}" does not export a default setup function. Skipping.`,
+        );
         return;
     }
 
@@ -115,9 +137,14 @@ async function registerCustomProtocol(protocolName: string, modulePath: string) 
             await setupResult;
         }
         protocols.set(protocolName, packetHandlers);
-        console.log(`Registered custom protocol "${protocolName}" from ${modulePath}`);
+        console.log(
+            `Registered custom protocol "${protocolName}" from ${modulePath}`,
+        );
     } catch (err) {
-        console.error(`Error running setup for custom protocol "${protocolName}" from ${modulePath}:`, err);
+        console.error(
+            `Error running setup for custom protocol "${protocolName}" from ${modulePath}:`,
+            err,
+        );
     }
 }
 
@@ -140,43 +167,54 @@ async function loadCustomProtocols() {
 
     for (const entry of entries) {
         if (entry.isFile() && entry.name.endsWith(".js")) {
-            const protocolName = entry.name.substring(0, entry.name.length - ".js".length);
-            await registerCustomProtocol(protocolName, path.join(baseDir, entry.name));
+            const protocolName = entry.name.substring(
+                0,
+                entry.name.length - ".js".length,
+            );
+            await registerCustomProtocol(
+                protocolName,
+                path.join(baseDir, entry.name),
+            );
         }
     }
 }
 
 // Import after ServerPackets has been defined.
-Promise.all([
-    import("./ftp"),
-    import("./sftp"),
-]).then(async ([ftp, sftp]) => {
-    protocols.set("ftp", ftp.ftpPacketHandlers);
-    protocols.set("sftp", sftp.sftpPacketHandlers);
-    await loadCustomProtocols();
-}).catch(err => {
-    console.error("Error importing protocol handlers:", err);
-    process.exit(1);
-});
+Promise.all([import("./ftp"), import("./sftp")])
+    .then(async ([ftp, sftp]) => {
+        protocols.set("ftp", ftp.ftpPacketHandlers);
+        protocols.set("sftp", sftp.sftpPacketHandlers);
+        await loadCustomProtocols();
+    })
+    .catch((err) => {
+        console.error("Error importing protocol handlers:", err);
+        process.exit(1);
+    });
 
 if (false) {
     const originalCloseWithError = ftp.FTPContext.prototype.closeWithError;
-    ftp.FTPContext.prototype.closeWithError = function(error: unknown) {
+    ftp.FTPContext.prototype.closeWithError = function (error: unknown) {
         console.log("DEBUG FTPContext.closeWithError called with:", error);
         return originalCloseWithError.apply(this, arguments);
-    }
+    };
     // @ts-ignore
     const originalPassToHandler = ftp.FTPContext.prototype._passToHandler;
     // @ts-ignore
-    ftp.FTPContext.prototype._passToHandler = function(response: unknown) {
+    ftp.FTPContext.prototype._passToHandler = function (response: unknown) {
         if (response instanceof Error) {
             response["taskStack"] = this._task ? this._task.stack : null;
         }
-        if (response instanceof Error && !String(response).includes("Command requires authentication:")) {
-            console.log("DEBUG FTPContext._passToHandler called with stack ", this._task ? this._task.stack : null);
+        if (
+            response instanceof Error &&
+            !String(response).includes("Command requires authentication:")
+        ) {
+            console.log(
+                "DEBUG FTPContext._passToHandler called with stack ",
+                this._task ? this._task.stack : null,
+            );
         }
         return originalPassToHandler.apply(this, arguments);
-    }
+    };
 }
 
 function isSFTPError(err: any): boolean {
@@ -216,10 +254,16 @@ export function formatErrorMessage(error: any): string | null {
         return "Please try again. (" + error + ")";
     }
     const str = error.toString().trim();
-    if (str === "Error: Timeout (data socket)" || str === "Error: Timeout (control socket)") {
+    if (
+        str === "Error: Timeout (data socket)" ||
+        str === "Error: Timeout (control socket)"
+    ) {
         return str;
     }
-    if (str === "None of the available transfer strategies work. Last error response was 'FTPError: 400 Unable to find valid port'.") {
+    if (
+        str ===
+        "None of the available transfer strategies work. Last error response was 'FTPError: 400 Unable to find valid port'."
+    ) {
         return "Please try again later. (FTPError: 400 Unable to find valid port)";
     }
     if (str === "Error: This socket has been ended by the other party") {
@@ -232,24 +276,37 @@ export function formatErrorMessage(error: any): string | null {
 }
 
 export async function sleep(ms: number) {
-    return await new Promise(resolve => setInterval(resolve, ms));
+    return await new Promise((resolve) => setInterval(resolve, ms));
 }
 
 const httpServer = createServer(function (req, res) {
     if (req.method == "GET") {
         if (req.url && req.url.startsWith("/download/")) {
             const downloadId = req.url.substring("/download/".length);
-            const largeDownload = largeDownloads.find(o => o.id === downloadId);
+            const largeDownload = largeDownloads.find(
+                (o) => o.id === downloadId,
+            );
             if (largeDownload) {
                 largeDownloads.splice(largeDownloads.indexOf(largeDownload), 1);
                 (async () => {
-                    const packetHandlers = protocols.get(largeDownload.connection.protocol);
-                    const handler = packetHandlers?.map.get(ServerPackets.LargeDownload);
+                    const packetHandlers = protocols.get(
+                        largeDownload.connection.protocol,
+                    );
+                    const handler = packetHandlers?.map.get(
+                        ServerPackets.LargeDownload,
+                    );
                     if (!handler) {
-                        throw new Error("No handler for LargeDownload packet for protocol " + largeDownload.connection.protocol);
+                        throw new Error(
+                            "No handler for LargeDownload packet for protocol " +
+                                largeDownload.connection.protocol,
+                        );
                     }
-                    return await handler(ServerPackets.LargeDownload, { largeDownload, response: res }, largeDownload.connection);
-                })().catch(err => {
+                    return await handler(
+                        ServerPackets.LargeDownload,
+                        { largeDownload, response: res },
+                        largeDownload.connection,
+                    );
+                })().catch((err) => {
                     if (!largeDownload.connection.userClosed) {
                         // The connection was not closed, but we still got an unexpected error.
                         largeDownload.connection.log("Download error " + err);
@@ -284,19 +341,19 @@ const server = new WebSocketServer({ server: httpServer });
 
 httpServer.listen(PORT);
 
-server.on("listening", function() {
+server.on("listening", function () {
     console.log("Started WebSocket server on port " + PORT);
 });
 
 // Graceful shutdown handling
 const gracefulShutdown = () => {
     console.log("Shutting down gracefully...");
-    
+
     // Close all WebSocket connections
     server.clients.forEach((client) => {
         client.close();
     });
-    
+
     // Close the HTTP server
     httpServer.close(() => {
         console.log("Server closed");
@@ -307,11 +364,11 @@ const gracefulShutdown = () => {
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
 
-server.on("connection", function(ws) {
+server.on("connection", function (ws) {
     let connection: Connection = null;
     let userClosed = false;
-    
-    ws.on("message", function(rawMessage) {
+
+    ws.on("message", function (rawMessage) {
         let message: string;
         if (typeof rawMessage == "string") {
             message = rawMessage;
@@ -324,7 +381,14 @@ server.on("connection", function(ws) {
                 connection = new Connection(ws);
                 connection.log("New successfull handshake.");
             } else {
-                ws.send("Error, incompatible protocol type or version. Expected \"" + "handshake json " + PROTOCOL_VERSION + "\", got \"" + message + "\"");
+                ws.send(
+                    'Error, incompatible protocol type or version. Expected "' +
+                        "handshake json " +
+                        PROTOCOL_VERSION +
+                        '", got "' +
+                        message +
+                        '"',
+                );
                 ws.close();
             }
         } else {
@@ -332,11 +396,21 @@ server.on("connection", function(ws) {
             if (typeof json.packetId == "number") {
                 const packetId: number = json.packetId;
                 const packetName = String(json.packetName);
-                connection.log("Got packet id: " + packetId + " name: " + packetName);
+                connection.log(
+                    "Got packet id: " + packetId + " name: " + packetName,
+                );
 
                 // Get the packet
-                const packet = packetNameMap.get(packetName) || packetMap.get(packetId);
-                if (packet != null && connection.protocol && packet !== Packets.Ping && packet !== Packets.ConnectFtp && packet !== Packets.ConnectSftp && packet !== Packets.Connect) {
+                const packet =
+                    packetNameMap.get(packetName) || packetMap.get(packetId);
+                if (
+                    packet != null &&
+                    connection.protocol &&
+                    packet !== Packets.Ping &&
+                    packet !== Packets.ConnectFtp &&
+                    packet !== Packets.ConnectSftp &&
+                    packet !== Packets.Connect
+                ) {
                     // Ensure the client is connected before attempting to interact.
                     if (!connection.isClientConnected()) {
                         const requestId = json["requestId"];
@@ -376,57 +450,62 @@ server.on("connection", function(ws) {
                     // ...call the handler
                     // If the handler is an async function it returns a promise. Otherwise we wrap
                     // it. Either way, we now have a promise.
-                    const promise = Promise.resolve(handler(packet, json, connection));
+                    const promise = Promise.resolve(
+                        handler(packet, json, connection),
+                    );
 
                     // Check if the client is awaiting a response from the server
                     const requestId = json["requestId"];
                     if (requestId != null) {
                         // If they are, when the handler is complete...
-                        promise.then((response) => {
-                            if (response == null) response = {};
+                        promise.then(
+                            (response) => {
+                                if (response == null) response = {};
 
-                            // ... then send the response back to the client with the
-                            // same request id so the client can handle the response.
-                            response["requestId"] = requestId;
-                            if (connection) {
-                                connection.sendJson(response);
-                            }
-                        }, (err) => {
-                            // Handle errors
-                            let response: ErrorReply | null = null;
-                            const message = formatErrorMessage(err);
-                            if (message) {
-                                response = {
-                                    action: "error",
-                                    type: "Error",
-                                    message
-                                };
-                            } else if (err instanceof FTPError) {
-                                response = {
-                                    action: "error",
-                                    type: "FTPError",
-                                    message: err.message,
-                                    code: err.code,
-                                };
-                            } else if (isSFTPError(err)) {
-                                response = {
-                                    action: "error",
-                                    type: "SFTPError",
-                                    message: err.message,
-                                    code: err.code,
-                                };
-                            } else {
-                                response = {
-                                    action: "error",
-                                    type: "Error",
-                                    message: `Internal server error (${createHash('md5').update(String(err)).digest("hex")})`
-                                };
-                            }
-                            response["requestId"] = requestId;
-                            if (connection) {
-                                connection.sendJson(response);
-                            }
-                        });
+                                // ... then send the response back to the client with the
+                                // same request id so the client can handle the response.
+                                response["requestId"] = requestId;
+                                if (connection) {
+                                    connection.sendJson(response);
+                                }
+                            },
+                            (err) => {
+                                // Handle errors
+                                let response: ErrorReply | null = null;
+                                const message = formatErrorMessage(err);
+                                if (message) {
+                                    response = {
+                                        action: "error",
+                                        type: "Error",
+                                        message,
+                                    };
+                                } else if (err instanceof FTPError) {
+                                    response = {
+                                        action: "error",
+                                        type: "FTPError",
+                                        message: err.message,
+                                        code: err.code,
+                                    };
+                                } else if (isSFTPError(err)) {
+                                    response = {
+                                        action: "error",
+                                        type: "SFTPError",
+                                        message: err.message,
+                                        code: err.code,
+                                    };
+                                } else {
+                                    response = {
+                                        action: "error",
+                                        type: "Error",
+                                        message: `Internal server error (${createHash("md5").update(String(err)).digest("hex")})`,
+                                    };
+                                }
+                                response["requestId"] = requestId;
+                                if (connection) {
+                                    connection.sendJson(response);
+                                }
+                            },
+                        );
                     }
 
                     promise.catch((err) => {
@@ -439,7 +518,9 @@ server.on("connection", function(ws) {
                             // that. Do not report it.
                             return;
                         }
-                        console.error(`[${connection ? connection.id : '?'}] Non ftp error in packet handler with error hash ${createHash('md5').update(String(err)).digest("hex")}}`);
+                        console.error(
+                            `[${connection ? connection.id : "?"}] Non ftp error in packet handler with error hash ${createHash("md5").update(String(err)).digest("hex")}}`,
+                        );
                         console.error(err);
                     });
                 }
@@ -447,7 +528,7 @@ server.on("connection", function(ws) {
         }
     });
 
-    ws.on("close", function() {
+    ws.on("close", function () {
         if (connection != null && connection.isClientConnected()) {
             connection.log("Left, disconnecting client");
             try {
@@ -455,10 +536,16 @@ server.on("connection", function(ws) {
                 userClosed = true;
                 connection.userClosed = true;
                 const packetHandlers = protocols.get(connection.protocol);
-                const handler = packetHandlers?.map.get(ServerPackets.Disconnect);
+                const handler = packetHandlers?.map.get(
+                    ServerPackets.Disconnect,
+                );
                 if (handler) {
-                    Promise.resolve(handler(ServerPackets.Disconnect, {}, connection)).catch(err => {
-                        connection.log("Error during disconnect: " + err.message);
+                    Promise.resolve(
+                        handler(ServerPackets.Disconnect, {}, connection),
+                    ).catch((err) => {
+                        connection.log(
+                            "Error during disconnect: " + err.message,
+                        );
                     });
                 }
             } catch (err) {
@@ -505,10 +592,15 @@ export class Connection<T = unknown> {
         if (typeof isConnected === "function") {
             const result = isConnected(ServerPackets.IsConnected, {}, this);
             if (result instanceof Promise) {
-                console.warn(`[${this.id}] isConnected returned a promise, this is not supported.`);
+                console.warn(
+                    `[${this.id}] isConnected returned a promise, this is not supported.`,
+                );
                 return false;
             }
-            if (typeof result === "object" && typeof result.isConnected === "boolean") {
+            if (
+                typeof result === "object" &&
+                typeof result.isConnected === "boolean"
+            ) {
                 return result.isConnected;
             }
         }
@@ -517,15 +609,29 @@ export class Connection<T = unknown> {
 }
 
 export function newPacketHandlersMap<T>() {
-    const map = new Map< Packet<any, any>, <Data, Response>(packet: Packet<Data, Response>, data: Data, connection: Connection) => Promise<Response> | Response >();
-    function push<Data, Response>(packet: Packet<Data, Response>, handler: (packet: Packet<Data, Response>, data: Data, connection: Connection<T>) => Promise<Response> | Response) {
+    const map = new Map<
+        Packet<any, any>,
+        <Data, Response>(
+            packet: Packet<Data, Response>,
+            data: Data,
+            connection: Connection,
+        ) => Promise<Response> | Response
+    >();
+    function push<Data, Response>(
+        packet: Packet<Data, Response>,
+        handler: (
+            packet: Packet<Data, Response>,
+            data: Data,
+            connection: Connection<T>,
+        ) => Promise<Response> | Response,
+    ) {
         // @ts-ignore
         map.set(packet, handler);
     }
     return {
         map,
-        push
-    }
+        push,
+    };
 }
 
 type PacketHandler = ReturnType<typeof newPacketHandlersMap>;
@@ -550,7 +656,9 @@ handler(Packets.Connect, async (packet, data, connection) => {
     }
     const handler = packetHandlers.map.get(Packets.Connect);
     if (!handler) {
-        throw new Error("No handler for Connect packet for protocol " + data.protocol);
+        throw new Error(
+            "No handler for Connect packet for protocol " + data.protocol,
+        );
     }
     return await handler(Packets.Connect, data, connection);
 });
@@ -558,7 +666,7 @@ handler(Packets.Connect, async (packet, data, connection) => {
 handler(Packets.ChunkedUpload, async (packet, data, connection) => {
     type Status = ChunkedUploadStatus;
 
-    const chunkedUpload = chunkedUploads.find(u => u.id === data.uploadId);
+    const chunkedUpload = chunkedUploads.find((u) => u.id === data.uploadId);
     if (!chunkedUpload) {
         return { status: "404" as Status };
     }
@@ -567,10 +675,13 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
     }
 
     if (chunkedUpload.error) {
-        const message = shouldShowErrorToUser(chunkedUpload.error) && formatErrorMessage(chunkedUpload.error) || "An error occured.";
+        const message =
+            (shouldShowErrorToUser(chunkedUpload.error) &&
+                formatErrorMessage(chunkedUpload.error)) ||
+            "An error occured.";
         return {
             status: "error" as Status,
-            error: message
+            error: message,
         };
     }
 
@@ -596,13 +707,21 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
     }
 
     let sleepCount = 0;
-    while (chunkedUpload.pendingChunks >= chunkedUpload.maxPendingChunks && sleepCount++ < 1000) {
+    while (
+        chunkedUpload.pendingChunks >= chunkedUpload.maxPendingChunks &&
+        sleepCount++ < 1000
+    ) {
         // We have a few chunks in the queue now. We can wait a little.
         await sleep(50);
     }
 
     if (sleepCount > 0) {
-        connection.log("slept " + sleepCount + " times, pendingChunks = " + chunkedUpload.pendingChunks);
+        connection.log(
+            "slept " +
+                sleepCount +
+                " times, pendingChunks = " +
+                chunkedUpload.pendingChunks,
+        );
     }
 
     chunkedUpload.offset += buffer.length;
@@ -618,7 +737,7 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
 });
 
 handler(Packets.ChunkedUploadStop, async (packet, data, connection) => {
-    const chunkedUpload = chunkedUploads.find(u => u.id === data.uploadId);
+    const chunkedUpload = chunkedUploads.find((u) => u.id === data.uploadId);
     if (!chunkedUpload) {
         return;
     }

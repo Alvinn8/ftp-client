@@ -33,7 +33,7 @@ export default class FTPSession extends EventEmitter {
             // We must pause all tasks so that they stop retrying to connect.
             // TODO notify user? Dialog? Or Action Required in task?
             this.taskManager.pauseAllTreeTasks();
-        })
+        });
         this.taskManager = new TaskManager();
         this.taskManager.setSession(this);
     }
@@ -42,7 +42,10 @@ export default class FTPSession extends EventEmitter {
         return this.connectionPool;
     }
 
-    async addToPoolQueue<T>(priority: number, executor: (connection: FTPConnection) => Promise<T> | T): Promise<T> {
+    async addToPoolQueue<T>(
+        priority: number,
+        executor: (connection: FTPConnection) => Promise<T> | T,
+    ): Promise<T> {
         return await new Promise((resolve, reject) => {
             const request = new FTPRequest(priority, executor, resolve, reject);
             this.poolQueue.push(request);
@@ -61,8 +64,14 @@ export default class FTPSession extends EventEmitter {
 
         // Remove any connections that are no longer valid.
         // Also creates a new connection if needed. Handle this async.
-        this.connectionPool.refreshConnections().catch(unexpectedErrorHandler("Failed to refresh connections in pool."));
-        
+        this.connectionPool
+            .refreshConnections()
+            .catch(
+                unexpectedErrorHandler(
+                    "Failed to refresh connections in pool.",
+                ),
+            );
+
         // Get a connection if there is one available.
         const connection = this.connectionPool.getConnectionAndLock();
         if (!connection) {
@@ -75,12 +84,15 @@ export default class FTPSession extends EventEmitter {
         this.poolQueue.sort((a, b) => b.priority - a.priority);
         const request = this.poolQueue.shift();
 
-        Promise.resolve(request.executor(connection)).then((t) => {
-            request.resolve(t);
-            this.connectionPool.unlockConnection(connection);
-        }, (err) => {
-            request.reject(err);
-            this.connectionPool.unlockConnection(connection);
-        });
+        Promise.resolve(request.executor(connection)).then(
+            (t) => {
+                request.resolve(t);
+                this.connectionPool.unlockConnection(connection);
+            },
+            (err) => {
+                request.reject(err);
+                this.connectionPool.unlockConnection(connection);
+            },
+        );
     }
 }

@@ -21,7 +21,9 @@ const AppWrapper: React.FC = () => {
     }, []);
 
     if (!ready) {
-        return <ConnectingScreen title={"Connecting..."} body={"Connecting..."} />;
+        return (
+            <ConnectingScreen title={"Connecting..."} body={"Connecting..."} />
+        );
     }
 
     return <Ui2App />;

@@ -14,8 +14,8 @@ const ConnectingScreen: React.FC<ConnectingScreenProps> = ({ title, body }) => {
                         <span className="visually-hidden">Loading...</span>
                     </div>
                 </span>
-                <h2>{ title }</h2>
-                <p>{ body }</p>
+                <h2>{title}</h2>
+                <p>{body}</p>
             </div>
         </div>
     );
