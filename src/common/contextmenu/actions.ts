@@ -1,14 +1,9 @@
 import JSZip from "jszip";
 import Dialog from "../Dialog";
 import download from "../download";
-import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry, { FolderEntryType } from "../folder/FolderEntry";
-import DirectoryPath from "../ftp/DirectoryPath";
-import Priority from "../ftp/Priority";
-import Task from "../task/Task";
-import TaskManager from "../task/TaskManager";
 import { formatByteSize, joinPath, parentdir, trailingSlash } from "../utils";
-import { CancellationError, formatError, unexpectedErrorHandler } from "../error";
+import { CancellationError, unexpectedErrorHandler } from "../error";
 import { FileTree, FileTreeFile } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
 import { usePath } from "../ui2/store/pathStore";
@@ -113,11 +108,6 @@ export function downloadFolderEntry(entry: FolderEntry) {
         }
         unexpectedErrorHandler("Failed to download")(err);
     });
-}
-
-/** @deprecated */
-export function rename(entry: FolderEntry) {
-    throw new Error("ui1 rename is not supported anymore");
 }
 
 /**
@@ -488,31 +478,4 @@ export async function downloadAsZipStreaming(entries: FolderEntry[], fileHandle:
         countingTask.setNextTask(task);
     }
     session.taskManager.addTreeTask(task);
-}
-
-export async function computeSize(entries: FolderEntry[]): Promise<number> {
-    if (!TaskManager.requestNewTask()) return;
-
-    const task = new Task("Computing size", "", false);
-    TaskManager.setTask(task);
-    const path = new DirectoryPath(getDirectoryPath(entries));
-    const size = await computeSizeRecursively(entries, task, path);
-    task.complete();
-    return size;
-}
-
-async function computeSizeRecursively(entries: FolderEntry[], task: Task, path: DirectoryPath): Promise<number> {
-    let size = 0;
-    for (const entry of entries) {
-        if (entry.isFile()) {
-            size += entry.size;
-        } else if (entry.isDirectory()) {
-            task.progress(0, 0, "Computing size of " + entry.name);
-            path.cd(entry.name);
-            const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.LARGE_TASK, path.get());
-            size += await computeSizeRecursively(list, task, path);
-            path.cdup();
-        }
-    }
-    return size;
 }

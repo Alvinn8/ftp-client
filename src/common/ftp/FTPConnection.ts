@@ -6,7 +6,6 @@ import FolderEntry from "../folder/FolderEntry";
  * the FTP server to download, upload, list files, etc.
  */
 export default interface FTPConnection {
-    connectToFtp(host: string, port: number, username: string, password: string, secure: boolean): Promise<void>;
     isConnected(): Promise<boolean>;
     close(): void;
 

@@ -5,9 +5,9 @@ import { blobToBase64, ensureAbsolute, filename, sleep } from "../common/utils";
 import { ChunkedUploadResponse, ConnectData, ConnectReply, ErrorReply, Packet, Packets } from "../protocol/packets";
 import { LargeFileOperationInterface, largeFileOperationStore } from "../common/ui/LargeFileOperation";
 import Dialog from "../common/Dialog";
-import TaskManager from "../common/task/TaskManager";
 import { assertUnreachable, CancellationError, ConnectionClosedError, FTPError, SFTPError } from "../common/error";
 import { getConfig } from "../common/config/config";
+import { useSession } from "../common/ui2/store/sessionStore";
 
 interface PendingReply {
     requestId: string;
@@ -131,10 +131,12 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 // matter since it will reconnect. There is no need to worry the user that
                 // something abnormal happened, since it is, in fact, very normal.
                 if (e.code != 1000 && e.code != 1005 && e.code != 1006) message = "Connection closed: " + e.code + " " + e.reason;
-                
+
                 this.rejectPendingReplies(new ConnectionClosedError(message, e.code, e.reason));
-                
-                const hasTask = TaskManager.hasTask() || TaskManager.getTreeTasks().length > 0;
+
+                const sessionStore = useSession.getState();
+                const taskManager = sessionStore.hasSession() ? sessionStore.getSession().taskManager : null;
+                const hasTask = taskManager && (taskManager.getTreeTasks().length > 0);
                 if (message == "Connection closed" && (!hasTask || this.closing)) return;
                 addMessage({
                     color: "danger",
@@ -187,20 +189,6 @@ export default class WebsocketFTPConnection implements FTPConnection {
         for (const pendingReply of this.pendingReplies) {
             pendingReply.reject(error);
         }
-    }
-
-    /** @deprecated */
-    async connectToFtp(host: string, port: number, username: string, password: string, secure: boolean): Promise<void> {
-        await this.send(Packets.ConnectFtp, {
-            host, port, username, password, secure
-        });
-    }
-
-    /** @deprecated */
-    async connectToSftp(host: string, port: number, username: string, password: string): Promise<void> {
-        await this.send(Packets.ConnectSftp, {
-            host, port, username, password
-        });
     }
 
     async connect(data: ConnectData): Promise<ConnectReply> {

@@ -1,6 +1,5 @@
 import { vi } from "vitest";
 import FTPConnection from "../ftp/FTPConnection";
-import { ChunkedUploadResponse } from "../../protocol/packets";
 
 export default class TestFTPConnection implements FTPConnection {
     connectToFtp = vi.fn();

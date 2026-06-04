@@ -1,5 +1,8 @@
 import React from "react";
 import MainView from "./views/MainView";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import "../ui/style.css";
 import "./colors.css";
 import "./scrollbars.css";
 import { useSession } from "./store/sessionStore";

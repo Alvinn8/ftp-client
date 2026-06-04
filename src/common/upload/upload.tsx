@@ -64,7 +64,7 @@ export async function handleOnDrop(event: React.DragEvent<HTMLDivElement> | Drag
     }
 
     // Upload the files
-    await upload(uploads);
+    upload(uploads);
 }
 
 /**
@@ -210,7 +210,7 @@ export function handleInputUpload(event: InputEvent) {
     setZipUploadMode(false);
 
     // Upload
-    upload(root).catch(unexpectedErrorHandler("Failed to upload"));
+    upload(root);
 }
 
 /**
@@ -311,5 +311,5 @@ async function handleZip(file: File) {
         return;
     }
     const uploads = await getUploadsFromZip(zip);
-    await upload(uploads).catch(unexpectedErrorHandler("Failed to upload"));
+    upload(uploads);
 }
