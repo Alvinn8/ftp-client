@@ -3,7 +3,12 @@ import { FileTree, FileTreeFile, Status } from "@common/task/tree";
 import { TreeTask } from "@common/task/treeTask";
 import { usePath } from "@common/ui/store/pathStore";
 import { useSession } from "@common/ui/store/sessionStore";
-import { dirname, filename, joinPath, noTrailingSlash } from "@common/util/utils";
+import {
+    dirname,
+    filename,
+    joinPath,
+    noTrailingSlash,
+} from "@common/util/utils";
 import Directory from "./Directory";
 
 const LARGE_FILE_THRESHOLD = 10e6; // 10 MB

@@ -22,6 +22,14 @@ export default defineConfig({
         open: false,
         setupFiles: "./src/common/test/setup.ts",
     },
+    resolve: {
+        alias: {
+            "@common": resolve(__dirname, "src", "common"),
+            "@protocol": resolve(__dirname, "src", "protocol"),
+            "@web": resolve(__dirname, "src", "web"),
+            "@server": resolve(__dirname, "src", "server"),
+        },
+    },
     build: {
         rollupOptions: {
             input: {

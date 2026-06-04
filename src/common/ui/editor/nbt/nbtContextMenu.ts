@@ -31,7 +31,7 @@ export type ListParentData = {
 };
 export type ParentData = CompoundParentData | ListParentData | null;
 
-function contextMenuForParent(parent: ParentData): ContextMenuEntry[] {
+function contextMenuForParent(parent: ParentData) {
     if (parent == null) {
         return [];
     }
@@ -44,9 +44,7 @@ function contextMenuForParent(parent: ParentData): ContextMenuEntry[] {
     return [];
 }
 
-function contextMenuForCompoundParent(
-    parent: CompoundParentData,
-): ContextMenuEntry[] {
+function contextMenuForCompoundParent(parent: CompoundParentData) {
     return [
         {
             name: "Rename",
@@ -90,7 +88,7 @@ function contextMenuForCompoundParent(
     ];
 }
 
-function contextMenuForListParent(parent: ListParentData): ContextMenuEntry[] {
+function contextMenuForListParent(parent: ListParentData) {
     const list = [];
     if (parent.index > 0) {
         list.push({
@@ -207,7 +205,7 @@ export function contextMenuForString(
     tag: NbtString,
     parent: ParentData,
     reRenderUi: () => void,
-): ContextMenuPopulator {
+) {
     return {
         getEntries: () => [
             {
@@ -268,7 +266,7 @@ export function contextMenuForNumber(
     tag: NumberNbtTag,
     parent: ParentData,
     reRenderUi: () => void,
-): ContextMenuPopulator {
+) {
     return {
         getEntries: () => [
             {
@@ -307,7 +305,7 @@ export function contextMenuForArray(
     tag: ArrayNbtTag,
     parent: ParentData,
     reRenderUi: () => void,
-): ContextMenuPopulator {
+) {
     return {
         getEntries: () => [
             {
@@ -374,7 +372,7 @@ export function contextMenuForCompound(
     tag: NbtCompound,
     parent: ParentData,
     reRenderUi: () => void,
-): ContextMenuPopulator {
+) {
     return {
         getEntries: () => [
             {
@@ -422,7 +420,7 @@ export function contextMenuForList(
     tag: NbtList,
     parent: ParentData,
     reRenderUi: () => void,
-): ContextMenuPopulator {
+) {
     return {
         getEntries: () => [
             {

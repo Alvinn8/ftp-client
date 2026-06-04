@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useSelection } from "@common/ui/store/selectionStore";
-import OverflowToMenu, { OverflowAction } from "@common/ui/components/elements/OverflowToMenu";
+import OverflowToMenu, {
+    OverflowAction,
+} from "@common/ui/components/elements/OverflowToMenu";
 import UploadDialog from "./UploadDialog";
 import { getActions } from "@common/contextmenu/actions";
 import { useRenameStore } from "@common/ui/store/renameStore";

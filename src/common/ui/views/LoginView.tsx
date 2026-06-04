@@ -11,7 +11,11 @@ import {
     LoginError,
     unexpectedErrorHandler,
 } from "@common/util/error";
-import { getConfig, isHostAllowed, ProtocolConfig } from "@common/config/config";
+import {
+    getConfig,
+    isHostAllowed,
+    ProtocolConfig,
+} from "@common/config/config";
 import ConnectingScreen from "@common/ui/ConnectingScreen";
 import ErrorScreen from "@common/ui/ErrorScreen";
 import { performWithRetry } from "@common/task/taskActions";

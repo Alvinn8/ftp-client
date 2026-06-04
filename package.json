@@ -12,9 +12,10 @@
         "test": "vitest",
         "test:ui": "vitest --ui",
         "lint": "eslint",
+        "lint:fix": "eslint --fix",
         "check": "tsc",
-        "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "format:fix": "prettier --write ."
     },
     "dependencies": {
         "@sayari/eslint-plugin": "0.0.1-rc.4",

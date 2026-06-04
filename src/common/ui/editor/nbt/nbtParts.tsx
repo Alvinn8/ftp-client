@@ -1,4 +1,3 @@
-
 export function UiNbtKey(props: { name: string }) {
     return <span style={{ color: "#2bc3c3" }}>{props.name}</span>;
 }

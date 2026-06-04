@@ -3,6 +3,7 @@ import NbtData, { BedrockEdition, BedrockLevelDat } from "@common/nbt/NbtData";
 import EditorControls from "@common/ui/editor/EditorControls";
 import UiNbtTag from "./UiNbtTag";
 import "./NbtEditor.css";
+import "@common/ui/colors.css";
 import { readNbt, sanityCheckNbt, writeNbt } from "@common/nbt/nbt";
 import Dialog from "@common/Dialog";
 import { formatError, unexpectedErrorHandler } from "@common/util/error";

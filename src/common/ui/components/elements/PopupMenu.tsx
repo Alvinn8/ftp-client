@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export type PopupMenuProps = {
-    anchorRef: React.RefObject<HTMLElement>;
+    anchorRef?: React.RefObject<HTMLElement>;
     x?: number;
     y?: number;
     open: boolean;
@@ -35,7 +35,7 @@ const PopupMenu: React.FC<PopupMenuProps> = ({
             setPosition({ left: x, top: y });
             return;
         }
-        const anchor = anchorRef.current;
+        const anchor = anchorRef?.current;
         if (!anchor) return;
         const rect = anchor.getBoundingClientRect();
         setPosition({
@@ -69,7 +69,8 @@ const PopupMenu: React.FC<PopupMenuProps> = ({
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
             if (menuRef.current && menuRef.current.contains(target)) return;
-            if (anchorRef.current && anchorRef.current.contains(target)) return;
+            if (anchorRef?.current && anchorRef.current.contains(target))
+                return;
             onClose();
         };
         document.addEventListener("mousedown", handleClickOutside);
