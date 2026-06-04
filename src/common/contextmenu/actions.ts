@@ -7,7 +7,6 @@ import DirectoryPath from "../ftp/DirectoryPath";
 import Priority from "../ftp/Priority";
 import Task from "../task/Task";
 import TaskManager from "../task/TaskManager";
-import { getApp } from "../ui/App";
 import { formatByteSize, joinPath, parentdir, trailingSlash } from "../utils";
 import { CancellationError, formatError, unexpectedErrorHandler } from "../error";
 import { FileTree, FileTreeFile } from "../task/tree";
@@ -15,7 +14,6 @@ import { TreeTask } from "../task/treeTask";
 import { usePath } from "../ui2/store/pathStore";
 import { openChosenEditor, openEditor } from "../ui/editor/editor";
 import { getSession } from "../ui2/store/sessionStore";
-import { useNewUiStore } from "../ui2/store/newUiStore";
 import { performWithRetry } from "../task/taskActions";
 import { useRenameStore } from "../ui2/store/renameStore";
 import { BlobReader, ZipWriter } from "@zip.js/zip.js";
@@ -69,9 +67,7 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
             icon: "download",
             label: "Download",
             onClick: () => {
-                downloadFolderEntry(selectedEntries[0]).catch(
-                    unexpectedErrorHandler("Failed to download")
-                )
+                downloadFolderEntry(selectedEntries[0])
             },
         });
     } else {
@@ -106,63 +102,22 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
     return actions;
 }
 
-export async function downloadFolderEntry(entry: FolderEntry) {
+export function downloadFolderEntry(entry: FolderEntry) {
     console.log("Download one folder entry");
-    if (useNewUiStore.getState().useNewUi) {
-        performWithRetry(getSession(), parentdir(entry.path), async (connection) => {
-            const blob = await connection.download(entry);
-            download(blob, entry.name);
-        }).catch((err) => {
-            if (err instanceof CancellationError) {
-                return;
-            }
-            unexpectedErrorHandler("Failed to download")(err);
-        });
-        return;
-    }
-    try {
-        const blob = await getApp().state.session.download(Priority.QUICK, entry);
+    performWithRetry(getSession(), parentdir(entry.path), async (connection) => {
+        const blob = await connection.download(entry);
         download(blob, entry.name);
-    } catch(err) {
-        Dialog.message("Failed to download", formatError(err));
-    }
+    }).catch((err) => {
+        if (err instanceof CancellationError) {
+            return;
+        }
+        unexpectedErrorHandler("Failed to download")(err);
+    });
 }
 
+/** @deprecated */
 export function rename(entry: FolderEntry) {
-    Dialog.prompt("Rename "+ entry.name, "Enter the new name of the file", "Rename", entry.name, newName => {
-        if (!newName) {
-            return;
-        }
-        if (newName.includes("/")) {
-            Dialog.message("Invalid name", "The name cannot contain slashes.");
-            return;
-        }
-        const newPath = entry.path.substring(0, entry.path.length - entry.name.length) + newName;
-
-        (async () => {
-            const list = await FolderContentProviders.MAIN.getFolderEntries(Priority.QUICK, parentdir(entry.path));
-            if (list && list.some((entry) => entry.name === newName)) {
-                Dialog.message(
-                    "Name already taken",
-                    "A file or folder with that name already exists.",
-                );
-                return;
-            }
-            console.log("Renaming", entry.path, "to", newPath);
-
-            try {
-                await getApp().state.session.rename(Priority.QUICK, entry.path, newPath);
-            } catch (err) {
-                if (String(err).includes("ENOTEMPTY") || String(err).includes("ENOTDIR")) {
-                    Dialog.message("Rename failed", "A file or folder with the new name already exists.");
-                } else {
-                    throw err;
-                }
-            } finally {
-                getApp().refresh();
-            }
-        })().catch(unexpectedErrorHandler("Failed to rename"));
-    });
+    throw new Error("ui1 rename is not supported anymore");
 }
 
 /**
@@ -366,15 +321,8 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
                     throw err;
                 }
             }
-            if (useNewUiStore.getState().useNewUi) {
-                getSession().folderCache.remove(directory.path);
-            } else {
-                const app = getApp();
-                delete app.state.session.cache[directory.path];
-                if (app.state.workdir === directory.path) {
-                    app.refresh();
-                }
-            }
+            getSession().folderCache.remove(directory.path);
+            
         },
         async file(file, connection) {
             try {
@@ -388,15 +336,7 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
             }
         },
         done(fileTree, connection) {
-            if (useNewUiStore.getState().useNewUi) {
-                getSession().folderCache.remove(fileTree.path);
-            } else {
-                const app = getApp();
-                delete app.state.session.cache[fileTree.path];
-                if (app.state.workdir === fileTree.path) {
-                    app.refreshWithoutClear();
-                }
-            }
+            getSession().folderCache.remove(fileTree.path);
         },
     });
     const description = task.count.totalFiles === 1 && entries[0]

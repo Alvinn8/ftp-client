@@ -1,6 +1,5 @@
 import { EventEmitter } from "eventemitter3";
 import { defaultConfig, distributionConfig } from "./defaultConfig";
-import { useNewUiStore } from "../ui2/store/newUiStore";
 
 export type Config = typeof defaultConfig;
 
@@ -77,12 +76,6 @@ function applyConfig() {
                 `--theme-${themeName}-${varName}`,
                 varValue,
             );
-        }
-    }
-    if (config.useNewUiByDefault) {
-        const state = useNewUiStore.getState();
-        if (!state.useNewUi) {
-            state.toggleUseNewUi();
         }
     }
 }

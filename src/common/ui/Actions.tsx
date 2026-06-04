@@ -3,9 +3,6 @@ import ContextMenuPopulator from "../contextmenu/ContextMenuPopulator";
 import FolderEntriesPopulator from "../contextmenu/FolderEntriesPopulator";
 import FolderEntryPopulator from "../contextmenu/FolderEntryPopulator";
 import FolderEntry from "../folder/FolderEntry";
-import Button from "../ui2/components/elements/Button";
-import { getSession, useSession } from "../ui2/store/sessionStore";
-import { useNewUiStore } from "../ui2/store/newUiStore";
 
 interface ActionsProps {
     selection: FolderEntry[];
@@ -18,23 +15,9 @@ interface ActionsProps {
  */
 export default class Actions extends React.Component<ActionsProps, {}> {
     render() {
-        
-        const goToNewUi = () => {
-            const session = getSession();
-            session.donateConnectionToPool();
-            useSession.getState().setSession(session);
-            useNewUiStore.getState().toggleUseNewUi();
-        };
-        
         const selection = this.props.selection;
         let populator: ContextMenuPopulator;
-        if (selection.length == 0) {
-            return (
-                <div id="mobile-actions" className="d-flex align-items-end justify-content-end p-1">
-                    <Button variant="ghost" label="Try new design" onClick={() => goToNewUi()} />
-                </div>
-            );
-        } else if (selection.length == 1) {
+        if (selection.length == 1) {
             populator = new FolderEntryPopulator(selection[0], this.props.onChangeDirectory);
         } else {
             populator = new FolderEntriesPopulator(selection);

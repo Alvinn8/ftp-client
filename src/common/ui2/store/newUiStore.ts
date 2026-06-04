@@ -5,8 +5,9 @@ interface UseNewUiState {
     toggleUseNewUi: () => void;
 }
 
+/** @deprecated */
 const useNewUiStore = create<UseNewUiState>((set) => ({
-    useNewUi: String(location.href).includes("useNewUi"),
+    useNewUi: true,
     toggleUseNewUi: () => set((state) => ({ useNewUi: !state.useNewUi })),
 }));
 

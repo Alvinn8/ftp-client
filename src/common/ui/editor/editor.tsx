@@ -1,16 +1,13 @@
 import { ungzip as pakoUngzip } from "pako";
 import Dialog from "../../Dialog";
 import FolderEntry from "../../folder/FolderEntry";
-import Priority from "../../ftp/Priority";
 import { readNbt, validateNbtParsing } from "../../nbt/nbt";
 import NbtData from "../../nbt/NbtData";
 import { FileType, getFileType } from "../FileFormats";
-import { getApp } from "../App";
 import { addMessage } from "../messages";
 import { EventEmitter } from "eventemitter3";
 import { CancellationError, formatError } from "../../error";
 import { sha256 } from "../../utils";
-import { useNewUiStore } from "../../ui2/store/newUiStore";
 import { performWithRetry } from "../../task/taskActions";
 import { useSession } from "../../ui2/store/sessionStore";
 
@@ -252,13 +249,9 @@ export async function openTextEditor(folderEntry: FolderEntry) {
                 } catch {}
             }
         }
-        if (useNewUiStore.getState().useNewUi) {
-            await performWithRetry(useSession.getState().getSession(), absolutePath, async (connection) => {
-                await connection.uploadSmall(blob, absolutePath);
-            });
-        } else {
-            await getApp().state.session.uploadSmall(Priority.QUICK, blob, absolutePath);
-        }
+        await performWithRetry(useSession.getState().getSession(), absolutePath, async (connection) => {
+            await connection.uploadSmall(blob, absolutePath);
+        });
         // TODO what if the file is large?
         wind.postMessage({
             action: "save-callback"
@@ -321,14 +314,9 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
     if (allowSaving) {
         const absolutePath = folderEntry.path;
         wind["save"] = async function(blob: Blob) {
-            if (useNewUiStore.getState().useNewUi) {
-                await performWithRetry(useSession.getState().getSession(), absolutePath, async (connection) => {
-                    await connection.uploadSmall(blob, absolutePath);
-                });
-            } else {
-                const session = getApp().state.session;
-                await session.uploadSmall(Priority.QUICK, blob, absolutePath);
-            }
+            await performWithRetry(useSession.getState().getSession(), absolutePath, async (connection) => {
+                await connection.uploadSmall(blob, absolutePath);
+            });
             wind.postMessage({
                 action: "save-callback"
             });
@@ -417,19 +405,15 @@ async function getFile(folderEntry: FolderEntry): Promise<EditorFileInfo | null>
 
     let blob: Blob;
     try {
-        if (useNewUiStore.getState().useNewUi) {
-            try {
-                blob = await performWithRetry(useSession.getState().getSession(), folderEntry.path, async (connection) => {
-                    return await connection.download(folderEntry);
-                });
-            } catch (err) {
-                if (err instanceof CancellationError) {
-                    return;
-                }
-                throw err;
+        try {
+            blob = await performWithRetry(useSession.getState().getSession(), folderEntry.path, async (connection) => {
+                return await connection.download(folderEntry);
+            });
+        } catch (err) {
+            if (err instanceof CancellationError) {
+                return;
             }
-        } else {
-            blob = await getApp().state.session.download(Priority.QUICK, folderEntry);
+            throw err;
         }
     } catch(err) {
         Dialog.message("Failed to open file", formatError(err));

@@ -20,9 +20,6 @@ import ConnectingScreen from "./ConnectingScreen";
 import ErrorScreen from "./ErrorScreen";
 import VERSION from "../../protocol/version";
 import { dirname } from "../utils";
-import Button from "../ui2/components/elements/Button";
-import { useNewUiStore } from "../ui2/store/newUiStore";
-import { useSession } from "../ui2/store/sessionStore";
 import { getConfig } from "../config/config";
 
 let app: App;
@@ -243,12 +240,6 @@ export class App extends React.Component<AppProps, AppState> {
             }
         }
 
-        const goToNewUi = () => {
-            this.state.session.donateConnectionToPool();
-            useSession.getState().setSession(this.state.session);
-            useNewUiStore.getState().toggleUseNewUi();
-        };
-
         const config = getConfig();
 
         return (
@@ -294,7 +285,6 @@ export class App extends React.Component<AppProps, AppState> {
                                     {aside}
                                     {actions}
                                     <small id="version" className="text-secondary">
-                                        <Button variant="ghost" label="Try new design" onClick={() => goToNewUi()} />
                                         <span>{ `Version: ${VERSION}` }</span>
                                     </small>
                                 </aside>

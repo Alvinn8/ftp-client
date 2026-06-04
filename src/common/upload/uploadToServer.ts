@@ -3,7 +3,6 @@ import { CancellationError, ConnectionClosedError, formatError } from "../error"
 import FolderContentProviders from "../folder/FolderContentProviders";
 import FolderEntry from "../folder/FolderEntry";
 import DirectoryPath from "../ftp/DirectoryPath";
-import { FolderCache } from "../ftp/FolderCache";
 import FTPSession from "../ftp/FTPSession";
 import Priority from "../ftp/Priority";
 import Task from "../task/Task";
@@ -13,7 +12,6 @@ import { FileTree, FileTreeFile, Status } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
 import { getApp } from "../ui/App";
 import { largeFileOperationStore } from "../ui/LargeFileOperation";
-import { useNewUiStore } from "../ui2/store/newUiStore";
 import { usePath } from "../ui2/store/pathStore";
 import { useSession } from "../ui2/store/sessionStore";
 import { dirname, filename, joinPath, noTrailingSlash, sleep } from "../utils";
@@ -114,14 +112,9 @@ function uploadUsingTreeTask(uploads: Directory) {
 
     let workdir: string;
     let session: FTPSession;
-    if (useNewUiStore.getState().useNewUi) {
-        workdir = usePath.getState().path;
-        session = useSession.getState().getSession();
-    } else {
-        const app = getApp();
-        workdir = app.state.workdir;
-        session = app.state.session;
-    }
+    workdir = usePath.getState().path;
+    session = useSession.getState().getSession();
+    
     const tree = uploadsToTree(uploads, workdir);
     taskManager.addTreeTask(new TreeTask(session, tree, {
         processRootDirectory: true,
@@ -175,15 +168,8 @@ function uploadUsingTreeTask(uploads: Directory) {
                 }
             }
             // Update cache
-            if (useNewUiStore.getState().useNewUi) {
-                useSession.getState().getSession().folderCache.set(node.path, list);
-            } else {
-                const app = getApp();
-                app.state.session.cache[node.path] = list;
-                if (app.state.workdir === node.path) {
-                    app.refreshWithoutClear();
-                }
-            }
+            useSession.getState().getSession().folderCache.set(node.path, list);
+            
         },
         file: async (node, connection) => {
             const path = joinPath(node.parent.path, node.name);
@@ -284,13 +270,7 @@ function uploadUsingTreeTask(uploads: Directory) {
         cancelled: async (fileTree, connection) => {
             // If the task is cancelled, we need to delete all files that were partially
             // uploaded to avoid leaving behind corrupted files.
-            let cache: { [key: string]: FolderEntry[] | null } = null;
-            let folderCache: FolderCache | null = null;
-            if (useNewUiStore.getState().useNewUi) {
-                folderCache = useSession.getState().getSession().folderCache;
-            } else {
-                cache = getApp().state.session.cache;
-            }
+            let folderCache = useSession.getState().getSession().folderCache;
             async function removePartialFilesRecursive(fileTree: FileTree<UploadData>) {
                 for (const entry of fileTree.getEntries()) {
                     if (entry instanceof FileTreeFile) {
@@ -298,12 +278,7 @@ function uploadUsingTreeTask(uploads: Directory) {
                             const path = joinPath(fileTree.path, entry.name);
                             console.log(`Removing partial file ${path}`);
                             await connection.delete(path);
-                            if (cache) {
-                                delete cache[dirname(path)];
-                            }
-                            if (folderCache) {
-                                folderCache.remove(dirname(path));
-                            }
+                            folderCache.remove(dirname(path));
                         }
                     } else {
                         await removePartialFilesRecursive(entry);
@@ -311,12 +286,9 @@ function uploadUsingTreeTask(uploads: Directory) {
                 }
             }
             await removePartialFilesRecursive(fileTree);
-            if (useNewUiStore.getState().useNewUi) {
-                const session = useSession.getState().getSession();
-                session.folderCache.fetchIfNotCached(session, usePath.getState().path);
-            } else {
-                getApp().refreshWithoutClear();
-            }
+            const session = useSession.getState().getSession();
+            session.folderCache.fetchIfNotCached(session, usePath.getState().path);
+            
         },
     }));
 }
