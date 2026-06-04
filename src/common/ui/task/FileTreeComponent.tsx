@@ -3,7 +3,7 @@ import { FileTree, FileTreeFile, Status } from "../../task/tree";
 import { getIconFor } from "../FileFormats";
 import { filename, formatByteSize } from "../../utils";
 import { formatError } from "../../error";
-import Button from "../../ui2/components/elements/Button";
+import Button from "../components/elements/Button";
 
 function statusIcon(status: string) {
     switch (status) {

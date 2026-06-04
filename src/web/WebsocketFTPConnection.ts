@@ -7,7 +7,7 @@ import { LargeFileOperationInterface, largeFileOperationStore } from "../common/
 import Dialog from "../common/Dialog";
 import { assertUnreachable, CancellationError, ConnectionClosedError, FTPError, SFTPError } from "../common/error";
 import { getConfig } from "../common/config/config";
-import { useSession } from "../common/ui2/store/sessionStore";
+import { useSession } from "../common/ui/store/sessionStore";
 
 interface PendingReply {
     requestId: string;

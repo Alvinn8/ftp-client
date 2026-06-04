@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ProgressObject, TaskStatus, TreeTask } from '../../task/treeTask';
 import { formatByteSize } from '../../utils';
-import Button from '../../ui2/components/elements/Button';
+import Button from '../components/elements/Button';
 
 export interface TaskProps {
     treeTask: TreeTask;

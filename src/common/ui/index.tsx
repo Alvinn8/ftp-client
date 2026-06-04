@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
 import "./googleTranslateFix";
-import Ui2App from "../ui2/App";
+import Ui2App from "./App";
 import { useEffect, useState } from "react";
 import { loadConfig, onLoad, removeOnLoad } from "../config/config";
 import { unexpectedErrorHandler } from "../error";

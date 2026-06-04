@@ -2,15 +2,15 @@ import React from "react";
 import MainView from "./views/MainView";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import "../ui/style.css";
+import "./style.css";
 import "./colors.css";
 import "./scrollbars.css";
 import { useSession } from "./store/sessionStore";
 import LoginView from "./views/LoginView";
-import Tasks from "../ui/task/Tasks";
-import LargeFileOperation from "../ui/LargeFileOperation";
-import OpenEditors from "../ui/editor/OpenEditors";
-import Messages from "../ui/messages";
+import Tasks from "./task/Tasks";
+import LargeFileOperation from "./LargeFileOperation";
+import OpenEditors from "./editor/OpenEditors";
+import Messages from "./messages";
 
 const App: React.FC = () => {
     const hasSession = useSession((state) => state.hasSession());

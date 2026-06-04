@@ -4,7 +4,7 @@ import { TaskStatus, TreeTask } from "./treeTask";
 import FTPSession from "../ftp/FTPSession";
 import { Status } from "./tree";
 import { unexpectedErrorHandler } from "../error";
-import { useSession } from "../ui2/store/sessionStore";
+import { useSession } from "../ui/store/sessionStore";
 
 export class TaskManager extends EventEmitter {
     private session: FTPSession;

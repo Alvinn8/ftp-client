@@ -6,11 +6,11 @@ import { formatByteSize, joinPath, parentdir, trailingSlash } from "../utils";
 import { CancellationError, unexpectedErrorHandler } from "../error";
 import { FileTree, FileTreeFile } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
-import { usePath } from "../ui2/store/pathStore";
+import { usePath } from "../ui/store/pathStore";
 import { openChosenEditor, openEditor } from "../ui/editor/editor";
-import { getSession } from "../ui2/store/sessionStore";
+import { getSession } from "../ui/store/sessionStore";
 import { performWithRetry } from "../task/taskActions";
-import { useRenameStore } from "../ui2/store/renameStore";
+import { useRenameStore } from "../ui/store/renameStore";
 import { BlobReader, ZipWriter } from "@zip.js/zip.js";
 
 interface Action {

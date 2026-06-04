@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useRef, useEffect } from "react";
-import { useSelection } from "../ui2/store/selectionStore";
+import { useSelection } from "./store/selectionStore";
 
 type NumberLike = number | string;
 interface DropZoneProps {

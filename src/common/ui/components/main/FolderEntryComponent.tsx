@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
-import Size from "../../../ui/Size";
+import Size from "../../Size";
 import FolderEntry from "../../../folder/FolderEntry";
-import { getIconFor } from "../../../ui/FileFormats";
+import { getIconFor } from "../../FileFormats";
 import Button from "../elements/Button";
 import Checkbox from "../elements/Checkbox";
 import { useSelection } from "../../store/selectionStore";
@@ -13,7 +13,7 @@ import { useContextMenu } from "../../store/contextMenu";
 import PopupMenu from "../elements/PopupMenu";
 import { findDirectorySize, getActions } from "../../../contextmenu/actions";
 import { createPortal } from "react-dom";
-import { openEditor } from "../../../ui/editor/editor";
+import { openEditor } from "../../editor/editor";
 import { unexpectedErrorHandler } from "../../../error";
 import { useRename } from "../../store/renameStore";
 import { performWithRetry } from "../../../task/taskActions";

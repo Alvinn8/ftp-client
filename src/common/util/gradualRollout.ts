@@ -1,4 +1,4 @@
-import { useSession } from "../ui2/store/sessionStore";
+import { useSession } from "../ui/store/sessionStore";
 
 // https://stackoverflow.com/a/7616484
 const generateHash = (str: string) => {

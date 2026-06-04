@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { usePath } from "../../store/pathStore";
 import Button from "../elements/Button";
-import { useDragAndDrop } from "../../../ui/DropZone";
+import { useDragAndDrop } from "../../DropZone";
 import {
     directoryUpload,
     fileUpload,

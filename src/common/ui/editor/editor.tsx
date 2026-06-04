@@ -9,7 +9,7 @@ import { EventEmitter } from "eventemitter3";
 import { CancellationError, formatError } from "../../error";
 import { sha256 } from "../../utils";
 import { performWithRetry } from "../../task/taskActions";
-import { useSession } from "../../ui2/store/sessionStore";
+import { useSession } from "../store/sessionStore";
 
 interface EditorWindow {
     window: Window;
