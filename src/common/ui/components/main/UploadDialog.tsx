@@ -10,7 +10,7 @@ import {
     handleOnDrop,
     setZipUploadMode,
 } from "../../../upload/upload";
-import { unexpectedErrorHandler } from "../../../error";
+import { unexpectedErrorHandler } from "../../../util/error";
 
 interface UploadDialogProps {
     onClose: () => void;

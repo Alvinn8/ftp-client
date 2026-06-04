@@ -4,8 +4,8 @@ import FTPSession from "./FTPSession";
 import { performWithRetry } from "../task/taskActions";
 import Dialog from "../Dialog";
 import { usePath } from "../ui/store/pathStore";
-import { joinPath, parentdir } from "../utils";
-import { formatError, unexpectedErrorHandler } from "../error";
+import { joinPath, parentdir } from "../util/utils";
+import { formatError, unexpectedErrorHandler } from "../util/error";
 
 export class FolderCache {
     private cache: Map<string, FolderEntry[]> = new Map();

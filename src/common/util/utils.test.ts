@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-    dirname,
-    ensureAbsolute,
-    filename,
-    joinPath,
-    parentdir,
-} from "./utils";
+import { dirname, filename, joinPath, parentdir } from "./utils";
 
 describe("utils", () => {
     it("joinPath /a/b and c", () => {

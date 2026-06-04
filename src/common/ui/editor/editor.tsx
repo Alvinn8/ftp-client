@@ -3,11 +3,11 @@ import Dialog from "../../Dialog";
 import FolderEntry from "../../folder/FolderEntry";
 import { readNbt, validateNbtParsing } from "../../nbt/nbt";
 import NbtData from "../../nbt/NbtData";
-import { FileType, getFileType } from "../FileFormats";
+import { FileType, getFileType } from "../../util/FileFormats";
 import { addMessage } from "../messages";
 import { EventEmitter } from "eventemitter3";
-import { CancellationError, formatError } from "../../error";
-import { sha256 } from "../../utils";
+import { CancellationError, formatError } from "../../util/error";
+import { sha256 } from "../../util/utils";
 import { performWithRetry } from "../../task/taskActions";
 import { useSession } from "../store/sessionStore";
 

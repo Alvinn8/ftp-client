@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import FolderEntry from "../../folder/FolderEntry";
-import { parentdir } from "../../utils";
-import { reportError } from "../../error";
+import { parentdir } from "../../util/utils";
+import { reportError } from "../../util/error";
 import { EventEmitter } from "eventemitter3";
 
 interface SelectionState {

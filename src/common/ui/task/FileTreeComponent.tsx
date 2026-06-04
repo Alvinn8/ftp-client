@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FileTree, FileTreeFile, Status } from "../../task/tree";
-import { getIconFor } from "../FileFormats";
-import { filename, formatByteSize } from "../../utils";
-import { formatError } from "../../error";
+import { getIconFor } from "../../util/FileFormats";
+import { filename, formatByteSize } from "../../util/utils";
+import { formatError } from "../../util/error";
 import Button from "../components/elements/Button";
 
 function statusIcon(status: string) {

@@ -3,8 +3,8 @@ import FTPConnection from "../ftp/FTPConnection";
 import { FileTree, FileTreeFile, Status } from "./tree";
 import FTPSession from "../ftp/FTPSession";
 import Priority from "../ftp/Priority";
-import { unexpectedErrorHandler } from "../error";
-import { sleep } from "../utils";
+import { unexpectedErrorHandler } from "../util/error";
+import { sleep } from "../util/utils";
 
 type MaybePromise<T> = Promise<T> | T;
 

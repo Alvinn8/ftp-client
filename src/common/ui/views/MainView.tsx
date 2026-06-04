@@ -5,7 +5,7 @@ import Path from "../components/main/Path";
 import "./mainView.css";
 import Button from "../components/elements/Button";
 import { usePath } from "../store/pathStore";
-import { parentdir } from "../../utils";
+import { parentdir } from "../../util/utils";
 import Actions from "../components/main/Actions";
 import FolderExplorer from "../components/main/FolderExplorer";
 import Ad from "../components/elements/Ad";
@@ -14,7 +14,7 @@ import VERSION from "../../../protocol/version";
 import BonusActions from "../components/bonus/BonusActions";
 import { handleOnDrop } from "../../upload/upload";
 import { useDragAndDrop } from "../../ui/DropZone";
-import { unexpectedErrorHandler } from "../../error";
+import { unexpectedErrorHandler } from "../../util/error";
 
 const MainView: React.FC = () => {
     const session = useSession((state) => state.session);

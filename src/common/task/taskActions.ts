@@ -1,4 +1,4 @@
-import { CancellationError } from "../error";
+import { CancellationError } from "../util/error";
 import FTPConnection from "../ftp/FTPConnection";
 import FTPSession from "../ftp/FTPSession";
 import { FileTree } from "./tree";

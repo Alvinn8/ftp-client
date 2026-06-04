@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { Modal } from "bootstrap";
 import { FileTree, FileTreeFile, Status } from "../../task/tree";
 import Tabs from "../components/elements/Tabs";
-import { formatByteSize, joinPath } from "../../utils";
+import { formatByteSize, joinPath } from "../../util/utils";
 import Button from "../components/elements/Button";
 import { FileTreeComponent, FileTreeFileComponent } from "./FileTreeComponent";
 import PlusMinusInput from "../components/elements/PlusMinusInput";

@@ -3,7 +3,7 @@ import { addMessage } from "../ui/messages";
 import { TaskStatus, TreeTask } from "./treeTask";
 import FTPSession from "../ftp/FTPSession";
 import { Status } from "./tree";
-import { unexpectedErrorHandler } from "../error";
+import { unexpectedErrorHandler } from "../util/error";
 import { useSession } from "../ui/store/sessionStore";
 
 export class TaskManager extends EventEmitter {

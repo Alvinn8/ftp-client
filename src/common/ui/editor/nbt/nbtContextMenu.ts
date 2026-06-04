@@ -1,7 +1,7 @@
 import ContextMenuEntry from "../../../contextmenu/ContextMenuEntry";
 import ContextMenuPopulator from "../../../contextmenu/ContextMenuPopulator";
 import Dialog from "../../../Dialog";
-import { unexpectedErrorHandler } from "../../../error";
+import { unexpectedErrorHandler } from "../../../util/error";
 import { getTagFromId } from "../../../nbt/nbt";
 import {
     ArrayNbtTag,
@@ -19,7 +19,7 @@ import {
     NbtString,
     NumberNbtTag,
 } from "../../../nbt/nbtTags";
-import { copyToClipboard } from "../../../utils";
+import { copyToClipboard } from "../../../util/utils";
 
 export type CompoundParentData = {
     parent: NbtCompound;

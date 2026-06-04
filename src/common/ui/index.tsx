@@ -4,7 +4,7 @@ import "./googleTranslateFix";
 import Ui2App from "./App";
 import { useEffect, useState } from "react";
 import { loadConfig, onLoad, removeOnLoad } from "../config/config";
-import { unexpectedErrorHandler } from "../error";
+import { unexpectedErrorHandler } from "../util/error";
 import ConnectingScreen from "./ConnectingScreen";
 
 loadConfig().catch(unexpectedErrorHandler("Config Load Error"));

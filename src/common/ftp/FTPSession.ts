@@ -3,7 +3,7 @@ import { Profile } from "./profile";
 import FTPRequest from "./FTPRequest";
 import { ConnectionPool } from "./ConnectionPool";
 import { EventEmitter } from "eventemitter3";
-import { unexpectedErrorHandler } from "../error";
+import { unexpectedErrorHandler } from "../util/error";
 import { TaskManager } from "../task/TaskManager";
 import { FolderCache } from "./FolderCache";
 

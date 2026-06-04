@@ -6,7 +6,11 @@ import { Profile } from "../../ftp/profile";
 import { useSession } from "../store/sessionStore";
 import FTPSession from "../../ftp/FTPSession";
 import "./loginView.css";
-import { formatError, LoginError, unexpectedErrorHandler } from "../../error";
+import {
+    formatError,
+    LoginError,
+    unexpectedErrorHandler,
+} from "../../util/error";
 import { getConfig, isHostAllowed, ProtocolConfig } from "../../config/config";
 import ConnectingScreen from "../../ui/ConnectingScreen";
 import ErrorScreen from "../../ui/ErrorScreen";

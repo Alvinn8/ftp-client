@@ -2,7 +2,7 @@ import { EventEmitter } from "eventemitter3";
 import WebsocketFTPConnection from "../../web/WebsocketFTPConnection";
 import FTPConnection from "./FTPConnection";
 import { Profile } from "./profile";
-import { FTPError, LoginError } from "../error";
+import { FTPError, LoginError } from "../util/error";
 
 export type ConnectionPoolEntry = {
     connection: WebsocketFTPConnection;

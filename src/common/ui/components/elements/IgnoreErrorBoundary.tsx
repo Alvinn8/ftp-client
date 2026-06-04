@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ErrorInfo } from "react";
-import { formatError } from "../../../error";
+import { formatError } from "../../../util/error";
 
 export type Props = {
     fallback: React.JSX.Element;

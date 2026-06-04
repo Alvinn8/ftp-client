@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ProgressObject, TaskStatus, TreeTask } from "../../task/treeTask";
-import { formatByteSize } from "../../utils";
+import { formatByteSize } from "../../util/utils";
 import Button from "../components/elements/Button";
 
 export interface TaskProps {

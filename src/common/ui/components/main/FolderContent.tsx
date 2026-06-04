@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 import { usePath } from "../../store/pathStore";
 import { useSession } from "../../store/sessionStore";
 import { useFolderContent } from "../../../ftp/FolderCache";
-import { randomBetween, range } from "../../../utils";
+import { randomBetween, range } from "../../../util/utils";
 import FolderEntryComponent from "./FolderEntryComponent";
 import { useSelection } from "../../store/selectionStore";
 import { useRenameStore } from "../../store/renameStore";

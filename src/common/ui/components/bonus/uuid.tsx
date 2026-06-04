@@ -2,7 +2,7 @@ import React from "react";
 import FolderEntry from "../../../folder/FolderEntry";
 import FTPSession from "../../../ftp/FTPSession";
 import { performWithRetry } from "../../../task/taskActions";
-import { parentdir } from "../../../utils";
+import { parentdir } from "../../../util/utils";
 import TextInput from "../elements/TextInput";
 import Button from "../elements/Button";
 import { usePath } from "../../store/pathStore";

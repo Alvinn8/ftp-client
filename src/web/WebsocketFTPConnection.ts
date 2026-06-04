@@ -1,7 +1,12 @@
 import FolderEntry, { FolderEntryType } from "../common/folder/FolderEntry";
 import FTPConnection from "../common/ftp/FTPConnection";
 import { addMessage } from "../common/ui/messages";
-import { blobToBase64, ensureAbsolute, filename, sleep } from "../common/utils";
+import {
+    blobToBase64,
+    ensureAbsolute,
+    filename,
+    sleep,
+} from "../common/util/utils";
 import {
     ChunkedUploadResponse,
     ConnectData,
@@ -21,7 +26,7 @@ import {
     ConnectionClosedError,
     FTPError,
     SFTPError,
-} from "../common/error";
+} from "../common/util/error";
 import { getConfig } from "../common/config/config";
 import { useSession } from "../common/ui/store/sessionStore";
 

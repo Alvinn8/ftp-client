@@ -1,9 +1,14 @@
 import JSZip from "jszip";
 import Dialog from "../Dialog";
-import download from "../download";
+import download from "../util/download";
 import FolderEntry, { FolderEntryType } from "../folder/FolderEntry";
-import { formatByteSize, joinPath, parentdir, trailingSlash } from "../utils";
-import { CancellationError, unexpectedErrorHandler } from "../error";
+import {
+    formatByteSize,
+    joinPath,
+    parentdir,
+    trailingSlash,
+} from "../util/utils";
+import { CancellationError, unexpectedErrorHandler } from "../util/error";
 import { FileTree, FileTreeFile } from "../task/tree";
 import { TreeTask } from "../task/treeTask";
 import { usePath } from "../ui/store/pathStore";

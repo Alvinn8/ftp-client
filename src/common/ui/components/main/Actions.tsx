@@ -7,7 +7,7 @@ import { useRenameStore } from "../../store/renameStore";
 import { getSession } from "../../store/sessionStore";
 import { usePath } from "../../store/pathStore";
 import FolderEntry, { FolderEntryType } from "../../../folder/FolderEntry";
-import { joinPath } from "../../../utils";
+import { joinPath } from "../../../util/utils";
 
 const Actions: React.FC = () => {
     const selectedEntries = useSelection((state) => state.selectedEntries);

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ensureAbsolute } from "../../utils";
+import { ensureAbsolute } from "../../util/utils";
 import { useSelection } from "./selectionStore";
 
 interface PathState {

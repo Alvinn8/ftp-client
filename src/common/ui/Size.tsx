@@ -1,5 +1,5 @@
 import * as React from "react";
-import { formatByteSize } from "../utils";
+import { formatByteSize } from "../util/utils";
 
 /**
  * A component rendering a file size in bytes. Will choose a fitting prefix and

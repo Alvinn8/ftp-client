@@ -7,7 +7,7 @@ import * as React from "react";
 import Dialog from "../Dialog";
 import Directory from "./Directory";
 import { upload } from "./uploadToServer";
-import { formatError, unexpectedErrorHandler } from "../error";
+import { formatError, unexpectedErrorHandler } from "../util/error";
 
 export namespace UploadSupport {
     /**

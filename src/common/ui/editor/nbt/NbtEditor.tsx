@@ -5,7 +5,7 @@ import UiNbtTag from "./UiNbtTag";
 import "./NbtEditor.css";
 import { readNbt, sanityCheckNbt, writeNbt } from "../../../nbt/nbt";
 import Dialog from "../../../Dialog";
-import { formatError, unexpectedErrorHandler } from "../../../error";
+import { formatError, unexpectedErrorHandler } from "../../../util/error";
 
 const NbtEditor = () => {
     const [nbt, setNbt] = useState<NbtData>(null);

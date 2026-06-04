@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import Size from "../../Size";
 import FolderEntry from "../../../folder/FolderEntry";
-import { getIconFor } from "../../FileFormats";
+import { getIconFor } from "../../../util/FileFormats";
 import Button from "../elements/Button";
 import Checkbox from "../elements/Checkbox";
 import { useSelection } from "../../store/selectionStore";
@@ -14,10 +14,10 @@ import PopupMenu from "../elements/PopupMenu";
 import { findDirectorySize, getActions } from "../../../contextmenu/actions";
 import { createPortal } from "react-dom";
 import { openEditor } from "../../editor/editor";
-import { unexpectedErrorHandler } from "../../../error";
+import { unexpectedErrorHandler } from "../../../util/error";
 import { useRename } from "../../store/renameStore";
 import { performWithRetry } from "../../../task/taskActions";
-import { parentdir } from "../../../utils";
+import { parentdir } from "../../../util/utils";
 import { useFolderCacheSize } from "../../../ftp/FolderCache";
 
 interface FolderEntryComponentProps {
