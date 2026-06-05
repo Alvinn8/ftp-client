@@ -53,6 +53,12 @@ importers:
       react-dom:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
+      ssh2-sftp-client:
+        specifier: ^12.1.1
+        version: 12.1.1
+      ws:
+        specifier: ^8.21.0
+        version: 8.21.0
       zustand:
         specifier: ^5.0.14
         version: 5.0.14(@types/react@19.2.16)(react@19.2.7)
@@ -99,6 +105,9 @@ importers:
       '@vitest/ui':
         specifier: ^4.1.8
         version: 4.1.8(vitest@4.1.8)
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
       eslint:
         specifier: ^10.4.1
         version: 10.4.1
@@ -135,19 +144,6 @@ importers:
       vitest:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.1)(@vitest/ui@4.1.8)(happy-dom@20.9.0)(vite@8.0.16(@types/node@25.9.1)(esbuild@0.28.0))
-
-  server:
-    dependencies:
-      ssh2-sftp-client:
-        specifier: ^12.1.1
-        version: 12.1.1
-      ws:
-        specifier: ^8.21.0
-        version: 8.21.0
-    devDependencies:
-      esbuild:
-        specifier: ^0.28.0
-        version: 0.28.0
 
 packages:
 

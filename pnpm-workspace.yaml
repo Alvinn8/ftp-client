@@ -1,5 +1,3 @@
-packages:
-    - server
 allowBuilds:
     cpu-features@0.0.10: true
     esbuild@0.28.0: true

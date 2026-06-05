@@ -1,12 +1,11 @@
 FROM node:24-alpine AS build
 
-WORKDIR /app/server
+WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@11.5.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
-COPY server/package.json /app/server/
 RUN pnpm install --frozen-lockfile
 COPY . /app/
-RUN pnpm run build
+RUN pnpm run server:build
 
 FROM node:24-alpine
 
@@ -18,7 +17,6 @@ RUN apk add --no-cache ca-certificates curl \
 ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/letsencrypt-root-yr.pem
 RUN corepack enable && corepack prepare pnpm@11.5.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
-COPY server/package.json ./
 RUN pnpm install --prod --frozen-lockfile
 COPY --from=build /app/server/bundle.js ./bundle.js
 ENV PORT=8081
