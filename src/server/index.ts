@@ -396,9 +396,11 @@ server.on("connection", function (ws) {
             if (typeof json.packetId == "number") {
                 const packetId: number = json.packetId;
                 const packetName = String(json.packetName);
-                connection.log(
-                    "Got packet id: " + packetId + " name: " + packetName,
-                );
+                if (process.env.DEBUG_PACKETS) {
+                    connection.log(
+                        "Got packet id: " + packetId + " name: " + packetName,
+                    );
+                }
 
                 // Get the packet
                 const packet =
