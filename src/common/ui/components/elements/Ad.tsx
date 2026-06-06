@@ -10,6 +10,9 @@ interface AdProps {
 
 const Ad: React.FC<AdProps> = ({ name: _, sizes }) => {
     // Placeholder for ad component
+    //
+    // Distribution-specific code can be added here to load ads from an ad provider.
+    //
     const [sizesThatFit, setSizesThatFit] = useState<Size[]>([]);
     const [size, setSize] = useState<Size>([0, 0]);
 

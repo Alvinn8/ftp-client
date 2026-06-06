@@ -114,6 +114,8 @@ const LoginView: React.FC = () => {
             }
         });
 
+        parseCustomUrlFormats(url, urlData);
+
         const hasAllRequired = protocolConfig.fields
             .filter((field) => !field.optional)
             .every(
@@ -382,5 +384,9 @@ const LoginView: React.FC = () => {
         </div>
     );
 };
+
+function parseCustomUrlFormats(url: URL, urlData: Record<string, any>) {
+    // Distribution-specific URL formats can be implemented here.
+}
 
 export default LoginView;
