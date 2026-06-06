@@ -51,6 +51,9 @@ async function attemptRequest() {
 }
 
 export async function pingBackend() {
+    if (import.meta.env.VITEST) {
+        return;
+    }
     let err: unknown;
     let attempts = 0;
     while (attempts < 5) {
