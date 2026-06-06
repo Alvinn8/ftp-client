@@ -7,4 +7,7 @@ esbuild.build({
     bundle: true,
     outfile: "bundle.js",
     packages: "external",
+    define: {
+        "process.env.VERSION": JSON.stringify(process.env.npm_package_version),
+    },
 });

@@ -10,7 +10,6 @@ import Actions from "@common/ui/components/main/Actions";
 import FolderExplorer from "@common/ui/components/main/FolderExplorer";
 import Ad from "@common/ui/components/elements/Ad";
 import { getConfig } from "@common/config/config";
-import VERSION from "@protocol/version";
 import BonusActions from "@common/ui/components/bonus/BonusActions";
 import { handleOnDrop } from "@common/upload/upload";
 import { useDragAndDrop } from "@common/ui/DropZone";
@@ -70,7 +69,7 @@ const MainView: React.FC = () => {
                 id="version"
                 className="text-secondary position-absolute bottom-0 end-0 p-2"
             >
-                <span>{`Version: ${VERSION}`}</span>
+                <span>{`Version: ${import.meta.env.VERSION}`}</span>
             </small>
             {adConfig.enabled && adConfig.slots.rightAd && (
                 <div className="right-content align-items-center">

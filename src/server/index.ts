@@ -16,8 +16,9 @@ import {
     packetNameMap,
     Packets,
 } from "@protocol/packets";
-import VERSION from "@protocol/version";
 import { ReadableMemoryStream, WritableMemoryStream } from "./memoryStreams";
+
+console.log("Version:", process.env.VERSION);
 
 // Prevent uncaught promise rejections from crashing the application
 process.on("unhandledRejection", (reason, promise) => {
@@ -326,7 +327,7 @@ const httpServer = createServer(function (req, res) {
             return;
         }
         res.writeHead(200, CORS_HEADERS);
-        res.write("Server is up. Version is " + VERSION);
+        res.write("Server is up. Version is " + process.env.VERSION);
         res.end();
     } else if (req.method == "OPTIONS") {
         res.writeHead(204, CORS_HEADERS);

@@ -30,6 +30,11 @@ export default defineConfig({
             "@server": resolve(__dirname, "src", "server"),
         },
     },
+    define: {
+        "import.meta.env.VERSION": JSON.stringify(
+            process.env.npm_package_version,
+        ),
+    },
     build: {
         rollupOptions: {
             input: {
