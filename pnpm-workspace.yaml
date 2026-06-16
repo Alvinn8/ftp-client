@@ -1,5 +1,5 @@
 allowBuilds:
     cpu-features@0.0.10: true
-    esbuild@0.28.0: true
+    esbuild@0.28.1: true
     ssh2@1.17.0: true
     unrs-resolver: true
