@@ -71,8 +71,11 @@ export interface DownloadReply {
 
 export interface UploadData {
     path: string;
-    /** The file's raw bytes, carried as a binary packet blob. */
-    data: Uint8Array;
+    /**
+     * The file's raw bytes, carried as a binary packet blob. Older clients
+     * without binary support instead send a base64-encoded string.
+     */
+    data: Uint8Array | string;
 }
 
 export interface RenameData {
@@ -98,8 +101,11 @@ export interface ChunkedUploadStartResponse {
 
 export interface ChunkedUploadData {
     uploadId: string;
-    /** The chunk's raw bytes, carried as a binary packet blob. */
-    data: Uint8Array;
+    /**
+     * The chunk's raw bytes, carried as a binary packet blob. Older clients
+     * without binary support instead send a base64-encoded string.
+     */
+    data: Uint8Array | string;
     /** The inclusive start byte offset in the file for this chunk. */
     start: number;
     /** The exclusive end byte offset in the file for this chunk. */

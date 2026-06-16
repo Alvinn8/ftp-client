@@ -153,7 +153,11 @@ handler(ServerPackets.LargeDownload, async (packet, data, connection) => {
 });
 
 handler(Packets.Upload, async (packet, data, connection) => {
-    const buffer = Buffer.from(data.data);
+    // New clients send raw bytes; older clients send a base64 string.
+    const buffer =
+        typeof data.data === "string"
+            ? Buffer.from(data.data, "base64")
+            : Buffer.from(data.data);
 
     await connection.client.put(buffer, data.path);
 });

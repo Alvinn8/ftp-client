@@ -390,17 +390,28 @@ server.on("connection", function (ws) {
             }
         }
         if (connection == null) {
-            // The connection is still handshaking
-            if (
+            // The connection is still handshaking.
+            const handshake =
                 !binary &&
-                message.startsWith("handshake json " + PROTOCOL_VERSION)
-            ) {
+                message.match(/^handshake (json|json-binary) (\d+)$/);
+            if (handshake) {
+                const type = handshake[1];
+                const version = parseInt(handshake[2], 10);
                 connection = new Connection(ws);
-                connection.log("New successfull handshake.");
+                // Binary packets are only used with clients that advertise
+                // support for them ("json-binary", version >= 2). Older
+                // (possibly cached) clients use "json" or version 1 and must
+                // keep receiving base64-encoded JSON.
+                connection.binary = type === "json-binary" && version >= 2;
+                connection.log(
+                    "New successful handshake. Binary packets " +
+                        (connection.binary ? "enabled" : "disabled") +
+                        ".",
+                );
             } else {
                 ws.send(
                     'Error, incompatible protocol type or version. Expected "' +
-                        "handshake json " +
+                        "handshake json-binary " +
                         PROTOCOL_VERSION +
                         '", got "' +
                         message +
@@ -589,6 +600,11 @@ export class Connection<T = unknown> {
     public readonly id = nextId++;
     public readonly ws: WebSocket;
     public userClosed: boolean = false;
+    /**
+     * Whether this client supports binary packets. Older (possibly cached)
+     * clients do not, and must keep receiving base64-encoded JSON.
+     */
+    public binary: boolean = false;
     protocol: string;
     client: T;
 
@@ -605,8 +621,10 @@ export class Connection<T = unknown> {
     }
 
     /**
-     * Sends a packet, automatically using the binary packet format when the
-     * object carries a blob property (see @protocol/binary), otherwise JSON.
+     * Sends a packet. When the object carries a blob property (see
+     * @protocol/binary) and the client supports binary packets, it is sent as a
+     * binary packet; otherwise the blob is base64-encoded into the JSON so that
+     * clients without binary support can still read it.
      */
     send(packet: object) {
         const blobProperty = findBinaryProperty(packet);
@@ -615,7 +633,12 @@ export class Connection<T = unknown> {
                 string,
                 any
             >;
-            this.ws.send(encodeBinaryPacket(json, blobProperty, blob));
+            if (this.binary) {
+                this.ws.send(encodeBinaryPacket(json, blobProperty, blob));
+            } else {
+                json[blobProperty] = Buffer.from(blob).toString("base64");
+                this.sendJson(json);
+            }
         } else {
             this.sendJson(packet);
         }
@@ -723,7 +746,11 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
         };
     }
 
-    const buffer = Buffer.from(data.data);
+    // New clients send raw bytes; older clients send a base64 string.
+    const buffer =
+        typeof data.data === "string"
+            ? Buffer.from(data.data, "base64")
+            : Buffer.from(data.data);
     if (buffer.byteLength !== data.end - data.start) {
         return { status: "malsized" as Status };
     }
