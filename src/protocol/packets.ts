@@ -64,13 +64,15 @@ export interface DownloadData {
 }
 
 export interface DownloadReply {
-    data?: string;
+    /** The file's raw bytes, carried as a binary packet blob. */
+    data?: Uint8Array;
     downloadId?: string;
 }
 
 export interface UploadData {
     path: string;
-    data: string;
+    /** The file's raw bytes, carried as a binary packet blob. */
+    data: Uint8Array;
 }
 
 export interface RenameData {
@@ -96,8 +98,8 @@ export interface ChunkedUploadStartResponse {
 
 export interface ChunkedUploadData {
     uploadId: string;
-    /** Base64-encoded chunk data. */
-    data: string;
+    /** The chunk's raw bytes, carried as a binary packet blob. */
+    data: Uint8Array;
     /** The inclusive start byte offset in the file for this chunk. */
     start: number;
     /** The exclusive end byte offset in the file for this chunk. */

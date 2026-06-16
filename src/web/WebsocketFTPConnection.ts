@@ -1,12 +1,12 @@
 import FolderEntry, { FolderEntryType } from "@common/folder/FolderEntry";
 import FTPConnection from "@common/ftp/FTPConnection";
 import { addMessage } from "@common/ui/messages";
+import { ensureAbsolute, filename, sleep } from "@common/util/utils";
 import {
-    blobToBase64,
-    ensureAbsolute,
-    filename,
-    sleep,
-} from "@common/util/utils";
+    decodeBinaryPacket,
+    encodeBinaryPacket,
+    findBinaryProperty,
+} from "@protocol/binary";
 import {
     ChunkedUploadResponse,
     ConnectData,
@@ -36,8 +36,8 @@ interface PendingReply {
     reject: (error: Error) => void;
 }
 
-export const PROTOCOL_TYPE = "json";
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_TYPE = "json-binary";
+export const PROTOCOL_VERSION = 2;
 
 const LARGE_FILE_THRESHOLD = 10e6; // 10 MB
 
@@ -144,8 +144,12 @@ export default class WebsocketFTPConnection implements FTPConnection {
 
         await new Promise<void>((resolve, reject) => {
             this.websocket = new WebSocket(getConfig().websocket_url);
+            this.websocket.binaryType = "arraybuffer";
             this.websocket.addEventListener("message", (e) => {
-                const json = JSON.parse(e.data);
+                const json =
+                    typeof e.data === "string"
+                        ? JSON.parse(e.data)
+                        : decodeBinaryPacket(e.data as ArrayBuffer);
                 const requestId = json.requestId;
                 for (let i = this.pendingReplies.length - 1; i >= 0; i--) {
                     const pendingReply = this.pendingReplies[i];
@@ -248,7 +252,18 @@ export default class WebsocketFTPConnection implements FTPConnection {
                     } else resolve(data as Response);
                 },
             });
-            this.websocket.send(JSON.stringify(data));
+            const blobProperty = findBinaryProperty(data as object);
+            if (blobProperty !== null) {
+                const { [blobProperty]: blob, ...json } = data as Record<
+                    string,
+                    any
+                >;
+                this.websocket.send(
+                    encodeBinaryPacket(json, blobProperty, blob),
+                );
+            } else {
+                this.websocket.send(JSON.stringify(data));
+            }
         });
     }
 
@@ -376,14 +391,9 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 xhr.send();
                 this.keepAlive(xhr);
             });
-        } else if (response.data || response.data === "") {
-            const base64 = response.data;
-            const binarystring = atob(base64);
-            const arraybuffer = new Uint8Array(binarystring.length);
-            for (let i = 0; i < binarystring.length; i++) {
-                arraybuffer[i] = binarystring.charCodeAt(i);
-            }
-            return new Blob([arraybuffer], {
+        } else if (response.data) {
+            // The decoded blob is ArrayBuffer-backed; cast for the Blob API.
+            return new Blob([response.data as Uint8Array<ArrayBuffer>], {
                 type: "application/octet-stream",
             });
         } else {
@@ -393,11 +403,10 @@ export default class WebsocketFTPConnection implements FTPConnection {
 
     async uploadSmall(blob: Blob, path: string): Promise<void> {
         ensureAbsolute(path);
-        const base64 = await blobToBase64(blob);
 
         await this.send(Packets.Upload, {
             path: path,
-            data: base64,
+            data: new Uint8Array(await blob.arrayBuffer()),
         });
     }
 
@@ -421,10 +430,9 @@ export default class WebsocketFTPConnection implements FTPConnection {
         start: number,
         end: number,
     ): Promise<ChunkedUploadResponse> {
-        const base64 = await blobToBase64(chunk);
         return await this.send(Packets.ChunkedUpload, {
             uploadId,
-            data: base64,
+            data: new Uint8Array(await chunk.arrayBuffer()),
             start,
             end,
         });

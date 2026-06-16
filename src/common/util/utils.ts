@@ -57,25 +57,6 @@ export function noTrailingSlash(path: string): string {
     return path;
 }
 
-export async function blobToBase64(blob: Blob): Promise<string> {
-    return await new Promise<string>(function (resolve, reject) {
-        const reader = new FileReader();
-        reader.onload = function () {
-            const dataURL = reader.result as string;
-            resolve(dataURL.substring(dataURL.indexOf(",") + 1));
-        };
-        reader.onerror = function () {
-            const name = blob instanceof File ? blob.name : "blob";
-            reject(
-                new Error(`Failed to read ${name} with size ${blob.size}`, {
-                    cause: reader.error,
-                }),
-            );
-        };
-        reader.readAsDataURL(blob);
-    });
-}
-
 export async function sleep(ms: number) {
     return await new Promise((resolve) => setInterval(resolve, ms));
 }

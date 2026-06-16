@@ -128,7 +128,7 @@ handler(Packets.Download, async (packet, data, connection) => {
         await connection.client.get(data.path, stream);
         // By this point the stream has finished as we awaited the download method.
         return {
-            data: stream.getBuffer().toString("base64"),
+            data: stream.getBuffer(),
         };
     }
 });
@@ -153,7 +153,7 @@ handler(ServerPackets.LargeDownload, async (packet, data, connection) => {
 });
 
 handler(Packets.Upload, async (packet, data, connection) => {
-    const buffer = Buffer.from(data.data, "base64");
+    const buffer = Buffer.from(data.data);
 
     await connection.client.put(buffer, data.path);
 });

@@ -17,6 +17,12 @@ import {
     Packets,
 } from "@protocol/packets";
 import { ReadableMemoryStream, WritableMemoryStream } from "./memoryStreams";
+import {
+    decodeBinaryPacket,
+    encodeBinaryPacket,
+    findBinaryProperty,
+    isBinaryMessage,
+} from "@protocol/binary";
 
 console.log("Version:", process.env.VERSION);
 
@@ -34,7 +40,7 @@ process.on("uncaughtException", (error) => {
 });
 
 const PORT = parseInt(process.env.PORT) || 8081;
-const PROTOCOL_VERSION = 1;
+const PROTOCOL_VERSION = 2;
 
 export const CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -370,15 +376,25 @@ server.on("connection", function (ws) {
     let userClosed = false;
 
     ws.on("message", function (rawMessage) {
+        // Binary packets carry a blob out-of-band (see @protocol/binary). They
+        // are decoded directly into the packet object and skip the JSON path.
+        const binary =
+            rawMessage instanceof Buffer && isBinaryMessage(rawMessage);
+
         let message: string;
-        if (typeof rawMessage == "string") {
-            message = rawMessage;
-        } else if (rawMessage instanceof Buffer) {
-            message = rawMessage.toString();
+        if (!binary) {
+            if (typeof rawMessage == "string") {
+                message = rawMessage;
+            } else if (rawMessage instanceof Buffer) {
+                message = rawMessage.toString();
+            }
         }
         if (connection == null) {
             // The connection is still handshaking
-            if (message.startsWith("handshake json " + PROTOCOL_VERSION)) {
+            if (
+                !binary &&
+                message.startsWith("handshake json " + PROTOCOL_VERSION)
+            ) {
                 connection = new Connection(ws);
                 connection.log("New successfull handshake.");
             } else {
@@ -393,7 +409,9 @@ server.on("connection", function (ws) {
                 ws.close();
             }
         } else {
-            let json = JSON.parse(message);
+            let json = binary
+                ? decodeBinaryPacket(rawMessage)
+                : JSON.parse(message);
             if (typeof json.packetId == "number") {
                 const packetId: number = json.packetId;
                 const packetName = String(json.packetName);
@@ -469,7 +487,7 @@ server.on("connection", function (ws) {
                                 // same request id so the client can handle the response.
                                 response["requestId"] = requestId;
                                 if (connection) {
-                                    connection.sendJson(response);
+                                    connection.send(response);
                                 }
                             },
                             (err) => {
@@ -586,6 +604,23 @@ export class Connection<T = unknown> {
         this.ws.send(JSON.stringify(json));
     }
 
+    /**
+     * Sends a packet, automatically using the binary packet format when the
+     * object carries a blob property (see @protocol/binary), otherwise JSON.
+     */
+    send(packet: object) {
+        const blobProperty = findBinaryProperty(packet);
+        if (blobProperty !== null) {
+            const { [blobProperty]: blob, ...json } = packet as Record<
+                string,
+                any
+            >;
+            this.ws.send(encodeBinaryPacket(json, blobProperty, blob));
+        } else {
+            this.sendJson(packet);
+        }
+    }
+
     isClientConnected(): boolean {
         if (this.client == null) {
             return false;
@@ -688,7 +723,7 @@ handler(Packets.ChunkedUpload, async (packet, data, connection) => {
         };
     }
 
-    const buffer = Buffer.from(data.data, "base64");
+    const buffer = Buffer.from(data.data);
     if (buffer.byteLength !== data.end - data.start) {
         return { status: "malsized" as Status };
     }
