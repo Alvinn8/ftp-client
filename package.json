@@ -14,6 +14,7 @@
         "check": "tsc",
         "format:check": "prettier --check .",
         "format:fix": "prettier --write .",
+        "validate": "pnpm run lint && pnpm run check && pnpm run format:check && pnpm run test run && pnpm audit --audit-level=high && echo 'Validation passed!'",
         "server:build": "cd server && node esbuild.config.js",
         "server:start": "cd server && node bundle.js",
         "server:build+start": "pnpm run server:build && pnpm run server:start"
