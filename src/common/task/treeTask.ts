@@ -671,6 +671,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
     }
 
     private countRecursive(fileTree: FileTree<T>, count: CountObject) {
+        fileTree.task = this;
         for (const entry of fileTree.getEntries()) {
             if (entry instanceof FileTreeFile) {
                 count.totalFiles++;
@@ -684,7 +685,6 @@ export class TreeTask<T = unknown> extends EventEmitter {
                 entry.task = this;
             } else if (entry instanceof FileTree) {
                 count.totalDirectories++;
-                entry.task = this;
                 this.countRecursive(entry, count);
             }
         }

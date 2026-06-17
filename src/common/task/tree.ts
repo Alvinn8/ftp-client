@@ -105,7 +105,7 @@ export class FileTree<T = unknown> extends EventEmitter {
             this.setAttempt(this.attempt + 1);
         }
         const newStatus =
-            this.attempt > this.task?.maxAttempts
+            !this.task || this.attempt > this.task.maxAttempts
                 ? Status.ERROR
                 : Status.PENDING;
         if (newStatus === Status.ERROR) {
@@ -219,7 +219,7 @@ export class FileTreeFile<T = unknown> extends EventEmitter {
         } else {
             this.setAttempt(this.attempt + 1);
         }
-        if (this.attempt > this.task?.maxAttempts) {
+        if (!this.task || this.attempt > this.task.maxAttempts) {
             this.setStatus(Status.ERROR);
             const formattedError = formatError(this.error);
             if (
