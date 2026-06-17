@@ -12,6 +12,7 @@ export type ConnectionPoolEntry = {
 export class ConnectionPool extends EventEmitter {
     private readonly profile: Profile;
     private connections: ConnectionPoolEntry[] = [];
+    private readOnly: boolean = false;
     private targetConnectionCount: number = 1;
     private isCreatingConnection: boolean = false;
     private lastConnectionCreationAttempt: number = 0;
@@ -160,7 +161,8 @@ export class ConnectionPool extends EventEmitter {
         const connection = new WebsocketFTPConnection();
         await connection.connectToWebsocket();
         try {
-            await connection.connect(this.profile);
+            const reply = await connection.connect(this.profile);
+            this.readOnly = reply.readOnly;
         } catch (err) {
             if (err instanceof FTPError && [430, 530].includes(err.code)) {
                 // Credentials are likely wrong, or the user lacks permission.
@@ -213,6 +215,14 @@ export class ConnectionPool extends EventEmitter {
                 entry.connection.close();
             }
         }
+    }
+
+    /**
+     * Whether the server reported that this connection is read-only. When read
+     * only, the UI hides all features that attempt to modify files.
+     */
+    isReadOnly(): boolean {
+        return this.readOnly;
     }
 
     getTargetConnectionCount(): number {

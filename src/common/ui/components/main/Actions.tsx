@@ -6,7 +6,7 @@ import OverflowToMenu, {
 import UploadDialog from "./UploadDialog";
 import { getActions } from "@common/contextmenu/actions";
 import { useRenameStore } from "@common/ui/store/renameStore";
-import { getSession } from "@common/ui/store/sessionStore";
+import { getSession, useSession } from "@common/ui/store/sessionStore";
 import { usePath } from "@common/ui/store/pathStore";
 import FolderEntry, { FolderEntryType } from "@common/folder/FolderEntry";
 import { joinPath } from "@common/util/utils";
@@ -15,6 +15,7 @@ const Actions: React.FC = () => {
     const selectedEntries = useSelection((state) => state.selectedEntries);
     const [uploadDialog, setUploadDialog] = useState(false);
     const renamingStore = useRenameStore();
+    const readOnly = useSession((state) => state.getSession().isReadOnly());
 
     function findFreeName(baseName: string, path: string): string {
         const entries = getSession().folderCache.get(path);
@@ -33,45 +34,47 @@ const Actions: React.FC = () => {
         return name;
     }
 
-    const genericActions: OverflowAction[] = [
-        {
-            icon: "file-earmark-plus",
-            label: "New File",
-            onClick: () => {
-                const path = usePath.getState().path;
-                const name = findFreeName("New File", path);
-                const entry = new FolderEntry(
-                    joinPath(path, name),
-                    name,
-                    0,
-                    FolderEntryType.File,
-                    "",
-                );
-                renamingStore.setNewItemCreating(entry, "file");
-            },
-        },
-        {
-            icon: "folder-plus",
-            label: "New Folder",
-            onClick: () => {
-                const path = usePath.getState().path;
-                const name = findFreeName("New Folder", path);
-                const entry = new FolderEntry(
-                    joinPath(path, name),
-                    name,
-                    0,
-                    FolderEntryType.Directory,
-                    "",
-                );
-                renamingStore.setNewItemCreating(entry, "directory");
-            },
-        },
-        {
-            icon: "upload",
-            label: "Upload",
-            onClick: () => setUploadDialog(true),
-        },
-    ];
+    const genericActions: OverflowAction[] = readOnly
+        ? []
+        : [
+              {
+                  icon: "file-earmark-plus",
+                  label: "New File",
+                  onClick: () => {
+                      const path = usePath.getState().path;
+                      const name = findFreeName("New File", path);
+                      const entry = new FolderEntry(
+                          joinPath(path, name),
+                          name,
+                          0,
+                          FolderEntryType.File,
+                          "",
+                      );
+                      renamingStore.setNewItemCreating(entry, "file");
+                  },
+              },
+              {
+                  icon: "folder-plus",
+                  label: "New Folder",
+                  onClick: () => {
+                      const path = usePath.getState().path;
+                      const name = findFreeName("New Folder", path);
+                      const entry = new FolderEntry(
+                          joinPath(path, name),
+                          name,
+                          0,
+                          FolderEntryType.Directory,
+                          "",
+                      );
+                      renamingStore.setNewItemCreating(entry, "directory");
+                  },
+              },
+              {
+                  icon: "upload",
+                  label: "Upload",
+                  onClick: () => setUploadDialog(true),
+              },
+          ];
 
     const specificActions = getActions(selectedEntries);
 

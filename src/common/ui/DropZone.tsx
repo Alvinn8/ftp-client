@@ -68,6 +68,7 @@ export default DropZone;
 export function useDragAndDrop(
     ref: React.RefObject<HTMLDivElement>,
     onDrop: (e: DragEvent) => void,
+    enabled: boolean = true,
 ) {
     const [dragAndDrop, setDragAndDrop] = React.useState(false);
 
@@ -95,6 +96,7 @@ export function useDragAndDrop(
     }
 
     useEffect(() => {
+        if (!enabled) return;
         if (!ref.current) return;
         const noop = () => {};
         const onScroll = () => setDragAndDrop(false);
@@ -112,10 +114,10 @@ export function useDragAndDrop(
             ref.current.removeEventListener("dragleave", onDragLeave);
             ref.current.removeEventListener("drop", noop);
         };
-    }, [ref.current]);
+    }, [ref.current, enabled]);
 
     let dropZoneElement = null;
-    if (dragAndDrop && ref.current && ref.current.parentElement) {
+    if (enabled && dragAndDrop && ref.current && ref.current.parentElement) {
         const box = ref.current.getBoundingClientRect();
         const scrollTop = ref.current.parentElement.scrollTop;
         dropZoneElement = (

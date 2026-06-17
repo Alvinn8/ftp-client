@@ -23,9 +23,13 @@ const MainView: React.FC = () => {
     const adConfig = getConfig().ads;
 
     const dropZone = useRef<HTMLTableSectionElement>(null);
-    const dropZoneElement = useDragAndDrop(dropZone, (e) => {
-        handleOnDrop(e).catch(unexpectedErrorHandler("Failed to upload"));
-    });
+    const dropZoneElement = useDragAndDrop(
+        dropZone,
+        (e) => {
+            handleOnDrop(e).catch(unexpectedErrorHandler("Failed to upload"));
+        },
+        !session?.isReadOnly(),
+    );
 
     return (
         <main className="main-view">

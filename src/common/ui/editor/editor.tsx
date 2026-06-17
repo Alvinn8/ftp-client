@@ -299,11 +299,13 @@ export async function openTextEditor(folderEntry: FolderEntry) {
         beforeHash = contentHash;
     };
 
+    const readOnly = useSession.getState().getSession().isReadOnly();
     wind["textEditorData"] = {
         text: await textPromise,
         absolutePath,
         title,
-        allowSaving: fileInfo.allowSaving,
+        allowSaving: fileInfo.allowSaving && !readOnly,
+        readOnly,
     };
 }
 
@@ -346,8 +348,11 @@ export async function openNbtEditor(folderEntry: FolderEntry) {
         return;
     }
 
+    const readOnly = useSession.getState().getSession().isReadOnly();
     const allowSaving =
-        fileInfo.allowSaving && (await validateNbtParsing(fileInfo.blob, nbt));
+        fileInfo.allowSaving &&
+        !readOnly &&
+        (await validateNbtParsing(fileInfo.blob, nbt));
 
     const wind = openWindow(folderEntry.name, "editor/nbt.html", folderEntry);
 

@@ -83,6 +83,10 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
             },
         });
     }
+    // Hide actions that modify files when the session is read-only.
+    if (getSession().isReadOnly()) {
+        return actions;
+    }
     if (one) {
         actions.push({
             icon: "pencil",

@@ -5,6 +5,7 @@ import { isDarkTheme } from "@common/ui/theme";
 
 const CodeMirrorEditor: React.FC<TextEditorData> = ({
     text,
+    readOnly,
     valueProvider,
 }) => {
     const valueRef = useRef<string>(text);
@@ -20,6 +21,7 @@ const CodeMirrorEditor: React.FC<TextEditorData> = ({
             value={text}
             theme={isDarkTheme() ? "dark" : "light"}
             onChange={onChange}
+            readOnly={readOnly}
             style={{ overflow: "hidden" }}
             width="100%"
             height="100%"

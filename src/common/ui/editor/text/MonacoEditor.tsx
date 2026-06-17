@@ -7,6 +7,7 @@ import { unexpectedErrorHandler } from "@common/util/error";
 const MonacoEditor: React.FC<TextEditorData> = ({
     text,
     absolutePath,
+    readOnly,
     valueProvider,
 }) => {
     const ref = useRef<HTMLDivElement>(null);
@@ -23,6 +24,7 @@ const MonacoEditor: React.FC<TextEditorData> = ({
             const editor = monacoEditor.create(ref.current, {
                 model: model,
                 theme: isDarkTheme() ? "vs-dark" : "vs",
+                readOnly: readOnly,
             });
 
             valueProvider.getValue = () => editor.getValue();

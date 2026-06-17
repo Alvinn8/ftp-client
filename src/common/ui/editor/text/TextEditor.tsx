@@ -9,6 +9,7 @@ interface TextEditorProps {
 export interface TextEditorData {
     text: string;
     absolutePath: string;
+    readOnly: boolean;
     valueProvider: {
         getValue(): string;
     };
@@ -26,6 +27,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ EditorComponent }) => {
         setData({
             text: data.text,
             absolutePath: data.absolutePath,
+            readOnly: data.readOnly,
             valueProvider: {
                 getValue() {
                     throw new Error("No valueProvider registered");

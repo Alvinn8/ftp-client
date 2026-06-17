@@ -42,6 +42,15 @@ export default class FTPSession extends EventEmitter {
         return this.connectionPool;
     }
 
+    /**
+     * Whether the server reported that this session is read-only. When read
+     * only, the UI hides all features that attempt to modify files and opens
+     * all files in read-only mode.
+     */
+    isReadOnly(): boolean {
+        return this.connectionPool.isReadOnly();
+    }
+
     async addToPoolQueue<T>(
         priority: number,
         executor: (connection: FTPConnection) => Promise<T> | T,
