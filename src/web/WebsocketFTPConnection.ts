@@ -1,7 +1,7 @@
 import FolderEntry, { FolderEntryType } from "@common/folder/FolderEntry";
 import FTPConnection from "@common/ftp/FTPConnection";
 import { addMessage } from "@common/ui/messages";
-import { ensureAbsolute, filename, sleep } from "@common/util/utils";
+import { ensureAbsolute, filename } from "@common/util/utils";
 import {
     decodeBinaryPacket,
     encodeBinaryPacket,
@@ -19,10 +19,8 @@ import {
     LargeFileOperationInterface,
     largeFileOperationStore,
 } from "@common/ui/LargeFileOperation";
-import Dialog from "@common/Dialog";
 import {
     assertUnreachable,
-    CancellationError,
     ConnectionClosedError,
     FTPError,
     SFTPError,
@@ -40,39 +38,6 @@ export const PROTOCOL_TYPE = "json-binary";
 export const PROTOCOL_VERSION = 2;
 
 const LARGE_FILE_THRESHOLD = 10e6; // 10 MB
-
-async function attemptRequest() {
-    const response = await fetch(
-        getConfig().websocket_url.replace(/^ws/, "http"),
-    );
-    if (response.status != 200) {
-        throw new Error("Non 200 response: " + response.status);
-    }
-}
-
-export async function pingBackend() {
-    if (import.meta.env.VITEST) {
-        return;
-    }
-    let err: unknown;
-    let attempts = 0;
-    while (attempts < 5) {
-        try {
-            attempts++;
-            await attemptRequest();
-            // No error yet? Nice, return
-            return;
-        } catch (err) {
-            console.log(
-                "Request failed, trying again in 5 seconds. Attempt: " +
-                    attempts,
-            );
-            await sleep(5000);
-            err = err;
-        }
-    }
-    throw err;
-}
 
 function progressTracker(
     type: "download" | "upload",
@@ -117,29 +82,12 @@ export default class WebsocketFTPConnection implements FTPConnection {
      * Connect to the websocket.
      */
     async connectToWebsocket() {
-        if (
-            navigator.onLine === false ||
-            (await pingBackend()
-                .then(() => true)
-                .catch(() => false)) === false
-        ) {
-            console.log(
-                "navigator.onLine",
-                navigator.onLine,
-                new Error().stack,
-            );
-            const confirmed = await Dialog.confirm(
-                "No internet connection",
-                `It appears you are not connected to the internet, or ${getConfig().branding.appName} is experiencing
-                downtime. Double check your internet connection and press "Continue" when you are online.`,
-                "Cancel",
-                "Continue",
-            );
-            if (!confirmed) {
-                throw new CancellationError(
-                    "No internet connection, and the user decided to cancel.",
-                );
-            }
+        // Fail fast when the browser knows it is offline. This counts as a
+        // failed connection attempt; once the pool gives up the user is shown
+        // the connection issue overlay (see ConnectionIssueScreen), which also
+        // explains the offline state and offers a retry.
+        if (navigator.onLine === false) {
+            throw new Error("No internet connection.");
         }
 
         await new Promise<void>((resolve, reject) => {

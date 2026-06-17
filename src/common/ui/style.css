@@ -298,3 +298,40 @@ html,
 .screen-icon {
     font-size: 4rem;
 }
+
+.connection-issue-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1080;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    /* Semi-transparent scrim so the app stays visible behind the overlay. */
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    overflow-y: auto;
+}
+
+/* The card in the middle stays opaque so its content is easy to read. */
+.connection-issue-card {
+    margin: 0;
+    padding: 48px 40px;
+    background-color: var(--bs-white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+@media (prefers-color-scheme: dark) {
+    .connection-issue-card {
+        background-color: var(--bs-dark);
+    }
+}
+
+.connection-issue-detail {
+    font-family: monospace;
+    word-break: break-word;
+    background-color: rgba(128, 128, 128, 0.1);
+    border-radius: var(--border-radius);
+    padding: 12px;
+}

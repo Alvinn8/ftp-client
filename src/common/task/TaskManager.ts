@@ -97,12 +97,6 @@ export class TaskManager extends EventEmitter {
         this.session.tryExecutePoolRequest();
     }
 
-    pauseAllTreeTasks() {
-        for (const treeTask of this.treeTasks) {
-            treeTask.setPaused(true);
-        }
-    }
-
     private suggestedParallelConnections(totalFiles: number): number {
         if (totalFiles <= 0) return 1;
         if (totalFiles <= 5) return 1;

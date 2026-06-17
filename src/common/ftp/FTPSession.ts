@@ -6,6 +6,7 @@ import { EventEmitter } from "eventemitter3";
 import { unexpectedErrorHandler } from "@common/util/error";
 import { TaskManager } from "@common/task/TaskManager";
 import { FolderCache } from "./FolderCache";
+import { useConnectionIssue } from "@common/ui/store/connectionIssueStore";
 
 /**
  * An FTP session that holds some information about the current session.
@@ -27,12 +28,20 @@ export default class FTPSession extends EventEmitter {
         this.profile = profile;
         this.connectionPool = new ConnectionPool(profile);
         this.connectionPool.on("connectionAvailable", () => {
+            // A connection is available again, so any earlier connection issue
+            // is resolved. clearIssue is a no-op when no issue is showing.
+            useConnectionIssue.getState().clearIssue();
             this.tryExecutePoolRequest();
         });
-        this.connectionPool.on("connectionFailed", () => {
-            // We must pause all tasks so that they stop retrying to connect.
-            // TODO notify user? Dialog? Or Action Required in task?
-            this.taskManager.pauseAllTreeTasks();
+        this.connectionPool.on("connectionFailed", (error?: Error) => {
+            // Notify the user with a full-screen overlay so they can retry once
+            // the issue is resolved. If the server reported a specific error
+            // (e.g. invalid credentials or maintenance), carry it over so it is
+            // shown to the user.
+            useConnectionIssue.getState().showIssue({
+                offline: navigator.onLine === false,
+                error,
+            });
         });
         this.taskManager = new TaskManager();
         this.taskManager.setSession(this);

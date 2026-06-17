@@ -17,6 +17,7 @@ export class ConnectionPool extends EventEmitter {
     private isCreatingConnection: boolean = false;
     private lastConnectionCreationAttempt: number = 0;
     private amountOfConnectionAttempts: number = 0;
+    private lastConnectionError: Error | null = null;
 
     constructor(profile: Profile) {
         super();
@@ -114,7 +115,13 @@ export class ConnectionPool extends EventEmitter {
                 now - this.lastConnectionCreationAttempt;
 
             if (this.amountOfConnectionAttempts >= 5) {
-                this.emit("connectionFailed");
+                this.emit("connectionFailed", this.lastConnectionError);
+                return;
+            }
+
+            if (this.lastConnectionError instanceof LoginError) {
+                // A LoginError should not be retried.
+                this.emit("connectionFailed", this.lastConnectionError);
                 return;
             }
 
@@ -133,8 +140,9 @@ export class ConnectionPool extends EventEmitter {
                 try {
                     const connection = await this.createConnection();
                     if (await connection.isConnected()) {
-                        // Success: reset attempt counter
+                        // Success: reset attempt counter and clear any error.
                         this.amountOfConnectionAttempts = 0;
+                        this.lastConnectionError = null;
                         console.log("Created new connection for pool");
                         this.connections.push({ connection, locked: false });
                         this.emit("connectionAvailable");
@@ -146,6 +154,10 @@ export class ConnectionPool extends EventEmitter {
                     // Increment attempt counter and update last attempt time on error.
                     this.amountOfConnectionAttempts++;
                     this.lastConnectionCreationAttempt = Date.now();
+                    this.lastConnectionError =
+                        error instanceof Error
+                            ? error
+                            : new Error(String(error));
                     console.error(
                         "Failed to create new connection for pool:",
                         error,
@@ -155,6 +167,18 @@ export class ConnectionPool extends EventEmitter {
                 }
             }
         }
+    }
+
+    /**
+     * Reset the failed connection attempt counter and immediately try to
+     * create connections again. Used when the user asks to retry after the
+     * pool gave up trying to reconnect.
+     */
+    async retryConnections() {
+        this.amountOfConnectionAttempts = 0;
+        this.lastConnectionCreationAttempt = 0;
+        this.lastConnectionError = null;
+        await this.refreshConnections();
     }
 
     private async createConnection(): Promise<WebsocketFTPConnection> {

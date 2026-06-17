@@ -11,6 +11,7 @@ import Tasks from "./task/Tasks";
 import LargeFileOperation from "./LargeFileOperation";
 import OpenEditors from "./editor/OpenEditors";
 import Messages from "./messages";
+import ConnectionIssueScreen from "./ConnectionIssueScreen";
 
 const App: React.FC = () => {
     const hasSession = useSession((state) => state.hasSession());
@@ -32,6 +33,7 @@ const App: React.FC = () => {
                 <OpenEditors />
             </div>
             <Messages />
+            <ConnectionIssueScreen />
         </div>
     );
 };
