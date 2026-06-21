@@ -4,6 +4,7 @@ import Button from "@common/ui/components/elements/Button";
 import { useFolderContent } from "@common/ftp/FolderCache";
 import { useSession } from "@common/ui/store/sessionStore";
 import { usePath } from "@common/ui/store/pathStore";
+import { useMoveDropTarget } from "@common/ui/useMoveDropTarget";
 
 const ROOT = new FolderEntry("/", "/", 0, FolderEntryType.Directory, "");
 
@@ -16,10 +17,17 @@ const Folder: React.FC<{ entry: FolderEntry }> = ({ entry }) => {
     const setPath = usePath((state) => state.setPath);
     const session = useSession((state) => state.getSession());
     const entries = useFolderContent(session, entry.path, open);
+    const { isDropTarget, dropProps } = useMoveDropTarget(entry.path);
 
     return (
         <div className="ps-2">
-            <div className="d-flex align-items-center">
+            <div
+                className={
+                    "d-flex align-items-center rounded" +
+                    (isDropTarget ? " bg-highlight-ui2" : "")
+                }
+                {...dropProps}
+            >
                 <Button
                     icon={open ? "chevron-down" : "chevron-right"}
                     variant="ghost"

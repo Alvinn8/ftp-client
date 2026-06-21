@@ -5,6 +5,7 @@ import FolderEntry, { FolderEntryType } from "@common/folder/FolderEntry";
 import {
     formatByteSize,
     joinPath,
+    noTrailingSlash,
     parentdir,
     trailingSlash,
 } from "@common/util/utils";
@@ -16,6 +17,8 @@ import { openChosenEditor, openEditor } from "@common/ui/editor/editor";
 import { getSession } from "@common/ui/store/sessionStore";
 import { performWithRetry } from "@common/task/taskActions";
 import { useRenameStore } from "@common/ui/store/renameStore";
+import { useMoveStore } from "@common/ui/store/moveStore";
+import { useSelection } from "@common/ui/store/selectionStore";
 import { BlobReader, ZipWriter } from "@zip.js/zip.js";
 
 interface Action {
@@ -97,6 +100,13 @@ export function getActions(selectedEntries: FolderEntry[]): Action[] {
         });
     }
     actions.push({
+        icon: "folder-symlink",
+        label: "Move",
+        onClick: () => {
+            useMoveStore.getState().setMoving(selectedEntries);
+        },
+    });
+    actions.push({
         icon: "trash",
         label: "Delete",
         onClick: () => {
@@ -123,6 +133,102 @@ export function downloadFolderEntry(entry: FolderEntry) {
         }
         unexpectedErrorHandler("Failed to download")(err);
     });
+}
+
+/**
+ * Whether the given entries can all be moved into the destination directory.
+ *
+ * A move is rejected when the destination is the directory the entries already
+ * live in (a no-op), or when a directory would be moved into itself or one of its
+ * own descendants.
+ *
+ * @param entries The entries to move.
+ * @param destDir The destination directory path.
+ * @returns Whether the move is allowed.
+ */
+export function canMoveInto(entries: FolderEntry[], destDir: string): boolean {
+    const dest = noTrailingSlash(destDir);
+    for (const entry of entries) {
+        // Already in the destination directory.
+        if (parentdir(entry.path) === dest) {
+            return false;
+        }
+        if (entry.isDirectory()) {
+            // Into itself or a descendant of itself.
+            if (
+                dest === entry.path ||
+                dest.startsWith(trailingSlash(entry.path))
+            ) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * Move the given entries into the destination directory using the rename
+ * operation. The entries must all be in the same source directory.
+ *
+ * @param entries The entries to move.
+ * @param destDir The destination directory path.
+ */
+export async function moveFolderEntries(
+    entries: FolderEntry[],
+    destDir: string,
+): Promise<void> {
+    if (entries.length === 0) {
+        return;
+    }
+    const dest = noTrailingSlash(destDir);
+    const sourceDir = parentdir(entries[0].path);
+    // Nothing to do when moving into the directory the entries already live in.
+    if (sourceDir === dest) {
+        return;
+    }
+    if (!canMoveInto(entries, dest)) {
+        Dialog.message(
+            "Cannot move",
+            "A folder cannot be moved into itself or one of its subfolders.",
+        );
+        return;
+    }
+    const session = getSession();
+    // Reject when something with the same name already exists at the destination.
+    const destEntries = session.folderCache.get(dest);
+    if (destEntries) {
+        const conflict = entries.find((entry) =>
+            destEntries.some((e) => e.name === entry.name),
+        );
+        if (conflict) {
+            Dialog.message(
+                "Name already taken",
+                `A file or folder named "${conflict.name}" already exists in the destination.`,
+            );
+            return;
+        }
+    }
+    for (const entry of entries) {
+        const newPath = joinPath(dest, entry.name);
+        await performWithRetry(session, sourceDir, async (connection) => {
+            try {
+                await connection.rename(entry.path, newPath);
+            } catch (err) {
+                if (
+                    String(err).includes("ENOTEMPTY") ||
+                    String(err).includes("ENOTDIR")
+                ) {
+                    Dialog.message("Move failed", "Refresh and try again");
+                } else {
+                    unexpectedErrorHandler("Failed to move")(err);
+                }
+            }
+        });
+    }
+    // The contents of both directories changed.
+    session.folderCache.remove(sourceDir);
+    session.folderCache.remove(dest);
+    useSelection.getState().clear();
 }
 
 /**

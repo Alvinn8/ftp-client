@@ -12,6 +12,11 @@ import Dialog from "@common/Dialog";
 import { useContextMenu } from "@common/ui/store/contextMenu";
 import PopupMenu from "@common/ui/components/elements/PopupMenu";
 import { findDirectorySize, getActions } from "@common/contextmenu/actions";
+import {
+    clearDraggedEntries,
+    setDraggedEntries,
+} from "@common/ui/store/moveStore";
+import { MOVE_MIME, useMoveDropTarget } from "@common/ui/useMoveDropTarget";
 import { createPortal } from "react-dom";
 import { openEditor } from "@common/ui/editor/editor";
 import { unexpectedErrorHandler } from "@common/util/error";
@@ -50,6 +55,11 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
         entry.isDirectory(),
     );
     const [calculatingSize, setCalculatingSize] = useState(false);
+    const readOnly = session.isReadOnly();
+    const { isDropTarget, dropProps } = useMoveDropTarget(
+        entry.path,
+        entry.isDirectory(),
+    );
 
     selectionStore.focusEmitter.on("focus", (focusedEntry: FolderEntry) => {
         if (focusedEntry.path === entry.path && ref.current) {
@@ -167,11 +177,31 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
         setContextMenuOpen(true);
     }
 
+    function onDragStart(e: React.DragEvent) {
+        if (renaming || readOnly) {
+            e.preventDefault();
+            return;
+        }
+        // Drag the existing selection, unless this entry is outside it.
+        let dragged = selectedEntries;
+        if (!selected) {
+            useSelection.getState().setSelection([entry]);
+            dragged = [entry];
+        }
+        setDraggedEntries(dragged);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData(MOVE_MIME, "1");
+    }
+
     return (
         <tr
             key={entry.name}
             ref={ref}
-            className={`folder-entry-component ${selected ? "selected text-white" : ""}`}
+            className={`folder-entry-component ${selected ? "selected text-white" : ""} ${isDropTarget ? "drop-target" : ""}`}
+            draggable={!renaming && !readOnly}
+            onDragStart={onDragStart}
+            onDragEnd={() => clearDraggedEntries()}
+            {...dropProps}
             onClick={(e) =>
                 !renaming &&
                 onSelect(

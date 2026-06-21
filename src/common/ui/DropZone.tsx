@@ -73,6 +73,12 @@ export function useDragAndDrop(
     const [dragAndDrop, setDragAndDrop] = React.useState(false);
 
     function onDragEnter(e: DragEvent) {
+        // Ignore internal move drags (entries dragged between folders). Those
+        // carry no "Files" and are handled by the move drop targets, not the
+        // upload drop zone. OS file-upload drags always expose "Files".
+        if (!e.dataTransfer?.types.includes("Files")) {
+            return;
+        }
         e.preventDefault();
         setDragAndDrop(true);
         useSelection.getState().clear();

@@ -4,6 +4,7 @@ import OverflowToMenu, {
     OverflowAction,
 } from "@common/ui/components/elements/OverflowToMenu";
 import UploadDialog from "./UploadDialog";
+import MoveDialog from "./MoveDialog";
 import { getActions } from "@common/contextmenu/actions";
 import { useRenameStore } from "@common/ui/store/renameStore";
 import { getSession, useSession } from "@common/ui/store/sessionStore";
@@ -91,6 +92,7 @@ const Actions: React.FC = () => {
             {uploadDialog && (
                 <UploadDialog onClose={() => setUploadDialog(false)} />
             )}
+            <MoveDialog />
         </div>
     );
 };
