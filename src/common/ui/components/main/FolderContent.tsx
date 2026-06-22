@@ -21,6 +21,7 @@ const FolderContent: React.FC = () => {
         folders.sort((a, b) => a.name.localeCompare(b.name));
         files.sort((a, b) => a.name.localeCompare(b.name));
     }
+    const allEntries = [...(folders ?? []), ...(files ?? [])];
 
     if (entries && entries.length === 0 && !renaming?.creating) {
         return (
@@ -90,7 +91,7 @@ const FolderContent: React.FC = () => {
                                 onSelect={(e, multiSelect) =>
                                     handleSelectionClick(
                                         entry,
-                                        folders,
+                                        allEntries,
                                         e,
                                         multiSelect,
                                     )
@@ -112,7 +113,7 @@ const FolderContent: React.FC = () => {
                                 onSelect={(e, multiSelect) =>
                                     handleSelectionClick(
                                         entry,
-                                        files,
+                                        allEntries,
                                         e,
                                         multiSelect,
                                     )
