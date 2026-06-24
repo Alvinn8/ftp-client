@@ -106,7 +106,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ onClose }) => {
                                 />
                                 <Button
                                     icon="file-zip"
-                                    label="Select ZIP"
+                                    label="Extract ZIP"
                                     size="small"
                                     onClick={() => {
                                         setZipUploadMode(true);
