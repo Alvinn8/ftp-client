@@ -350,6 +350,16 @@ export default class WebsocketFTPConnection implements FTPConnection {
                 xhr.send();
                 this.keepAlive(xhr);
             });
+        } else if (typeof response.data === "string") {
+            // The server can send a base64 string.
+            const binaryString = atob(response.data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return new Blob([bytes], {
+                type: "application/octet-stream",
+            });
         } else if (response.data) {
             // The decoded blob is ArrayBuffer-backed; cast for the Blob API.
             return new Blob([response.data as Uint8Array<ArrayBuffer>], {

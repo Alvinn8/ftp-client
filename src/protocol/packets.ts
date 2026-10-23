@@ -77,8 +77,11 @@ export interface DownloadData {
 }
 
 export interface DownloadReply {
-    /** The file's raw bytes, carried as a binary packet blob. */
-    data?: Uint8Array;
+    /**
+     * The file's raw bytes, carried as a binary packet blob or as a
+     * base64-encoded string.
+     */
+    data?: Uint8Array | string;
     downloadId?: string;
 }
 
