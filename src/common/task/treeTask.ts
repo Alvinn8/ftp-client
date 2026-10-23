@@ -275,6 +275,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
         }
 
         let attempt = 1;
+        let lastError: unknown;
         while (attempt <= this.maxAttempts) {
             let success = false;
             await this.session.addToPoolQueue(
@@ -284,6 +285,7 @@ export class TreeTask<T = unknown> extends EventEmitter {
                         await handler(this.fileTree, connection);
                         success = true;
                     } catch (error) {
+                        lastError = error;
                         console.error(
                             `Error in final handler '${handlerType}' (attempt ${attempt}):`,
                             error,
@@ -300,9 +302,9 @@ export class TreeTask<T = unknown> extends EventEmitter {
             }
         }
         // If we reach here, all attempts failed.
-        // For now, just log the error and move on.
-        console.error(
+        throw new Error(
             `Failed to call final handler '${handlerType}' after ${this.maxAttempts} attempts.`,
+            { cause: lastError },
         );
     }
 
