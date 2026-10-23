@@ -754,7 +754,11 @@ export async function downloadAsZipStreaming(
             },
             done: async (fileTree, connection) => {
                 await zipWriter.close();
-                await writable.close();
+                try {
+                    // This should not be needed, and will most likely just throw. But just in case
+                    // the file was not closed it should be after this.
+                    await writable.close();
+                } catch {}
             },
             cancelled: async (fileTree, connection) => {
                 try {
