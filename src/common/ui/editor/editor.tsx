@@ -291,6 +291,10 @@ export async function openTextEditor(folderEntry: FolderEntry) {
                 await connection.uploadSmall(blob, absolutePath);
             },
         );
+        useSession
+            .getState()
+            .getSession()
+            .folderCache.updateFileSize(absolutePath, blob.size);
         // TODO what if the file is large?
         wind.postMessage({
             action: "save-callback",
@@ -483,6 +487,12 @@ async function getFile(
     } catch (err) {
         Dialog.message("Failed to open file", formatError(err));
         return null;
+    }
+    if (blob instanceof Blob) {
+        useSession
+            .getState()
+            .getSession()
+            .folderCache.updateFileSize(folderEntry.path, blob.size);
     }
     if (isgzipped) {
         blob = await ungzip(blob);

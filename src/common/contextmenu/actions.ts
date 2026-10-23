@@ -125,6 +125,7 @@ export function downloadFolderEntry(entry: FolderEntry) {
         parentdir(entry.path),
         async (connection) => {
             const blob = await connection.download(entry);
+            getSession().folderCache.updateFileSize(entry.path, blob.size);
             download(blob, entry.name);
         },
     ).catch((err) => {

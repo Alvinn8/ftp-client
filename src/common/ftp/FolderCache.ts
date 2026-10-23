@@ -4,7 +4,7 @@ import FTPSession from "./FTPSession";
 import { performWithRetry } from "@common/task/taskActions";
 import Dialog from "@common/Dialog";
 import { usePath } from "@common/ui/store/pathStore";
-import { joinPath, parentdir } from "@common/util/utils";
+import { filename, joinPath, parentdir } from "@common/util/utils";
 import { formatError, unexpectedErrorHandler } from "@common/util/error";
 
 export class FolderCache {
@@ -51,6 +51,46 @@ export class FolderCache {
                 listener();
             }
         }
+    }
+
+    /**
+     * Update the size of a cached file, if possible, for example after it has
+     * been downloaded or uploaded and the actual size is known.
+     *
+     * @param filePath The absolute path to the file.
+     * @param size The new size of the file in bytes.
+     */
+    updateFileSize(filePath: string, size: number) {
+        const path = this.normalizePath(parentdir(filePath));
+        const entries = this.cache.get(path);
+        if (!entries) return;
+        const name = filename(filePath);
+        const index = entries.findIndex(
+            (entry) => entry.name === name && entry.isFile(),
+        );
+        if (index === -1 || entries[index].size === size) return;
+        const entry = entries[index];
+        const newEntries = [...entries];
+        newEntries[index] = new FolderEntry(
+            entry.path,
+            entry.name,
+            size,
+            entry.type,
+            entry.modifiedAt,
+        );
+        this.cache.set(path, newEntries);
+        // The cached sizes of this folder and all parent folders are now wrong.
+        // Unlike set, sizes of sub folders are still valid and are kept.
+        for (let p = path; ; p = this.normalizePath(parentdir(p))) {
+            this.folderSizeCache.delete(p);
+            if (this.listeners.has(p)) {
+                for (const listener of this.listeners.get(p)!) {
+                    listener();
+                }
+            }
+            if (p === "/") break;
+        }
+        this.bubbleUpdateFolderSizes(path);
     }
 
     clear() {
