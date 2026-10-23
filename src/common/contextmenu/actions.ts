@@ -567,7 +567,7 @@ export async function deleteFolderEntries(entries: FolderEntry[]) {
 }
 
 export async function downloadAsZip(entries: FolderEntry[]) {
-    const fileName =
+    let fileName =
         entries.length === 1 ? entries[0].name + ".zip" : "files.zip";
     if (typeof window.showSaveFilePicker === "function") {
         const opts: SaveFilePickerOptions = {
@@ -592,7 +592,35 @@ export async function downloadAsZip(entries: FolderEntry[]) {
             }
         }
         if (fileHandle) {
-            return await downloadAsZipStreaming(entries, fileHandle);
+            // Open the writable right away so we can fall back to a
+            // non-streaming download if the platform does not allow writing,
+            // for example on some Android browsers.
+            let writable: FileSystemWritableFileStream | null = null;
+            try {
+                writable = await fileHandle.createWritable();
+            } catch (err) {
+                if (
+                    ![
+                        "NotAllowedError",
+                        "SecurityError",
+                        "InvalidStateError",
+                    ].includes(err.name)
+                ) {
+                    throw err;
+                }
+                // Keep the file name the user chose for the fallback download.
+                fileName = fileHandle.name || fileName;
+                try {
+                    await fileHandle.remove();
+                } catch {}
+            }
+            if (writable) {
+                return await downloadAsZipStreaming(
+                    entries,
+                    fileHandle,
+                    writable,
+                );
+            }
         }
     }
     let fileTree: FileTree;
@@ -657,6 +685,7 @@ declare global {
 export async function downloadAsZipStreaming(
     entries: FolderEntry[],
     fileHandle: FileSystemFileHandle,
+    writable: FileSystemWritableFileStream,
 ) {
     let fileTree: FileTree;
     let countingTask: TreeTask | null = null;
@@ -666,6 +695,9 @@ export async function downloadAsZipStreaming(
             "Counting files to download",
         );
     } catch (err) {
+        try {
+            await writable.abort();
+        } catch {}
         if (err instanceof CancellationError) {
             try {
                 await fileHandle.remove();
@@ -675,7 +707,6 @@ export async function downloadAsZipStreaming(
         throw err;
     }
 
-    const writable = await fileHandle.createWritable(); // TODO this can throw (mostly on Linux?) fallback to non-streaming download
     const zipWriter = new ZipWriter({ writable });
 
     const rootPath = trailingSlash(getDirectoryPath(entries));
