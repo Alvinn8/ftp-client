@@ -2,8 +2,6 @@ name: Publish Docker Images
 
 on:
     push:
-        branches:
-            - main
         tags:
             - "v*.*.*"
     workflow_dispatch:
@@ -21,18 +19,14 @@ env:
 
 jobs:
     build-and-push:
+        # Only publish from main after the tests have passed.
+        if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
         runs-on: ubuntu-latest
         permissions:
             contents: read
             packages: write
 
         steps:
-            - name: Check test workflow success
-              if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success'
-              run: |
-                  echo "Test workflow failed or was cancelled"
-                  exit 1
-
             - name: Checkout repository
               uses: actions/checkout@v4
 
