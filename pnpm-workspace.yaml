@@ -1,5 +1,10 @@
 allowBuilds:
     cpu-features@0.0.10: true
-    esbuild@0.28.1: true
+    esbuild@0.28.2: true
     ssh2@1.17.0: true
     unrs-resolver: true
+
+overrides:
+    # monaco-editor 0.57.0 pins dompurify 3.4.15 (GHSA-cg2g-xh64-v4q7, GHSA-mrv2-3pqr-j5jr).
+    # Remove once monaco-editor releases a version depending on >=3.4.17.
+    "monaco-editor>dompurify": ^3.4.17
