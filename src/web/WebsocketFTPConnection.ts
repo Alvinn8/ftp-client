@@ -249,12 +249,18 @@ export default class WebsocketFTPConnection implements FTPConnection {
         return (await this.send(Packets.List, { path })).files.map(
             (fileInfo) => {
                 const folderEntryPath = directoryPath + fileInfo.name;
+                // Some servers may send -1 for unknown sizes or an empty string
+                // for unknown dates.
+                const size =
+                    typeof fileInfo.size === "number" && fileInfo.size >= 0
+                        ? fileInfo.size
+                        : null;
                 return new FolderEntry(
                     folderEntryPath,
                     fileInfo.name,
-                    fileInfo.size,
+                    size,
                     fileInfo.type as number as FolderEntryType,
-                    fileInfo.rawModifiedAt,
+                    fileInfo.rawModifiedAt || null,
                 );
             },
         );
@@ -297,7 +303,12 @@ export default class WebsocketFTPConnection implements FTPConnection {
 
         const response = await this.send(Packets.Download, {
             path: folderEntry.path,
-            largeDownload: folderEntry.size > LARGE_FILE_THRESHOLD,
+            // If the size is unknown, assume it is small.
+            // TODO when large downloads use websocket chunks instead of a streaming HTTP
+            // download, we can instead always use large downloads and let the server decide?
+            largeDownload:
+                folderEntry.size !== null &&
+                folderEntry.size > LARGE_FILE_THRESHOLD,
         });
         if (response.downloadId) {
             const url =

@@ -113,7 +113,9 @@ function uploadUsingTreeTask(uploads: Directory) {
                             );
                             if (
                                 fileInfo &&
-                                fileInfo.size === entry.data.file.size
+                                // If the size is unknown we can not verify it.
+                                (fileInfo.size === null ||
+                                    fileInfo.size === entry.data.file.size)
                             ) {
                                 continue;
                             }
@@ -153,7 +155,11 @@ function uploadUsingTreeTask(uploads: Directory) {
                         const fileEntry = fileInfo.find(
                             (f) => f.name === node.name,
                         );
-                        if (fileEntry && fileEntry.size < node.data.file.size) {
+                        if (
+                            fileEntry &&
+                            fileEntry.size !== null &&
+                            fileEntry.size < node.data.file.size
+                        ) {
                             startOffset = fileEntry.size;
                             console.log(
                                 `Resuming upload of ${node.name} at offset ${startOffset}`,
@@ -250,7 +256,10 @@ function uploadUsingTreeTask(uploads: Directory) {
                         throw new Error(
                             "Chunked upload failed for an unknown reason. File did not exist after upload.",
                         );
-                    } else if (fileInfo.size !== node.data.file.size) {
+                    } else if (
+                        fileInfo.size !== null &&
+                        fileInfo.size !== node.data.file.size
+                    ) {
                         throw new Error(
                             "Chunked upload failed. The file only uploaded partially.",
                         );

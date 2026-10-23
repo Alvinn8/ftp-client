@@ -11,16 +11,18 @@ export enum FolderEntryType {
 export default class FolderEntry {
     public readonly path: string;
     public readonly name: string;
-    public readonly size: number;
+    /** The size in bytes, or null if unknown. */
+    public readonly size: number | null;
     public readonly type: FolderEntryType;
-    public readonly modifiedAt: string;
+    /** The last modification date, or null if unknown. */
+    public readonly modifiedAt: string | null;
 
     constructor(
         path: string,
         name: string,
-        size: number,
+        size: number | null,
         type: FolderEntryType,
-        modifiedAt: string,
+        modifiedAt: string | null,
     ) {
         this.path = path;
         this.name = name;

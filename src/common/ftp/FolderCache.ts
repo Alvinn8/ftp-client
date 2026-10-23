@@ -7,9 +7,15 @@ import { usePath } from "@common/ui/store/pathStore";
 import { filename, joinPath, parentdir } from "@common/util/utils";
 import { formatError, unexpectedErrorHandler } from "@common/util/error";
 
+/**
+ * The size of a folder. "unknown" means that the size can not be calculated,
+ * for example because the server does not provide the size of a file inside it.
+ */
+export type FolderSize = number | "unknown";
+
 export class FolderCache {
     private cache: Map<string, FolderEntry[]> = new Map();
-    private folderSizeCache: Map<string, number> = new Map();
+    private folderSizeCache: Map<string, FolderSize> = new Map();
     private listeners: Map<string, (() => void)[]> = new Map();
     private pendingFetches = new Set<string>();
 
@@ -163,12 +169,15 @@ export class FolderCache {
         }
     }
 
-    getCachedFolderSize(path: string): number | null {
+    /**
+     * Get the cached size of a folder, or null if it has not been calculated.
+     */
+    getCachedFolderSize(path: string): FolderSize | null {
         path = this.normalizePath(path);
         return this.folderSizeCache.get(path) ?? null;
     }
 
-    setCachedFolderSize(path: string, size: number) {
+    setCachedFolderSize(path: string, size: FolderSize) {
         path = this.normalizePath(path);
         this.folderSizeCache.set(path, size);
         if (this.listeners.has(path)) {
@@ -184,24 +193,42 @@ export class FolderCache {
         const entries = this.cache.get(path);
         if (!entries) return;
         let size = 0;
+        let unknown = false;
+        let missing = false;
         for (const entry of entries) {
             if (entry.isFile()) {
+                if (entry.size === null) {
+                    // The size of the folder can never be known.
+                    unknown = true;
+                    break;
+                }
                 size += entry.size;
             } else if (entry.isDirectory()) {
                 const dirSize = this.folderSizeCache.get(
                     this.normalizePath(joinPath(path, entry.name)),
                 );
+                if (dirSize === "unknown") {
+                    unknown = true;
+                    break;
+                }
                 if (dirSize === undefined) {
-                    // One was missing, we cannot continue.
-                    return;
+                    // One was missing, but keep looking in case the size is unknown.
+                    missing = true;
+                    continue;
                 }
                 size += dirSize;
             } else {
                 // Symlink? We cannot continue.
-                return;
+                missing = true;
             }
         }
-        this.setCachedFolderSize(path, size);
+        if (unknown) {
+            this.setCachedFolderSize(path, "unknown");
+        } else if (missing) {
+            return;
+        } else {
+            this.setCachedFolderSize(path, size);
+        }
         this.bubbleUpdateFolderSizes(parentdir(path));
     }
 }
@@ -239,7 +266,7 @@ export function useFolderCacheSize(
     session: FTPSession,
     path: string,
     active: boolean,
-): number | null {
+): FolderSize | null {
     const [size, setSize] = useState(() =>
         session.folderCache.getCachedFolderSize(path),
     );

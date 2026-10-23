@@ -254,37 +254,45 @@ const FolderEntryComponent: React.FC<FolderEntryComponentProps> = ({
                     </span>
                 )}
             </td>
-            <td className="text-muted-color">
-                {entry.isFile() && (
-                    <Size size={entry.size} fractionDigits={1} />
-                )}
-                {entry.isDirectory() && totalSize !== null && (
-                    <Size size={totalSize} fractionDigits={1} />
-                )}
-                {entry.isDirectory() && totalSize === null && (
-                    <Button
-                        icon="calculator"
-                        label="Calculate"
-                        variant="ghost"
-                        size="small"
-                        severity={selected ? "white" : "secondary"}
-                        disabled={calculatingSize}
-                        loading={calculatingSize}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setCalculatingSize(true);
-                            findDirectorySize(entry).catch(
-                                unexpectedErrorHandler(
-                                    "Failed to calculate folder size",
-                                ),
-                            );
-                        }}
-                    />
-                )}
-            </td>
-            <td className="text-muted-color last-modified">
-                {formatLastModified(entry.modifiedAt)}
-            </td>
+            {session.isProvidingFileSize() && (
+                <td className="text-muted-color">
+                    {entry.isFile() && entry.size !== null && (
+                        <Size size={entry.size} fractionDigits={1} />
+                    )}
+                    {/* If totalSize is "unknown", nothing is shown. */}
+                    {entry.isDirectory() && typeof totalSize === "number" && (
+                        <Size size={totalSize} fractionDigits={1} />
+                    )}
+                    {entry.isDirectory() && totalSize === null && (
+                        <Button
+                            icon="calculator"
+                            label="Calculate"
+                            variant="ghost"
+                            size="small"
+                            severity={selected ? "white" : "secondary"}
+                            disabled={calculatingSize}
+                            loading={calculatingSize}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCalculatingSize(true);
+                                findDirectorySize(entry)
+                                    .catch(
+                                        unexpectedErrorHandler(
+                                            "Failed to calculate folder size",
+                                        ),
+                                    )
+                                    .finally(() => setCalculatingSize(false));
+                            }}
+                        />
+                    )}
+                </td>
+            )}
+            {session.isProvidingLastModified() && (
+                <td className="text-muted-color last-modified">
+                    {entry.modifiedAt !== null &&
+                        formatLastModified(entry.modifiedAt)}
+                </td>
+            )}
             <td>
                 <Button
                     buttonRef={menuButtonRef}

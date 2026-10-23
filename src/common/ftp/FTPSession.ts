@@ -60,6 +60,21 @@ export default class FTPSession extends EventEmitter {
         return this.connectionPool.isReadOnly();
     }
 
+    /**
+     * Whether the server provides file sizes. When not, the size column is hidden.
+     */
+    isProvidingFileSize(): boolean {
+        return this.connectionPool.isProvidingFileSize();
+    }
+
+    /**
+     * Whether the server provides last modification dates. When not, the last
+     * modified column is hidden.
+     */
+    isProvidingLastModified(): boolean {
+        return this.connectionPool.isProvidingLastModified();
+    }
+
     async addToPoolQueue<T>(
         priority: number,
         executor: (connection: FTPConnection) => Promise<T> | T,

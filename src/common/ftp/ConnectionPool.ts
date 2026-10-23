@@ -13,6 +13,8 @@ export class ConnectionPool extends EventEmitter {
     private readonly profile: Profile;
     private connections: ConnectionPoolEntry[] = [];
     private readOnly: boolean = false;
+    private providesFileSize: boolean = true;
+    private providesLastModified: boolean = true;
     private targetConnectionCount: number = 1;
     private isCreatingConnection: boolean = false;
     private lastConnectionCreationAttempt: number = 0;
@@ -187,6 +189,8 @@ export class ConnectionPool extends EventEmitter {
         try {
             const reply = await connection.connect(this.profile);
             this.readOnly = reply.readOnly;
+            this.providesFileSize = reply.providesFileSize ?? true;
+            this.providesLastModified = reply.providesLastModified ?? true;
         } catch (err) {
             if (err instanceof FTPError && [430, 530].includes(err.code)) {
                 // Credentials are likely wrong, or the user lacks permission.
@@ -247,6 +251,20 @@ export class ConnectionPool extends EventEmitter {
      */
     isReadOnly(): boolean {
         return this.readOnly;
+    }
+
+    /**
+     * Whether the server provides file sizes when listing files.
+     */
+    isProvidingFileSize(): boolean {
+        return this.providesFileSize;
+    }
+
+    /**
+     * Whether the server provides last modification dates when listing files.
+     */
+    isProvidingLastModified(): boolean {
+        return this.providesLastModified;
     }
 
     getTargetConnectionCount(): number {

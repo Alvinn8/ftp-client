@@ -12,6 +12,48 @@ function dir(path: string): FolderEntry {
     return new FolderEntry(path, name, 0, FolderEntryType.Directory, "");
 }
 
+describe("FolderCache folder sizes", () => {
+    it("marks folders as unknown when a file size is unknown", () => {
+        const cache = new FolderCache();
+        cache.set("/a", [file("/a/x.txt", 10), dir("/a/sub")]);
+        cache.set("/a/sub", [file("/a/sub/y.txt", 20), unknownSizeFile()]);
+
+        expect(cache.getCachedFolderSize("/a/sub")).toBe("unknown");
+        expect(cache.getCachedFolderSize("/a")).toBe("unknown");
+
+        // Once the size is known, the folder sizes can be calculated.
+        cache.updateFileSize("/a/sub/z.txt", 5);
+        expect(cache.getCachedFolderSize("/a/sub")).toBe(25);
+        expect(cache.getCachedFolderSize("/a")).toBe(35);
+    });
+
+    it("marks a folder as unknown even if other sub folders are not calculated", () => {
+        const cache = new FolderCache();
+        cache.set("/a", [dir("/a/other"), dir("/a/sub")]);
+        cache.set("/a/sub", [unknownSizeFile()]);
+
+        expect(cache.getCachedFolderSize("/a/other")).toBeNull();
+        expect(cache.getCachedFolderSize("/a")).toBe("unknown");
+    });
+
+    it("does not calculate a folder size while a sub folder is missing", () => {
+        const cache = new FolderCache();
+        cache.set("/a", [file("/a/x.txt", 10), dir("/a/other")]);
+
+        expect(cache.getCachedFolderSize("/a")).toBeNull();
+    });
+});
+
+function unknownSizeFile(): FolderEntry {
+    return new FolderEntry(
+        "/a/sub/z.txt",
+        "z.txt",
+        null,
+        FolderEntryType.File,
+        null,
+    );
+}
+
 describe("FolderCache.updateFileSize", () => {
     it("updates the size of the cached file and notifies listeners", () => {
         const cache = new FolderCache();

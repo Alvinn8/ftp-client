@@ -22,6 +22,17 @@ export type ConnectData = {
 
 export type ConnectReply = {
     readOnly: boolean;
+    /**
+     * Whether file sizes are provided when listing files. When false, the size
+     * column is hidden. Defaults to true if not specified.
+     */
+    providesFileSize?: boolean;
+    /**
+     * Whether last modification dates are provided when listing files. When
+     * false, the last modified column is hidden. Defaults to true if not
+     * specified.
+     */
+    providesLastModified?: boolean;
 };
 
 export interface ErrorReply {
@@ -41,9 +52,11 @@ export interface CdData {
 
 export interface FileInfo {
     name: string;
-    size: number;
+    /** The size in bytes, or null if unknown. */
+    size: number | null;
     type: FileType;
-    rawModifiedAt: string;
+    /** The last modification date, or null if unknown. */
+    rawModifiedAt: string | null;
 }
 
 export interface ListData {

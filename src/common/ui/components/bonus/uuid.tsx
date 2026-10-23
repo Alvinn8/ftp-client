@@ -43,7 +43,10 @@ export async function getUserCache(
                     const file = files.find(
                         (file) => file.name === "usercache.json",
                     );
-                    if (!file || file.size > 10 * 1024 * 1024) {
+                    if (
+                        !file ||
+                        (file.size !== null && file.size > 10 * 1024 * 1024)
+                    ) {
                         // Not found. Or a JSON file larger than 10 MB ?? Skip it.
                         return;
                     }

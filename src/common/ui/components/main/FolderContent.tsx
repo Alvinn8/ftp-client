@@ -38,8 +38,10 @@ const FolderContent: React.FC = () => {
                 <thead className="position-sticky top-0 bg-base-ui2">
                     <tr>
                         <th className="py-2 ps-5">Name</th>
-                        <th>Size</th>
-                        <th className="last-modified">Last Modified</th>
+                        {session.isProvidingFileSize() && <th>Size</th>}
+                        {session.isProvidingLastModified() && (
+                            <th className="last-modified">Last Modified</th>
+                        )}
                         <th></th>
                     </tr>
                 </thead>
@@ -71,8 +73,8 @@ const FolderContent: React.FC = () => {
                                         }}
                                     />
                                 </td>
-                                <td></td>
-                                <td></td>
+                                {session.isProvidingFileSize() && <td></td>}
+                                {session.isProvidingLastModified() && <td></td>}
                                 <td></td>
                             </tr>
                         ))}
