@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { isDarkTheme } from "@common/ui/theme";
 import { TextEditorData } from "./TextEditor";
 import { unexpectedErrorHandler } from "@common/util/error";
+import { findTextMateLanguage } from "./syntax/languages";
 
 const MonacoEditor: React.FC<TextEditorData> = ({
     text,
@@ -32,60 +33,19 @@ const MonacoEditor: React.FC<TextEditorData> = ({
             const onResize = () => editor.layout();
             window.addEventListener("resize", onResize);
 
-            if (absolutePath.endsWith(".sk")) {
-                import("./syntax/skript-syntax")
-                    .then(({ registerSkriptLanguage }) => {
-                        registerSkriptLanguage(editor).catch(
-                            unexpectedErrorHandler(
-                                "Failed to Register skript syntax highlighting",
+            const textMateLanguage = findTextMateLanguage(absolutePath);
+            if (textMateLanguage) {
+                import("./syntax/textmate")
+                    .then(
+                        async ({ registerTextMateLanguage }) =>
+                            await registerTextMateLanguage(
+                                textMateLanguage,
+                                editor,
                             ),
-                        );
-                    })
+                    )
                     .catch(
                         unexpectedErrorHandler(
-                            "Failed to Load skript syntax highlighting",
-                        ),
-                    );
-            } else if (absolutePath.endsWith(".mcfunction")) {
-                import("./syntax/mcfunction-syntax")
-                    .then(({ registerMcfunctionLanguage }) => {
-                        registerMcfunctionLanguage(editor).catch(
-                            unexpectedErrorHandler(
-                                "Failed to Register mcfunction syntax highlighting",
-                            ),
-                        );
-                    })
-                    .catch(
-                        unexpectedErrorHandler(
-                            "Failed to Load mcfunction syntax highlighting",
-                        ),
-                    );
-            } else if (absolutePath.endsWith(".toml")) {
-                import("./syntax/toml-syntax")
-                    .then(({ registerTomlLanguage }) => {
-                        registerTomlLanguage(editor).catch(
-                            unexpectedErrorHandler(
-                                "Failed to Register toml syntax highlighting",
-                            ),
-                        );
-                    })
-                    .catch(
-                        unexpectedErrorHandler(
-                            "Failed to Load toml syntax highlighting",
-                        ),
-                    );
-            } else if (absolutePath.endsWith(".json5")) {
-                import("./syntax/json5-syntax")
-                    .then(({ registerJson5Language }) => {
-                        registerJson5Language(editor).catch(
-                            unexpectedErrorHandler(
-                                "Failed to Register json5 syntax highlighting",
-                            ),
-                        );
-                    })
-                    .catch(
-                        unexpectedErrorHandler(
-                            "Failed to Load json5 syntax highlighting",
+                            `Failed to load ${textMateLanguage.id} syntax highlighting`,
                         ),
                     );
             }
