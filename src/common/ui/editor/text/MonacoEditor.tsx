@@ -74,6 +74,20 @@ const MonacoEditor: React.FC<TextEditorData> = ({
                             "Failed to Load toml syntax highlighting",
                         ),
                     );
+            } else if (absolutePath.endsWith(".json5")) {
+                import("./syntax/json5-syntax")
+                    .then(({ registerJson5Language }) => {
+                        registerJson5Language(editor).catch(
+                            unexpectedErrorHandler(
+                                "Failed to Register json5 syntax highlighting",
+                            ),
+                        );
+                    })
+                    .catch(
+                        unexpectedErrorHandler(
+                            "Failed to Load json5 syntax highlighting",
+                        ),
+                    );
             }
 
             return () => {
